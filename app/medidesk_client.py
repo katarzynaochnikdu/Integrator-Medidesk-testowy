@@ -100,6 +100,33 @@ async def submit_form(
     )
 
 
+async def verify_recaptcha_google_token(
+    token: str,
+    secret: str,
+) -> tuple[bool, dict[str, Any]]:
+    """Wywołanie Google siteverify – to samo co Medidesk robi po swojej stronie.
+
+    Zwraca (True, data) jeśli success==True, inaczej (False, data).
+    """
+    async with httpx.AsyncClient(timeout=settings.http_timeout) as client:
+        try:
+            resp = await client.post(
+                "https://www.google.com/recaptcha/api/siteverify",
+                data={"secret": secret, "response": token},
+            )
+        except httpx.HTTPError as exc:
+            logger.error("Google siteverify HTTP error: %s", exc)
+            return False, {"error": "siteverify_transport"}
+
+    try:
+        data = resp.json()
+    except Exception:
+        return False, {"error": "siteverify_invalid_json", "text": (resp.text or "")[:200]}
+
+    ok = data.get("success") is True
+    return ok, data
+
+
 async def get_placeholder_attachment_id(captcha_token: str | None = None) -> str | None:
     """Upload minimalnego PNG dla wymaganego pola „Dodaj-zdjęcie”."""
     return await upload_attachment(

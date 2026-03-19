@@ -133,6 +133,34 @@ class TestDemoContactPage:
         assert settings.recaptcha_site_key in resp.text
 
 
+class TestGoogleRecaptchaVerify:
+    def test_when_secret_set_and_google_rejects_returns_400(self, monkeypatch):
+        monkeypatch.setattr(settings, "recaptcha_secret", "fake-secret")
+        with patch(
+            "app.main.verify_recaptcha_google_token", new_callable=AsyncMock
+        ) as mock_v:
+            mock_v.return_value = (
+                False,
+                {"success": False, "error-codes": ["invalid-input-response"]},
+            )
+            resp = client.post("/api/medidesk/contact", json=VALID_PAYLOAD)
+        assert resp.status_code == 400
+        assert resp.json()["status"] == "recaptcha_google_failed"
+        mock_v.assert_called_once()
+
+    def test_when_secret_set_and_google_ok_calls_medidesk(self, monkeypatch):
+        monkeypatch.setattr(settings, "recaptcha_secret", "fake-secret")
+        with patch(
+            "app.main.verify_recaptcha_google_token", new_callable=AsyncMock
+        ) as mock_v, patch("app.main.submit_form", new_callable=AsyncMock) as mock_s:
+            mock_v.return_value = (True, {"success": True})
+            mock_s.return_value = MedideskResult(success=True, status_code=200)
+            resp = client.post("/api/medidesk/contact", json=VALID_PAYLOAD)
+        assert resp.status_code == 200
+        mock_v.assert_called_once()
+        mock_s.assert_called_once()
+
+
 class TestPlaceholderAttachment:
     @patch("app.main.get_placeholder_attachment_id", new_callable=AsyncMock)
     @patch("app.main.submit_form", new_callable=AsyncMock)

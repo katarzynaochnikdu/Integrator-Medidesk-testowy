@@ -14,6 +14,7 @@ from app.medidesk_client import (
     submit_form,
     upload_attachment,
     get_placeholder_attachment_id,
+    verify_recaptcha_google_token,
     MAX_ATTACHMENT_SIZE,
     ALLOWED_ATTACHMENT_TYPES,
 )
@@ -41,6 +42,37 @@ async def root():
         "demo_contact": "/demo/contact",
         "api_contact": "/api/medidesk/contact",
     }
+
+
+async def _maybe_verify_recaptcha_google(req: ContactRequest) -> JSONResponse | None:
+    """Jeśli ustawiono MEDIDESK_RECAPTCHA_SECRET – sprawdź token u Google przed Medidesk."""
+    if not settings.recaptcha_secret:
+        return None
+    ok, gdata = await verify_recaptcha_google_token(
+        req.captcha_token, settings.recaptcha_secret
+    )
+    if ok:
+        return None
+    safe = {
+        k: gdata.get(k)
+        for k in ("success", "hostname", "score", "action", "challenge_ts")
+        if k in gdata
+    }
+    if "error-codes" in gdata:
+        safe["errorCodes"] = gdata["error-codes"]
+    logger.info("Google siteverify FAILED: %s", safe)
+    return JSONResponse(
+        status_code=400,
+        content={
+            "status": "recaptcha_google_failed",
+            "message": (
+                "Token odrzucony przez Google (siteverify). "
+                "Sprawdź domenę w reCAPTCHA Admin (np. md-integrator-v1.onrender.com) "
+                "i czy MEDIDESK_RECAPTCHA_SECRET pasuje do tego samego klucza co site key."
+            ),
+            "google": safe,
+        },
+    )
 
 
 def _upstream_error_response(result: MedideskResult) -> JSONResponse:
@@ -97,6 +129,10 @@ async def demo_contact_page():
 )
 async def submit_contact(req: ContactRequest):
     """Accept contact data and forward it to the Medidesk forms API."""
+
+    early = await _maybe_verify_recaptcha_google(req)
+    if early is not None:
+        return early
 
     attachment_ids: list[str] | None = None
     if settings.auto_placeholder_photo:
@@ -161,6 +197,10 @@ async def submit_contact_with_attachment(
         req = ContactRequest.model_validate_json(data)
     except ValidationError as exc:
         return JSONResponse(status_code=422, content=exc.errors())
+
+    early = await _maybe_verify_recaptcha_google(req)
+    if early is not None:
+        return early
 
     if file.content_type and file.content_type not in ALLOWED_ATTACHMENT_TYPES:
         return JSONResponse(

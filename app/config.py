@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -14,6 +15,17 @@ class Settings(BaseSettings):
 
     # reCAPTCHA v3 site key (public) – używane na stronie demo / do wklejenia na WWW placówki
     recaptcha_site_key: str = "6Lfs81ghAAAAAL1x7coNFL3OORZHAkNk7ugPcBJ_"
+
+    # Sekret z Google reCAPTCHA Admin (ten sam projekt co site key) – opcjonalnie.
+    # Jeśli ustawisz, integrator wywoła siteverify przed Medidesk i przy błędzie zwróci 400 zamiast 502.
+    recaptcha_secret: str | None = None
+
+    @field_validator("recaptcha_secret", mode="before")
+    @classmethod
+    def _empty_secret_to_none(cls, v: object) -> object:
+        if v == "":
+            return None
+        return v
 
     # GET /demo/contact – formularz testowy bez ręcznego kopiowania tokenu (wyłącz na produkcji jeśli niepotrzebny)
     demo_page_enabled: bool = False
