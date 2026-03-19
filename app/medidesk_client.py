@@ -81,6 +81,16 @@ async def submit_form(
             body,
             preview,
         )
+        if resp.status_code == 500 and isinstance(body, dict):
+            if body.get("error") == "Internal Server Error" and "web-form" in str(
+                body.get("path", "")
+            ):
+                logger.info(
+                    "Wskazówka: Medidesk często zwraca ten generyczny 500 przy "
+                    "braku/wygasłym/nieakceptowanym tokenie reCAPTCHA (zamiast 401). "
+                    "Dodaj domenę Rendera (np. *.onrender.com) w Google reCAPTCHA Admin dla tego site key "
+                    "i użyj świeżego tokenu z /demo/contact."
+                )
 
     return MedideskResult(
         success=resp.status_code == 200,
