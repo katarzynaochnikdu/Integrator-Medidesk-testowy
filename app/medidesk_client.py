@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import logging
 from dataclasses import dataclass
 from typing import Any
@@ -9,6 +10,12 @@ import httpx
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Minimalny PNG 1×1 px (prawidłowy plik) – spełnia wymaganie pola ATTACHMENTS, jeśli formularz wymaga „Dodaj-zdjęcie”
+_MIN_PNG_B64 = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
+MINIMAL_PNG_BYTES = base64.b64decode(_MIN_PNG_B64)
 
 ALLOWED_ATTACHMENT_TYPES = {
     "image/jpeg",
@@ -30,6 +37,7 @@ class MedideskResult:
     success: bool
     status_code: int
     body: dict[str, Any] | None = None
+    raw_text: str | None = None
 
 
 async def submit_form(
@@ -58,37 +66,70 @@ async def submit_form(
             return MedideskResult(success=False, status_code=502)
 
     body = None
+    raw_text = (resp.text or "")[:8000] if resp.text else None
     try:
         body = resp.json()
     except Exception:
         pass
 
+    if resp.status_code != 200:
+        preview = (resp.text or "")[:1200]
+        # INFO żeby w logach Rendera (domyślnie INFO) było widać treść bez podnoszenia poziomu
+        logger.info(
+            "Medidesk POST form status=%s json=%s text_preview=%s",
+            resp.status_code,
+            body,
+            preview,
+        )
+
     return MedideskResult(
         success=resp.status_code == 200,
         status_code=resp.status_code,
         body=body,
+        raw_text=raw_text,
     )
 
 
-async def upload_attachment(file_bytes: bytes, filename: str) -> str | None:
+async def get_placeholder_attachment_id(captcha_token: str | None = None) -> str | None:
+    """Upload minimalnego PNG dla wymaganego pola „Dodaj-zdjęcie”."""
+    return await upload_attachment(
+        MINIMAL_PNG_BYTES, "placeholder.png", captcha_token=captcha_token
+    )
+
+
+async def upload_attachment(
+    file_bytes: bytes,
+    filename: str,
+    *,
+    captcha_token: str | None = None,
+) -> str | None:
     """Upload a single file to the Medidesk attachments endpoint.
 
     Returns the attachment UUID on success, or None on failure.
+    Niektóre konfiguracje Medidesk mogą wymagać tego samego tokenu co przy submit formularza.
     """
+
+    headers: dict[str, str] = {}
+    if captcha_token:
+        headers["captcha-response"] = captcha_token
 
     async with httpx.AsyncClient(timeout=settings.http_timeout) as client:
         try:
             resp = await client.post(
                 settings.medidesk_attachments_url,
                 files={"file": (filename, file_bytes)},
+                headers=headers or None,
             )
         except httpx.HTTPError as exc:
             logger.error("Attachment upload failed: %s", exc)
             return None
 
     if resp.status_code != 200:
-        logger.warning(
-            "Attachment upload returned %d: %s", resp.status_code, resp.text
+        logger.info(
+            "Medidesk attachment upload status=%d captcha_header=%s body=%s",
+            resp.status_code,
+            bool(captcha_token),
+            (resp.text or "")[:800],
         )
         return None
 

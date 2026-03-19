@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     # Opcjonalnie: front na innej domenie niż API (np. strona placówki) – lista originów rozdzielona przecinkami
     cors_origins: str = ""
 
+    # Jeśli w Medidesk formularz ma wymagane pole „Dodaj-zdjęcie”, ustaw true –
+    # wtedy integrator wyśle minimalny PNG przez /attachments. Gdy pole usunięto w panelu – zostaw false.
+    auto_placeholder_photo: bool = False
+
+    # True = w odpowiedzi 502 zwracaj szczegóły z Medidesk (tylko na czas debugu)
+    debug_upstream: bool = False
+
     model_config = {"env_prefix": "MEDIDESK_"}
 
     @property

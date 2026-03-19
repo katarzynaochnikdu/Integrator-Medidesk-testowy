@@ -10,8 +10,10 @@ from starlette.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.mapper import build_medidesk_payload
 from app.medidesk_client import (
+    MedideskResult,
     submit_form,
     upload_attachment,
+    get_placeholder_attachment_id,
     MAX_ATTACHMENT_SIZE,
     ALLOWED_ATTACHMENT_TYPES,
 )
@@ -28,6 +30,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Medidesk Integrator", version="1.0.0")
+
+
+def _upstream_error_response(result: MedideskResult) -> JSONResponse:
+    """502 z opcjonalnymi szczegółami, gdy MEDIDESK_DEBUG_UPSTREAM=true."""
+    kw: dict = {
+        "message": f"Medidesk returned HTTP {result.status_code}",
+    }
+    if settings.debug_upstream:
+        kw["upstream_status"] = result.status_code
+        if result.body is not None:
+            kw["upstream_body"] = result.body
+        elif result.raw_text:
+            kw["upstream_preview"] = result.raw_text[:2000]
+    body = UpstreamErrorResponse(**kw).model_dump(by_alias=True, exclude_none=True)
+    status = result.status_code if result.status_code in (502, 504) else 502
+    return JSONResponse(status_code=status, content=body)
 
 if settings.cors_origins_list:
     app.add_middleware(
@@ -69,7 +87,17 @@ async def demo_contact_page():
 async def submit_contact(req: ContactRequest):
     """Accept contact data and forward it to the Medidesk forms API."""
 
-    payload = build_medidesk_payload(req)
+    attachment_ids: list[str] | None = None
+    if settings.auto_placeholder_photo:
+        pid = await get_placeholder_attachment_id(req.captcha_token)
+        if pid:
+            attachment_ids = [pid]
+        else:
+            logger.warning(
+                "Upload placeholder PNG failed; wysyłam bez załącznika (możliwy błąd 500 po stronie Medidesk)"
+            )
+
+    payload = build_medidesk_payload(req, attachment_ids=attachment_ids)
     result = await submit_form(payload, req.captcha_token)
 
     if result.success:
@@ -93,12 +121,7 @@ async def submit_contact(req: ContactRequest):
         )
         return JSONResponse(status_code=400, content=resp.model_dump(by_alias=True))
 
-    return JSONResponse(
-        status_code=result.status_code if result.status_code in (502, 504) else 502,
-        content=UpstreamErrorResponse(
-            message=f"Medidesk returned HTTP {result.status_code}"
-        ).model_dump(),
-    )
+    return _upstream_error_response(result)
 
 
 @app.post(
@@ -145,13 +168,19 @@ async def submit_contact_with_attachment(
             ).model_dump(by_alias=True),
         )
 
-    attachment_id = await upload_attachment(file_bytes, file.filename or "attachment")
+    attachment_id = await upload_attachment(
+        file_bytes, file.filename or "attachment", captcha_token=req.captcha_token
+    )
+    if not attachment_id:
+        attachment_id = await upload_attachment(
+            file_bytes, file.filename or "attachment", captcha_token=None
+        )
     if not attachment_id:
         return JSONResponse(
             status_code=502,
             content=UpstreamErrorResponse(
                 message="Failed to upload attachment to Medidesk"
-            ).model_dump(),
+            ).model_dump(by_alias=True, exclude_none=True),
         )
 
     payload = build_medidesk_payload(req, attachment_ids=[attachment_id])
@@ -178,9 +207,4 @@ async def submit_contact_with_attachment(
         )
         return JSONResponse(status_code=400, content=resp.model_dump(by_alias=True))
 
-    return JSONResponse(
-        status_code=502,
-        content=UpstreamErrorResponse(
-            message=f"Medidesk returned HTTP {result.status_code}"
-        ).model_dump(),
-    )
+    return _upstream_error_response(result)

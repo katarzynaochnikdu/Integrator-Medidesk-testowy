@@ -9,6 +9,12 @@ from app.medidesk_client import MedideskResult
 
 client = TestClient(app)
 
+
+@pytest.fixture(autouse=True)
+def disable_auto_placeholder_photo(monkeypatch):
+    """Testy nie wywołują prawdziwego uploadu do Medidesk."""
+    monkeypatch.setattr(settings, "auto_placeholder_photo", False)
+
 VALID_PAYLOAD = {
     "captchaToken": "valid-token",
     "fullName": "Jan Kowalski",
@@ -117,3 +123,20 @@ class TestDemoContactPage:
         assert resp.status_code == 200
         assert "grecaptcha" in resp.text
         assert settings.recaptcha_site_key in resp.text
+
+
+class TestPlaceholderAttachment:
+    @patch("app.main.get_placeholder_attachment_id", new_callable=AsyncMock)
+    @patch("app.main.submit_form", new_callable=AsyncMock)
+    def test_payload_includes_attachment_when_placeholder_ok(
+        self, mock_submit, mock_placeholder, monkeypatch
+    ):
+        monkeypatch.setattr(settings, "auto_placeholder_photo", True)
+        mock_placeholder.return_value = "uuid-placeholder-123"
+        mock_submit.return_value = MedideskResult(success=True, status_code=200)
+
+        client.post("/api/medidesk/contact", json=VALID_PAYLOAD)
+
+        args, _kwargs = mock_submit.call_args
+        payload = args[0]
+        assert payload["attachments"] == {"Dodaj-zdjęcie": ["uuid-placeholder-123"]}

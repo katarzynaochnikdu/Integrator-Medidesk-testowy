@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -62,3 +62,9 @@ class CaptchaErrorResponse(BaseModel):
 class UpstreamErrorResponse(BaseModel):
     status: str = "upstream_error"
     message: str
+    # Wypełniane gdy MEDIDESK_DEBUG_UPSTREAM=true (diagnostyka 5xx z Medidesk)
+    upstream_status: int | None = Field(default=None, alias="upstreamStatus")
+    upstream_body: Any | None = Field(default=None, alias="upstreamBody")
+    upstream_preview: str | None = Field(default=None, alias="upstreamPreview")
+
+    model_config = {"populate_by_name": True}
