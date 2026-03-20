@@ -11,7 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.medidesk_client import (
     MedideskResult,
-    fetch_form_fields,
+    fetch_form_definition,
     submit_form_urlencoded,
 )
 
@@ -43,14 +43,15 @@ async def root():
 @app.get("/api/forms/{form_id}/fields")
 async def get_form_fields(form_id: str):
     """Podgląd pól formularza Medidesk — pomocne przy tworzeniu mapowania."""
-    fields = await fetch_form_fields(form_id)
-    if not fields:
+    defn = await fetch_form_definition(form_id)
+    if not defn or not defn.fields:
         return JSONResponse(
             status_code=404,
             content={"error": f"Form {form_id} not found or has no fields"},
         )
     return {
         "form_id": form_id,
+        "form_name": defn.name,
         "fields": [
             {
                 "fieldId": f.field_id,
@@ -59,7 +60,7 @@ async def get_form_fields(form_id: str):
                 "name": f.name,
                 "options": f.options,
             }
-            for f in fields
+            for f in defn.fields
         ],
     }
 

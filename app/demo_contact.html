@@ -84,7 +84,7 @@
       <div class="header">
         <h1>Medidesk Integrator</h1>
         <div class="sub">Symulacja leada z Facebook Ads</div>
-        <div class="meta-bar">Form: <code id="fid"></code></div>
+        <div class="meta-bar"><span id="fname">...</span> &middot; <code id="fid"></code></div>
       </div>
       <div id="form-container">Ladowanie...</div>
       <div id="out"></div>
@@ -138,6 +138,7 @@
       .then(r => r.json())
       .then(data => {
         if (data.error) { container.innerHTML = "<p class='err show'>" + data.error + "</p>"; return; }
+        if (data.form_name) document.getElementById("fname").textContent = data.form_name;
 
         const sorted = data.fields.slice().sort((a, b) => {
           const ia = FIELD_ORDER.indexOf(a.fieldId), ib = FIELD_ORDER.indexOf(b.fieldId);

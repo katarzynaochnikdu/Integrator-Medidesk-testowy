@@ -29,18 +29,24 @@ class FormField:
     options: list[str] | None = None
 
 
-async def fetch_form_fields(form_id: str) -> list[FormField]:
-    """GET /api/forms/{form_id} — pobiera aktualną definicję pól z Medidesk."""
+@dataclass
+class FormDefinition:
+    name: str
+    fields: list[FormField]
+
+
+async def fetch_form_definition(form_id: str) -> FormDefinition | None:
+    """GET /api/forms/{form_id} — pobiera nazwę i pola formularza z Medidesk."""
     url = f"{settings.medidesk_api_base}/{form_id}"
     async with httpx.AsyncClient(timeout=settings.http_timeout) as client:
         resp = await client.get(url)
 
     if resp.status_code != 200:
         logger.warning("Medidesk GET form %s status=%s", form_id, resp.status_code)
-        return []
+        return None
 
     data = resp.json()
-    return [
+    fields = [
         FormField(
             field_id=f["fieldId"],
             field_type=f["type"],
@@ -50,6 +56,7 @@ async def fetch_form_fields(form_id: str) -> list[FormField]:
         )
         for f in data.get("fields", [])
     ]
+    return FormDefinition(name=data.get("name", ""), fields=fields)
 
 
 def build_urlencoded_body(

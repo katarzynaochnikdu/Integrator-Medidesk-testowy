@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.config import settings
 from app.main import app
-from app.medidesk_client import MedideskResult, FormField
+from app.medidesk_client import MedideskResult, FormField, FormDefinition
 
 client = TestClient(app)
 
@@ -26,21 +26,25 @@ class TestRoot:
 
 
 class TestGetFormFields:
-    @patch("app.main.fetch_form_fields", new_callable=AsyncMock)
+    @patch("app.main.fetch_form_definition", new_callable=AsyncMock)
     def test_returns_fields(self, mock_fetch):
-        mock_fetch.return_value = [
-            FormField(field_id="Osoba", field_type="TEXT_FIELD", required=True, name="Osoba"),
-            FormField(field_id="Mail", field_type="EMAIL", required=True, name="Mail"),
-        ]
+        mock_fetch.return_value = FormDefinition(
+            name="Test Form",
+            fields=[
+                FormField(field_id="Osoba", field_type="TEXT_FIELD", required=True, name="Osoba"),
+                FormField(field_id="Mail", field_type="EMAIL", required=True, name="Mail"),
+            ],
+        )
         resp = client.get(f"/api/forms/{FORM_ID}/fields")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["fields"]) == 2
         assert data["fields"][0]["fieldId"] == "Osoba"
+        assert data["form_name"] == "Test Form"
 
-    @patch("app.main.fetch_form_fields", new_callable=AsyncMock)
+    @patch("app.main.fetch_form_definition", new_callable=AsyncMock)
     def test_returns_404_when_empty(self, mock_fetch):
-        mock_fetch.return_value = []
+        mock_fetch.return_value = None
         resp = client.get(f"/api/forms/{FORM_ID}/fields")
         assert resp.status_code == 404
 
