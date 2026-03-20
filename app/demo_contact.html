@@ -5,46 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Test – Medidesk Integrator v2</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 36rem; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
-    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1rem; color: #666; font-weight: 400; margin-top: 0; }
-    label { display: block; margin-top: 1rem; font-weight: 600; font-size: 0.9rem; color: #333; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e4e4e7; min-height: 100vh; }
+    .wrapper { max-width: 42rem; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 { font-size: 1.6rem; font-weight: 700; background: linear-gradient(135deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { color: #71717a; font-size: 0.9rem; margin-top: 0.25rem; }
+    .meta-bar { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; padding: 0.6rem 0.8rem; background: #1a1b23; border-radius: 8px; font-size: 0.8rem; color: #a1a1aa; }
+    .meta-bar code { background: #27272a; padding: 2px 6px; border-radius: 4px; color: #d4d4d8; font-size: 0.78rem; }
+
+    .test-sets { margin-top: 1.5rem; }
+    .test-sets h3 { font-size: 0.85rem; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem; }
+    .sets-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .set-btn {
+      padding: 0.5rem 1rem; border: 1px solid #27272a; border-radius: 8px; background: #1a1b23;
+      color: #d4d4d8; cursor: pointer; font-size: 0.85rem; transition: all 0.15s;
+    }
+    .set-btn:hover { border-color: #3b82f6; background: #1e2030; color: #fff; }
+    .set-btn .name { font-weight: 600; }
+    .set-btn .preview { color: #71717a; font-size: 0.75rem; margin-top: 0.15rem; }
+
+    .form-area { margin-top: 1.5rem; }
+    label { display: block; margin-top: 1rem; font-weight: 500; font-size: 0.88rem; color: #a1a1aa; }
     input, select, textarea {
-      width: 100%; box-sizing: border-box; margin-top: 0.3rem; padding: 0.6rem 0.75rem;
-      border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem;
+      width: 100%; margin-top: 0.3rem; padding: 0.6rem 0.75rem;
+      background: #1a1b23; border: 1px solid #27272a; border-radius: 8px;
+      color: #e4e4e7; font-size: 0.95rem; transition: border-color 0.15s;
     }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: #1877f2; box-shadow: 0 0 0 2px rgba(24,119,242,0.15); }
-    textarea { resize: vertical; min-height: 80px; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+    textarea { resize: vertical; min-height: 70px; }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2371717a' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2rem; }
+    select option { background: #1a1b23; color: #e4e4e7; }
     .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
-    .checkbox-row input { width: auto; margin: 0; }
-    .checkbox-row label { margin: 0; font-weight: 400; }
-    button {
-      margin-top: 1.5rem; padding: 0.7rem 1.5rem; cursor: pointer; font-size: 1rem;
-      background: #1877f2; color: #fff; border: none; border-radius: 6px; width: 100%;
+    .checkbox-row input { width: auto; margin: 0; accent-color: #3b82f6; }
+    .checkbox-row label { margin: 0; font-weight: 400; font-size: 0.88rem; }
+    .field-id { font-size: 0.7rem; color: #3f3f46; margin-top: 0.1rem; font-family: monospace; }
+    .req { color: #ef4444; }
+
+    .submit-btn {
+      margin-top: 1.5rem; width: 100%; padding: 0.75rem; border: none; border-radius: 8px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; font-size: 1rem;
+      font-weight: 600; cursor: pointer; transition: opacity 0.15s;
     }
-    button:hover { background: #166fe5; }
-    #out { margin-top: 1rem; white-space: pre-wrap; font-size: 0.85rem; padding: 0.75rem; border-radius: 6px; }
-    .err { color: #b00; background: #fff0f0; } .ok { color: #060; background: #f0fff0; }
-    .info { background: #f0f4ff; padding: 0.75rem; border-radius: 6px; font-size: 0.82rem; margin-bottom: 1.5rem; }
-    code { background: #e8ecf0; padding: 2px 5px; border-radius: 3px; font-size: 0.82rem; }
-    .badge { display: inline-block; background: #1877f2; color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; vertical-align: middle; margin-left: 0.3rem; }
-    .field-hint { font-size: 0.78rem; color: #888; margin-top: 0.15rem; }
+    .submit-btn:hover { opacity: 0.9; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #out {
+      margin-top: 1rem; white-space: pre-wrap; font-size: 0.82rem; padding: 0.75rem;
+      border-radius: 8px; font-family: monospace; display: none;
+    }
+    #out.show { display: block; }
+    .err { color: #fca5a5; background: #1c1215; border: 1px solid #7f1d1d; }
+    .ok { color: #86efac; background: #0f1a14; border: 1px solid #14532d; }
   </style>
 </head>
 <body>
-  <h1>Symulacja leada z Facebook Ads</h1>
-  <h2>Medidesk Integrator — demo</h2>
-  <div class="info">
-    <strong>Formularz Medidesk:</strong> <code id="fid">d908ee01-0b7d-44a0-a494-a707ab5a55ef</code><br>
-    Pola ladowane dynamicznie z Medidesk API. Wysylka urlencoded bez captchy.
+  <div class="wrapper">
+    <h1>Medidesk Integrator</h1>
+    <div class="subtitle">Symulacja leada z Facebook Ads</div>
+    <div class="meta-bar">
+      Form ID: <code id="fid"></code>
+    </div>
+
+    <div class="test-sets">
+      <h3>Szybkie wypelnienie</h3>
+      <div class="sets-row" id="sets"></div>
+    </div>
+
+    <div class="form-area" id="form-container">Ladowanie...</div>
+    <div id="out"></div>
   </div>
-  <div id="form-container">Ladowanie pol formularza...</div>
-  <div id="out"></div>
 
   <script>
     const DEFAULT_FORM_ID = "d908ee01-0b7d-44a0-a494-a707ab5a55ef";
     const formId = new URLSearchParams(location.search).get("form_id") || DEFAULT_FORM_ID;
     document.getElementById("fid").textContent = formId;
+
+    const TEST_SETS = [
+      {
+        name: "Anna Nowak",
+        preview: "Ortopeda, Krakow",
+        values: { "Imie-i-nazwisko": "Anna Nowak", "Mail": "anna.nowak@gmail.com", "Telefon": "+48 600 700 800", "Lista": "Opcja 1", "Zyczenie": "Prosze o wizyte u ortopedy w Krakowie", "zgoda": "true" }
+      },
+      {
+        name: "Marek Zielinski",
+        preview: "USG, Warszawa",
+        values: { "Imie-i-nazwisko": "Marek Zielinski", "Mail": "m.zielinski@wp.pl", "Telefon": "+48 501 234 567", "Lista": "Opcja 2", "Zyczenie": "Chcialbym umowic USG kolana na przyszly tydzien", "zgoda": "true" }
+      },
+      {
+        name: "Ewa Kowalczyk",
+        preview: "Konsultacja, Gdansk",
+        values: { "Imie-i-nazwisko": "Ewa Kowalczyk", "Mail": "ewa.k@onet.pl", "Telefon": "+48 512 345 678", "Lista": "Opcja 3", "Zyczenie": "Potrzebuje konsultacji kardiologicznej, najlepiej po 16:00", "zgoda": "true" }
+      }
+    ];
 
     const NICE_LABELS = {
       "Imie-i-nazwisko": "Imie i nazwisko",
@@ -55,55 +107,70 @@
       "zgoda": "Wyrazam zgode na kontakt zwrotny",
     };
 
-    const PLACEHOLDERS = {};
-    const TEST_VALUES = {};
-
     const container = document.getElementById("form-container");
     const out = document.getElementById("out");
+    const setsEl = document.getElementById("sets");
+
+    TEST_SETS.forEach((s, i) => {
+      const btn = document.createElement("button");
+      btn.className = "set-btn";
+      btn.innerHTML = "<div class='name'>" + s.name + "</div><div class='preview'>" + s.preview + "</div>";
+      btn.addEventListener("click", () => fillForm(s.values));
+      setsEl.appendChild(btn);
+    });
+
+    function fillForm(values) {
+      Object.entries(values).forEach(([k, v]) => {
+        const el = document.querySelector("[name='" + k + "']");
+        if (!el) return;
+        if (el.type === "checkbox") { el.checked = v === "true"; }
+        else { el.value = v; }
+      });
+      out.className = ""; out.classList.remove("show"); out.textContent = "";
+    }
 
     fetch("/api/forms/" + formId + "/fields")
       .then(r => r.json())
       .then(data => {
-        if (data.error) { container.innerHTML = "<p class='err'>" + data.error + "</p>"; return; }
+        if (data.error) { container.innerHTML = "<p class='err show'>" + data.error + "</p>"; return; }
 
         let html = "<form id='f'>";
         data.fields.forEach(f => {
           const label = NICE_LABELS[f.fieldId] || f.name;
-          const ph = PLACEHOLDERS[f.fieldId] || "";
-          const tv = TEST_VALUES[f.fieldId] || "";
-          const req = f.required ? " *" : "";
-          const fbBadge = "<span class='badge'>FB</span>";
+          const req = f.required ? "<span class='req'> *</span>" : "";
 
           if (f.type === "CHECKBOX") {
             html += "<div class='checkbox-row'>"
-              + "<input type='checkbox' id='cb_" + f.fieldId + "' name='" + f.fieldId + "' value='true' checked />"
+              + "<input type='checkbox' id='cb_" + f.fieldId + "' name='" + f.fieldId + "' value='true' />"
               + "<label for='cb_" + f.fieldId + "'>" + label + "</label>"
-              + "</div>";
+              + "</div>"
+              + "<div class='field-id'>" + f.fieldId + "</div>";
           } else if (f.type === "SELECT" && f.options) {
-            html += "<label>" + label + req + " " + fbBadge
+            html += "<label>" + label + req + "</label>"
               + "<select name='" + f.fieldId + "'>";
             f.options.forEach(o => { html += "<option value='" + o + "'>" + o + "</option>"; });
-            html += "</select></label>"
-              + "<div class='field-hint'>fieldId: " + f.fieldId + "</div>";
+            html += "</select>"
+              + "<div class='field-id'>" + f.fieldId + "</div>";
           } else if (f.type === "TEXT_AREA") {
-            html += "<label>" + label + req + " " + fbBadge
-              + "<textarea name='" + f.fieldId + "' placeholder='" + ph + "'" + (f.required ? " required" : "") + ">" + tv + "</textarea>"
-              + "</label>"
-              + "<div class='field-hint'>fieldId: " + f.fieldId + "</div>";
+            html += "<label>" + label + req + "</label>"
+              + "<textarea name='" + f.fieldId + "'" + (f.required ? " required" : "") + "></textarea>"
+              + "<div class='field-id'>" + f.fieldId + "</div>";
           } else {
-            const inputType = f.type === "EMAIL" ? "email" : f.type === "PHONE" ? "tel" : "text";
-            html += "<label>" + label + req + " " + fbBadge
-              + "<input type='" + inputType + "' name='" + f.fieldId + "' placeholder='" + ph + "' value='" + tv + "'" + (f.required ? " required" : "") + " />"
-              + "</label>"
-              + "<div class='field-hint'>fieldId: " + f.fieldId + "</div>";
+            const t = f.type === "EMAIL" ? "email" : f.type === "PHONE" ? "tel" : "text";
+            html += "<label>" + label + req + "</label>"
+              + "<input type='" + t + "' name='" + f.fieldId + "'" + (f.required ? " required" : "") + " />"
+              + "<div class='field-id'>" + f.fieldId + "</div>";
           }
         });
-        html += "<button type='submit'>Wyslij lead do Medidesk</button></form>";
+        html += "<button type='submit' class='submit-btn'>Wyslij lead do Medidesk</button></form>";
         container.innerHTML = html;
 
         document.getElementById("f").addEventListener("submit", function(e) {
           e.preventDefault();
-          out.textContent = "Wysylanie..."; out.className = "";
+          const btn = e.target.querySelector(".submit-btn");
+          btn.disabled = true; btn.textContent = "Wysylanie...";
+          out.textContent = ""; out.className = ""; out.classList.remove("show");
+
           const fd = new FormData(e.target);
           const body = {};
           for (const [k, v] of fd.entries()) body[k] = v;
@@ -118,15 +185,21 @@
           })
           .then(r => r.json().then(d => ({ status: r.status, data: d })))
           .then(({ status, data }) => {
-            out.className = status === 200 ? "ok" : "err";
+            out.classList.add("show");
+            out.className = status === 200 ? "ok show" : "err show";
             out.textContent = status === 200
-              ? "Lead wyslany! Sprawdz panel Medidesk.\n\n" + JSON.stringify(data, null, 2)
-              : "Blad HTTP " + status + ":\n" + JSON.stringify(data, null, 2);
+              ? "Lead wyslany! Sprawdz panel Medidesk.\n" + JSON.stringify(data, null, 2)
+              : "Blad HTTP " + status + "\n" + JSON.stringify(data, null, 2);
+            btn.disabled = false; btn.textContent = "Wyslij lead do Medidesk";
           })
-          .catch(err => { out.className = "err"; out.textContent = "Blad: " + err; });
+          .catch(err => {
+            out.classList.add("show"); out.className = "err show";
+            out.textContent = "Blad: " + err;
+            btn.disabled = false; btn.textContent = "Wyslij lead do Medidesk";
+          });
         });
       })
-      .catch(err => { container.innerHTML = "<p class='err'>Blad ladowania formularza: " + err + "</p>"; });
+      .catch(err => { container.innerHTML = "<p class='err'>" + err + "</p>"; });
   </script>
 </body>
 </html>
