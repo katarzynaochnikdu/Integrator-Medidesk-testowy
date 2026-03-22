@@ -430,7 +430,21 @@ async def get_all_token_health(_session=Depends(require_admin)):
     return {"tokens": results, "warn_days": settings.token_expiry_warn_days}
 
 
-# ─── Pages: Demo, Setup Wizard & Dashboard ────────────────────
+# ─── Pages: Demo, Setup Wizard, Dashboard & FB Compliance ────────
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_policy():
+    """Privacy policy required for Facebook App Review."""
+    path = Path(__file__).parent / "privacy.html"
+    return path.read_text(encoding="utf-8")
+
+
+@app.get("/data-deletion", response_class=HTMLResponse)
+async def data_deletion():
+    """Data deletion instructions required for Facebook App Review."""
+    path = Path(__file__).parent / "data_deletion.html"
+    return path.read_text(encoding="utf-8")
 
 
 @app.get("/demo/contact", response_class=HTMLResponse, include_in_schema=False)
