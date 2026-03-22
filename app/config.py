@@ -11,6 +11,21 @@ class Settings(BaseSettings):
     debug_upstream: bool = False
     cors_origins: str = ""
 
+    # Facebook OAuth & Graph API
+    fb_app_id: str = ""
+    fb_app_secret: str = ""
+    fb_redirect_uri: str = "http://localhost:8000/auth/facebook/callback"
+    fb_graph_version: str = "v25.0"
+    fb_webhook_verify_token: str = "medidesk_integrator_verify_2026"
+
+    # Integration storage
+    integrations_file: str = "integrations.json"
+    lead_log_file: str = "lead_log.json"
+
+    # Session
+    fb_session_secret: str = "medidesk-session-secret-change-me-2026"
+    admin_password: str = "medidesk-admin-2026"
+
     model_config = {"env_prefix": "MEDIDESK_"}
 
     @property

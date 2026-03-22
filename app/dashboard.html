@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard – Medidesk Integrator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0a0c10;
+      color: #e4e4e7;
+      min-height: 100vh;
+      font-size: 14px;
+      display: flex;
+    }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      width: 240px;
+      background: #0f1117;
+      border-right: 1px solid #1e2030;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 50;
+    }
+    .sidebar-brand {
+      padding: 1.2rem 1rem;
+      border-bottom: 1px solid #1e2030;
+    }
+    .sidebar-brand h1 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #3b82f6, #a855f7);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .sidebar-brand .sub {
+      font-size: 0.65rem;
+      color: #52525b;
+      margin-top: 0.2rem;
+    }
+
+    .sidebar-nav {
+      padding: 0.8rem 0.6rem;
+      flex: 1;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #71717a;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 0.2rem;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.03); color: #a1a1aa; }
+    .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #93c5fd; }
+    .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .nav-divider { height: 1px; background: #1e2030; margin: 0.6rem 0.8rem; }
+
+    .sidebar-user {
+      padding: 0.8rem 1rem;
+      border-top: 1px solid #1e2030;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
+    }
+    .user-name { font-size: 0.78rem; font-weight: 600; }
+    .user-email { font-size: 0.65rem; color: #52525b; }
+
+    /* ─── Main ─── */
+    .main {
+      margin-left: 240px;
+      flex: 1;
+      min-height: 100vh;
+    }
+    .main-header {
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid #1e2030;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(10, 12, 16, 0.95);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .main-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .main-content { padding: 1.5rem 2rem; max-width: 1100px; }
+
+    /* ─── Section panels ─── */
+    .section { display: none; }
+    .section.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ─── KPI Grid ─── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .kpi-card {
+      background: #13141b;
+      border: 1px solid #1e2030;
+      border-radius: 12px;
+      padding: 1.2rem;
+    }
+    .kpi-card .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #52525b;
+      margin-bottom: 0.4rem;
+    }
+    .kpi-card .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .kpi-card .sub {
+      font-size: 0.72rem;
+      color: #52525b;
+      margin-top: 0.3rem;
+    }
+    .kpi-blue .value { color: #60a5fa; }
+    .kpi-green .value { color: #4ade80; }
+    .kpi-yellow .value { color: #fbbf24; }
+    .kpi-red .value { color: #f87171; }
+
+    /* ─── Cards ─── */
+    .card {
+      background: #13141b;
+      border: 1px solid #1e2030;
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .card-header h3 { font-size: 0.9rem; font-weight: 600; }
+
+    /* ─── Integration cards ─── */
+    .int-card {
+      background: #13141b;
+      border: 1px solid #1e2030;
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 0.8rem;
+      transition: border-color 0.15s;
+    }
+    .int-card:hover { border-color: #27272a; }
+    .int-card-top {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .int-card-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .int-card-icon.fb { background: rgba(24, 119, 242, 0.15); }
+    .int-card-info { flex: 1; min-width: 0; }
+    .int-card-info .name {
+      font-weight: 600;
+      font-size: 0.88rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .int-card-info .meta { font-size: 0.72rem; color: #52525b; margin-top: 0.15rem; }
+    .int-card-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .status-active { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
+    .status-inactive { background: rgba(161, 161, 170, 0.1); color: #71717a; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-active .status-dot { background: #4ade80; }
+    .status-inactive .status-dot { background: #52525b; }
+
+    .int-card-flow {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.8rem 0;
+      padding: 0.6rem 0.8rem;
+      background: #0f1117;
+      border-radius: 8px;
+      font-size: 0.78rem;
+    }
+    .flow-box {
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .flow-fb { background: rgba(24, 119, 242, 0.1); color: #60a5fa; }
+    .flow-arrow { color: #27272a; }
+    .flow-md { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
+
+    .int-card-stats {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.72rem;
+      color: #52525b;
+    }
+    .int-card-stats span strong { color: #a1a1aa; }
+
+    .int-card-actions {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.8rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid #1a1b25;
+    }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.7rem; }
+    .btn-primary { background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-success { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+    .btn-warning { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); }
+    .btn-danger { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .btn-outline { background: transparent; border: 1px solid #27272a; color: #a1a1aa; }
+    .btn-outline:hover { border-color: #3b82f6; color: #93c5fd; }
+
+    /* ─── Recent leads table ─── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+    th {
+      text-align: left;
+      padding: 0.5rem 0.8rem;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #52525b;
+      border-bottom: 1px solid #1e2030;
+    }
+    td {
+      padding: 0.5rem 0.8rem;
+      border-bottom: 1px solid #13141b;
+      color: #a1a1aa;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+    .badge-sent { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
+    .badge-failed { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+    .badge-received { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
+
+    /* ─── Lead detail (expandable) ─── */
+    .lead-detail {
+      background: #0f1117;
+      border: 1px solid #1e2030;
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin: 0.3rem 0 0.6rem;
+      font-size: 0.75rem;
+    }
+    .lead-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+    .lead-detail h4 {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #52525b;
+      margin-bottom: 0.4rem;
+    }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.25rem 0;
+      border-bottom: 1px solid #1a1b25;
+    }
+    .data-key { color: #71717a; }
+    .data-val { color: #e4e4e7; font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+    .error-box {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 6px;
+      padding: 0.5rem 0.8rem;
+      color: #fca5a5;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    /* ─── Room header ─── */
+    .room-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .room-header .back {
+      cursor: pointer;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #27272a;
+      color: #a1a1aa;
+      font-size: 0.8rem;
+      background: transparent;
+    }
+    .room-header .back:hover { border-color: #3b82f6; color: #93c5fd; }
+
+    .mapping-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      margin-bottom: 0;
+    }
+    .mapping-table td { padding: 0.4rem 0.6rem; }
+    .mapping-table .arrow { color: #27272a; text-align: center; width: 40px; }
+    .mapping-table .fb-col { color: #60a5fa; }
+    .mapping-table .md-col { color: #4ade80; }
+    .mapping-table .conf { color: #52525b; font-size: 0.7rem; text-align: right; }
+
+    .lead-row { cursor: pointer; transition: background 0.1s; }
+    .lead-row:hover { background: rgba(255,255,255,0.02); }
+
+    /* ─── Empty state ─── */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #52525b;
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+    .empty-state h3 { font-size: 1rem; color: #71717a; margin-bottom: 0.5rem; }
+
+    /* ─── Demo banner ─── */
+    .demo-banner {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      text-align: center;
+      padding: 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .toast.show { opacity: 1; pointer-events: auto; }
+    .toast.success { background: #14532d; color: #86efac; border: 1px solid #16a34a; }
+    .toast.error { background: #450a0a; color: #fca5a5; border: 1px solid #991b1b; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 56px; }
+      .sidebar-brand h1, .sidebar-brand .sub, .nav-item span:not(.icon), .sidebar-user .user-info { display: none; }
+      .main { margin-left: 56px; }
+      .main-content { padding: 1rem; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ─── Login screen ─── */
+    .login-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: #0a0c10;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      background: #13141b; border: 1px solid #1e2030; border-radius: 16px;
+      padding: 2.5rem; width: 380px; text-align: center;
+    }
+    .login-box h2 {
+      font-size: 1.2rem; font-weight: 700; margin-bottom: 0.3rem;
+      background: linear-gradient(135deg, #3b82f6, #a855f7);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .login-box .sub { font-size: 0.78rem; color: #52525b; margin-bottom: 1.5rem; }
+    .login-input {
+      width: 100%; padding: 0.6rem 0.8rem; border-radius: 8px;
+      border: 1px solid #27272a; background: #0f1117; color: #e4e4e7;
+      font-size: 0.85rem; margin-bottom: 0.8rem; outline: none;
+    }
+    .login-input:focus { border-color: #3b82f6; }
+    .login-btn {
+      width: 100%; padding: 0.6rem; border-radius: 8px; border: none;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      margin-bottom: 0.5rem;
+    }
+    .login-btn-admin {
+      background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff;
+    }
+    .login-btn-fb {
+      background: #1877f2; color: #fff;
+    }
+    .login-divider {
+      display: flex; align-items: center; gap: 0.8rem;
+      margin: 1rem 0; color: #52525b; font-size: 0.72rem;
+    }
+    .login-divider::before, .login-divider::after {
+      content: ''; flex: 1; height: 1px; background: #1e2030;
+    }
+    .login-error {
+      color: #f87171; font-size: 0.75rem; margin-bottom: 0.5rem;
+    }
+    .role-badge {
+      display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px;
+      font-size: 0.6rem; font-weight: 600; margin-top: 0.2rem;
+    }
+    .role-admin { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .role-user { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
+  </style>
+</head>
+<body>
+
+  <div class="demo-banner" id="demo-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:100;">
+    ⚡ TRYB DEMO — dane są symulowane
+  </div>
+
+  <!-- Login overlay -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-box">
+      <h2>Medidesk Integrator</h2>
+      <div class="sub">Zaloguj się do panelu</div>
+      <div class="login-error" id="login-error" style="display:none;"></div>
+      <input class="login-input" id="admin-password" type="password" placeholder="Hasło administratora" onkeydown="if(event.key==='Enter')adminLogin()" />
+      <button class="login-btn login-btn-admin" onclick="adminLogin()">Zaloguj jako Admin</button>
+      <div class="login-divider">lub</div>
+      <button class="login-btn login-btn-fb" onclick="location.href='/auth/facebook'">🟦 Zaloguj przez Facebook (Placówka)</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>Medidesk Integrator</h1>
+      <div class="sub" id="sidebar-sub">Panel</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-section="overview" onclick="showSection('overview')">
+        <span class="icon">📊</span> <span>Przegląd</span>
+      </div>
+      <div class="nav-item" data-section="integrations" onclick="showSection('integrations')">
+        <span class="icon">🔗</span> <span>Integracje</span>
+      </div>
+      <div class="nav-item" data-section="room" id="nav-room" onclick="showSection('room')" style="display:none;">
+        <span class="icon">🏠</span> <span id="nav-room-label">Połączenie</span>
+      </div>
+      <div class="nav-divider"></div>
+      <div class="nav-item" onclick="location.href='/setup'">
+        <span class="icon">➕</span> <span>Nowa integracja</span>
+      </div>
+    </nav>
+    <div class="sidebar-user" id="sidebar-user">
+      <div class="user-avatar" id="user-initials">?</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name">Niezalogowany</div>
+        <div class="user-email" id="user-email"></div>
+        <div id="user-role-badge"></div>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem;border-top:1px solid #1e2030;" id="logout-area" style="display:none;">
+      <button class="btn btn-sm btn-outline" style="width:100%;" onclick="doLogout()">Wyloguj</button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="main-header">
+      <h2 id="section-title">Przegląd</h2>
+      <button class="btn btn-primary" onclick="location.href='/setup'">➕ Nowa integracja</button>
+    </div>
+    <div class="main-content">
+
+      <!-- Section: Overview -->
+      <div class="section active" id="sec-overview">
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi-card kpi-blue">
+            <div class="label">Łączne leady</div>
+            <div class="value" id="kpi-total">—</div>
+            <div class="sub">wszystkich przetworzonych</div>
+          </div>
+          <div class="kpi-card kpi-green">
+            <div class="label">Wysłane do Medidesk</div>
+            <div class="value" id="kpi-sent">—</div>
+            <div class="sub">pomyślnie przesłane</div>
+          </div>
+          <div class="kpi-card kpi-yellow">
+            <div class="label">Success rate</div>
+            <div class="value" id="kpi-rate">—</div>
+            <div class="sub">procent sukcesu</div>
+          </div>
+          <div class="kpi-card kpi-red">
+            <div class="label">Aktywne integracje</div>
+            <div class="value" id="kpi-active">—</div>
+            <div class="sub" id="kpi-active-sub">połączonych formularzy</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Ostatnie leady</h3>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Lead ID</th><th>Status</th><th>Pola</th><th>Kiedy</th><th>Integracja</th></tr>
+              </thead>
+              <tbody id="recent-leads-body">
+                <tr><td colspan="5" style="text-align:center;color:#52525b;padding:1.5rem;">Ładowanie...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Integrations -->
+      <div class="section" id="sec-integrations">
+        <div id="integrations-list"></div>
+      </div>
+
+      <!-- Section: Integration Room -->
+      <div class="section" id="sec-room">
+        <div class="room-header">
+          <button class="back" onclick="showSection('integrations')">← Wróć</button>
+          <div>
+            <h3 id="room-title" style="font-size:1rem;font-weight:700;"></h3>
+            <div id="room-subtitle" style="font-size:0.75rem;color:#52525b;"></div>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="room-kpis"></div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Mapowanie pól</h3>
+          </div>
+          <table class="mapping-table" id="room-mappings">
+            <thead><tr><th>Pole Facebook</th><th></th><th>Pole Medidesk</th><th style="text-align:right">Pewność</th></tr></thead>
+            <tbody id="room-mappings-body"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Historia leadów</h3>
+            <button class="btn btn-sm btn-outline" id="btn-retry-all" style="display:none;" onclick="retryAllFailed()">🔄 Powtórz wszystkie błędne</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Lead ID</th><th>Status</th><th>Pola</th><th>Kiedy</th><th>Błąd</th><th>Akcja</th></tr>
+              </thead>
+              <tbody id="room-leads-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const DEMO = params.has('demo');
+    const DEMO_ROLE = params.get('demo') || 'admin'; // ?demo=admin or ?demo=user
+
+    let USER_ROLE = null; // 'admin' or 'user'
+    let USER_PAGES = []; // FB page IDs for placówka filtering
+
+    if (DEMO) document.getElementById('demo-banner').style.display = 'block';
+
+    // ─── Mock data for demo ─────────────────────────────
+    const MOCK_STATS = {
+      total_leads: 247, sent: 231, failed: 16,
+      success_rate: 93.5, active_integrations: 2, total_integrations: 3,
+      last_lead_at: new Date(Date.now() - 45 * 60000).toISOString(),
+      recent_leads: [
+        { lead_id: 'fb_lead_990124', status: 'sent', mapped_fields_count: 5, timestamp: new Date(Date.now() - 12 * 60000).toISOString(), integration_id: 'int-001' },
+        { lead_id: 'fb_lead_990123', status: 'sent', mapped_fields_count: 4, timestamp: new Date(Date.now() - 45 * 60000).toISOString(), integration_id: 'int-001' },
+        { lead_id: 'fb_lead_990122', status: 'failed', mapped_fields_count: 3, timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), integration_id: 'int-002', error: 'Medidesk HTTP 502' },
+        { lead_id: 'fb_lead_990121', status: 'sent', mapped_fields_count: 5, timestamp: new Date(Date.now() - 3 * 3600000).toISOString(), integration_id: 'int-001' },
+        { lead_id: 'fb_lead_990120', status: 'sent', mapped_fields_count: 4, timestamp: new Date(Date.now() - 5 * 3600000).toISOString(), integration_id: 'int-002' },
+        { lead_id: 'fb_lead_990119', status: 'sent', mapped_fields_count: 5, timestamp: new Date(Date.now() - 8 * 3600000).toISOString(), integration_id: 'int-001' },
+        { lead_id: 'fb_lead_990118', status: 'failed', mapped_fields_count: 0, timestamp: new Date(Date.now() - 12 * 3600000).toISOString(), integration_id: 'int-001', error: 'No mapped fields' },
+        { lead_id: 'fb_lead_990117', status: 'sent', mapped_fields_count: 5, timestamp: new Date(Date.now() - 24 * 3600000).toISOString(), integration_id: 'int-002' },
+      ],
+    };
+
+    const MOCK_INTEGRATIONS = [
+      {
+        id: 'int-001', fb_page_name: 'Klinika Dental Premium', fb_form_name: 'Umów wizytę u ortopedy',
+        medidesk_form_id: 'd908ee01-0b7d-44a0-a494-a707ab5a55ef', medidesk_form_name: 'Formularz KOCHNIKA',
+        active: true, mappings_count: 5, created_at: '2026-03-20T10:00:00Z',
+        stats: { total: 189, sent: 178, failed: 11, success_rate: 94.2 },
+      },
+      {
+        id: 'int-002', fb_page_name: 'Centrum Medyczne Zdrowie', fb_form_name: 'Zapisz się na USG',
+        medidesk_form_id: 'a1b2c3d4', medidesk_form_name: 'Formularz USG',
+        active: true, mappings_count: 4, created_at: '2026-03-21T14:00:00Z',
+        stats: { total: 58, sent: 53, failed: 5, success_rate: 91.4 },
+      },
+      {
+        id: 'int-003', fb_page_name: 'Fizjo-Med Rehabilitacja', fb_form_name: 'Rehabilitacja powypadkowa',
+        medidesk_form_id: 'x9y8z7', medidesk_form_name: 'Formularz fizjo',
+        active: false, mappings_count: 3, created_at: '2026-03-19T09:00:00Z',
+        stats: { total: 0, sent: 0, failed: 0, success_rate: 0 },
+      },
+    ];
+
+    const MOCK_FAILED_LEADS = [
+      {
+        lead_id: 'fb_lead_990122', integration_id: 'int-002', status: 'failed',
+        timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
+        error: 'Medidesk HTTP 502', mapped_fields_count: 3,
+        fb_raw_data: { full_name: 'Anna Kowalska', phone_number: '+48 600 123 456', email: 'anna.k@gmail.com', rodzaj_badania: 'USG jamy brzusznej', uwagi: 'Proszę o termin poranny' },
+        mapped_values: { 'Imie-i-nazwisko': 'Anna Kowalska', 'Telefon': '+48 600 123 456', 'Mail': 'anna.k@gmail.com' },
+        medidesk_form_id: 'a1b2c3d4',
+      },
+      {
+        lead_id: 'fb_lead_990118', integration_id: 'int-001', status: 'failed',
+        timestamp: new Date(Date.now() - 12 * 3600000).toISOString(),
+        error: 'No mapped fields with values', mapped_fields_count: 0,
+        fb_raw_data: { custom_field_xyz: 'some value' },
+        mapped_values: {},
+        medidesk_form_id: 'd908ee01-0b7d-44a0-a494-a707ab5a55ef',
+      },
+    ];
+
+    let currentRoomId = null;
+
+    // ─── Login ───────────────────────────────────────────
+    async function adminLogin() {
+      if (DEMO) {
+        hideLogin('admin');
+        return;
+      }
+      const pw = document.getElementById('admin-password').value;
+      const errEl = document.getElementById('login-error');
+      try {
+        const resp = await fetch('/auth/facebook/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pw }),
+        });
+        if (resp.ok) {
+          hideLogin('admin');
+        } else {
+          const data = await resp.json();
+          errEl.textContent = data.error || 'Błąd logowania';
+          errEl.style.display = 'block';
+        }
+      } catch (e) {
+        errEl.textContent = 'Błąd połączenia';
+        errEl.style.display = 'block';
+      }
+    }
+
+    function hideLogin(role) {
+      document.getElementById('login-overlay').style.display = 'none';
+      USER_ROLE = role;
+      document.getElementById('sidebar-sub').textContent = role === 'admin' ? 'Panel administratora' : 'Panel placówki';
+      document.getElementById('user-role-badge').innerHTML = role === 'admin'
+        ? '<span class="role-badge role-admin">ADMIN</span>'
+        : '<span class="role-badge role-user">PLACÓWKA</span>';
+    }
+
+    async function doLogout() {
+      if (!DEMO) await fetch('/auth/facebook/logout', { method: 'POST' });
+      location.reload();
+    }
+
+    // ─── Section nav ────────────────────────────────────
+    const titles = { overview: 'Przegląd', integrations: 'Integracje', room: 'Połączenie' };
+
+    function showSection(name) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById('sec-' + name).classList.add('active');
+      document.querySelectorAll('.nav-item[data-section]').forEach(n => {
+        n.classList.toggle('active', n.dataset.section === name);
+      });
+      document.getElementById('section-title').textContent = titles[name] || name;
+    }
+
+    // ─── Init ───────────────────────────────────────────
+    init();
+
+    async function init() {
+      if (DEMO) {
+        hideLogin(DEMO_ROLE);
+        if (DEMO_ROLE === 'admin') {
+          setUser({ name: 'Administrator', id: 'admin' });
+        } else {
+          setUser({ name: 'Katarzyna Ochnik', id: '10229876543210' });
+          USER_PAGES = ['page_001', 'page_002']; // mock: only see own pages
+        }
+      } else {
+        try {
+          const resp = await fetch('/auth/facebook/me');
+          if (resp.ok) {
+            const data = await resp.json();
+            setUser(data.user);
+            USER_ROLE = data.role || 'user';
+            USER_PAGES = (data.pages || []).map(p => p.page_id);
+            hideLogin(USER_ROLE);
+          }
+          // If not logged in, login overlay stays visible
+        } catch {}
+      }
+
+      if (USER_ROLE) {
+        await loadStats();
+        await loadIntegrations();
+      }
+    }
+
+    function setUser(user) {
+      document.getElementById('user-initials').textContent = (user.name || '?')[0];
+      document.getElementById('user-name').textContent = user.name || 'Użytkownik';
+      document.getElementById('user-email').textContent = 'ID: ' + (user.id || '');
+    }
+
+    // ─── Overview ───────────────────────────────────────
+    async function loadStats() {
+      let stats;
+      if (DEMO) {
+        stats = MOCK_STATS;
+      } else {
+        try {
+          const resp = await fetch('/api/stats');
+          stats = await resp.json();
+        } catch { stats = { total_leads: 0, sent: 0, failed: 0, success_rate: 0, active_integrations: 0, total_integrations: 0, recent_leads: [] }; }
+      }
+
+      document.getElementById('kpi-total').textContent = stats.total_leads;
+      document.getElementById('kpi-sent').textContent = stats.sent;
+      document.getElementById('kpi-rate').textContent = stats.success_rate + '%';
+      document.getElementById('kpi-active').textContent = stats.active_integrations;
+      document.getElementById('kpi-active-sub').textContent = `z ${stats.total_integrations} łącznie`;
+
+      // Recent leads table
+      const tbody = document.getElementById('recent-leads-body');
+      const leads = stats.recent_leads || [];
+      if (leads.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#52525b;padding:1.5rem;">Brak danych — leady pojawią się po pierwszym webhookuw</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = leads.map(l => `
+        <tr>
+          <td style="font-family:monospace;font-size:0.72rem;">${l.lead_id.substring(0, 18)}</td>
+          <td><span class="badge badge-${l.status}">${l.status === 'sent' ? '✓ wysłano' : l.status === 'failed' ? '✗ błąd' : '⟳ odebrano'}</span></td>
+          <td>${l.mapped_fields_count} pól</td>
+          <td>${timeAgo(l.timestamp)}</td>
+          <td style="font-size:0.7rem;color:#52525b;">${l.integration_id?.substring(0, 8) || '—'}…</td>
+        </tr>
+      `).join('');
+    }
+
+    // ─── Integrations ───────────────────────────────────
+    async function loadIntegrations() {
+      let integrations;
+      if (DEMO) {
+        integrations = MOCK_INTEGRATIONS;
+        // Filter for placówka demo: only show integrations matching their pages  
+        if (DEMO_ROLE === 'user') {
+          // In demo user mode, show only first 2 (their "own")
+          integrations = integrations.filter(i => i.active || i.id === 'int-001');
+        }
+      } else {
+        try {
+          const resp = await fetch('/api/integrations');
+          const data = await resp.json();
+          integrations = data.integrations || [];
+          // Placówka: filter by their FB page IDs
+          if (USER_ROLE === 'user' && USER_PAGES.length > 0) {
+            integrations = integrations.filter(i => USER_PAGES.includes(i.fb_page_id));
+          }
+          // Enrich with stats
+          for (let i of integrations) {
+            try {
+              const sr = await fetch(`/api/stats/${i.id}`);
+              if (sr.ok) i.stats = await sr.json();
+            } catch {}
+          }
+        } catch { integrations = []; }
+      }
+
+      const container = document.getElementById('integrations-list');
+      if (integrations.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🔗</div>
+            <h3>Brak integracji</h3>
+            <p>Dodaj pierwszą integrację łączącą Facebook Lead Ads z Medidesk.</p>
+            <button class="btn btn-primary" style="margin-top:1rem;" onclick="location.href='/setup'">➕ Dodaj integrację</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = integrations.map(i => {
+        const stats = i.stats || { total: 0, sent: 0, failed: 0, success_rate: 0 };
+        const statusClass = i.active ? 'status-active' : 'status-inactive';
+        const statusLabel = i.active ? 'Aktywna' : 'Nieaktywna';
+        const toggleLabel = i.active ? 'Dezaktywuj' : 'Aktywuj';
+        const toggleAction = i.active ? 'deactivate' : 'activate';
+        const toggleClass = i.active ? 'btn-warning' : 'btn-success';
+
+        return `
+        <div class="int-card" data-id="${i.id}">
+          <div class="int-card-top">
+            <div class="int-card-icon fb">📘</div>
+            <div class="int-card-info">
+              <div class="name">${i.fb_page_name}</div>
+              <div class="meta">${i.fb_form_name}</div>
+            </div>
+            <div class="int-card-status ${statusClass}">
+              <div class="status-dot"></div>
+              ${statusLabel}
+            </div>
+          </div>
+
+          <div class="int-card-flow">
+            <span class="flow-box flow-fb">${i.fb_form_name}</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-box flow-md">${i.medidesk_form_name || i.medidesk_form_id}</span>
+          </div>
+
+          <div class="int-card-stats">
+            <span><strong>${stats.total}</strong> leadów</span>
+            <span><strong>${stats.sent}</strong> wysłanych</span>
+            <span><strong>${stats.failed}</strong> błędów</span>
+            <span><strong>${stats.success_rate}%</strong> sukcesu</span>
+            <span><strong>${i.mappings_count}</strong> zmapowanych pól</span>
+          </div>
+
+          <div class="int-card-actions">
+            <button class="btn btn-sm btn-outline" onclick="openRoom('${i.id}')">📋 Szczegóły</button>
+            <button class="btn btn-sm ${toggleClass}" onclick="toggleIntegration('${i.id}', '${toggleAction}')">
+              ${toggleLabel}
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deleteIntegration('${i.id}')">Usuń</button>
+          </div>
+        </div>
+        `;
+      }).join('');
+    }
+
+    async function toggleIntegration(id, action) {
+      if (DEMO) {
+        showToast(`DEMO: ${action === 'activate' ? 'Aktywowano' : 'Dezaktywowano'} integrację`, 'success');
+        return;
+      }
+      try {
+        const resp = await fetch(`/api/integrations/${id}/${action}`, { method: 'POST' });
+        if (resp.ok) {
+          showToast(action === 'activate' ? 'Integracja aktywowana' : 'Integracja dezaktywowana', 'success');
+          await loadIntegrations();
+          await loadStats();
+        } else {
+          const err = await resp.json();
+          showToast('Błąd: ' + (err.error || ''), 'error');
+        }
+      } catch (e) { showToast('Błąd: ' + e.message, 'error'); }
+    }
+
+    async function deleteIntegration(id) {
+      if (!confirm('Na pewno usunąć tę integrację?')) return;
+      if (DEMO) { showToast('DEMO: Usunięto integrację', 'success'); return; }
+      try {
+        const resp = await fetch(`/api/integrations/${id}`, { method: 'DELETE' });
+        if (resp.ok) {
+          showToast('Integracja usunięta', 'success');
+          await loadIntegrations();
+          await loadStats();
+        }
+      } catch (e) { showToast('Błąd: ' + e.message, 'error'); }
+    }
+
+    // ─── Integration Room ────────────────────────────────
+    async function openRoom(integrationId) {
+      currentRoomId = integrationId;
+      document.getElementById('nav-room').style.display = 'flex';
+
+      let integration, stats, leads;
+
+      if (DEMO) {
+        integration = MOCK_INTEGRATIONS.find(i => i.id === integrationId);
+        stats = integration?.stats || { total: 0, sent: 0, failed: 0, success_rate: 0 };
+        // Build realistic lead history
+        const allLeads = [...MOCK_STATS.recent_leads, ...MOCK_FAILED_LEADS]
+          .filter(l => l.integration_id === integrationId)
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        leads = allLeads;
+        // Add mock fb_raw_data / mapped_values to sent leads that don't have them
+        leads.forEach(l => {
+          if (!l.fb_raw_data) {
+            l.fb_raw_data = { full_name: 'Jan Nowak', phone_number: '+48 501 234 567', email: 'jan@example.com' };
+            l.mapped_values = { 'Imie-i-nazwisko': 'Jan Nowak', 'Telefon': '+48 501 234 567', 'Mail': 'jan@example.com' };
+          }
+        });
+        // Mock mappings
+        integration.field_mappings = [
+          { fb_field: 'full_name', medidesk_field: 'Imie-i-nazwisko', confidence: 0.95 },
+          { fb_field: 'phone_number', medidesk_field: 'Telefon', confidence: 0.95 },
+          { fb_field: 'email', medidesk_field: 'Mail', confidence: 0.95 },
+          { fb_field: 'rodzaj_badania', medidesk_field: 'Lista', confidence: 0.85 },
+          { fb_field: 'uwagi', medidesk_field: 'Zyczenie', confidence: 0.80 },
+        ].slice(0, integration.mappings_count);
+      } else {
+        try {
+          const [iResp, sResp] = await Promise.all([
+            fetch(`/api/integrations/${integrationId}`),
+            fetch(`/api/stats/${integrationId}`),
+          ]);
+          integration = await iResp.json();
+          const statsData = await sResp.json();
+          stats = statsData;
+          leads = statsData.recent_leads || [];
+        } catch {
+          showToast('Błąd ładowania danych', 'error');
+          return;
+        }
+      }
+
+      // Set titles
+      document.getElementById('room-title').textContent = integration.fb_page_name || 'Integracja';
+      document.getElementById('room-subtitle').textContent = `${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
+      document.getElementById('nav-room-label').textContent = (integration.fb_page_name || 'Połączenie').substring(0, 16);
+
+      // KPIs
+      const failCount = stats.failed || 0;
+      document.getElementById('room-kpis').innerHTML = `
+        <div class="kpi-card kpi-blue"><div class="label">Leady</div><div class="value">${stats.total}</div></div>
+        <div class="kpi-card kpi-green"><div class="label">Wysłane</div><div class="value">${stats.sent}</div></div>
+        <div class="kpi-card kpi-red"><div class="label">Błędy</div><div class="value">${failCount}</div></div>
+        <div class="kpi-card kpi-yellow"><div class="label">Success</div><div class="value">${stats.success_rate}%</div></div>
+      `;
+
+      // Mapping table
+      const mappings = integration.field_mappings || [];
+      document.getElementById('room-mappings-body').innerHTML = mappings.map(m => `
+        <tr>
+          <td class="fb-col">${m.fb_field}</td>
+          <td class="arrow">→</td>
+          <td class="md-col">${m.medidesk_field}</td>
+          <td class="conf">${Math.round((m.confidence || 0) * 100)}%</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4" style="color:#52525b;text-align:center;">Brak mapowań</td></tr>';
+
+      // Leads history
+      const hasFailures = leads.some(l => l.status === 'failed');
+      document.getElementById('btn-retry-all').style.display = hasFailures ? 'inline-flex' : 'none';
+
+      const tbody = document.getElementById('room-leads-body');
+      if (leads.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#52525b;padding:1.5rem;">Brak historii leadów</td></tr>';
+      } else {
+        tbody.innerHTML = leads.map(l => {
+          const statusBadge = l.status === 'sent' ? '<span class="badge badge-sent">✓ wysłano</span>'
+            : l.status === 'failed' ? '<span class="badge badge-failed">✗ błąd</span>'
+            : '<span class="badge badge-received">⟳</span>';
+          const errorText = l.error || '—';
+          const retryBtn = l.status === 'failed' && (l.mapped_values && Object.keys(l.mapped_values).length > 0)
+            ? `<button class="btn btn-sm btn-success" onclick="retryLead('${l.lead_id}')">🔄 Powtórz</button>`
+            : (l.status === 'failed' ? '<span style="font-size:0.68rem;color:#52525b;">brak danych</span>' : '');
+
+          return `
+            <tr class="lead-row" onclick="toggleLeadDetail('${l.lead_id}')">
+              <td style="font-family:monospace;font-size:0.72rem;">${l.lead_id.substring(0, 20)}</td>
+              <td>${statusBadge}</td>
+              <td>${l.mapped_fields_count || 0} pól</td>
+              <td>${timeAgo(l.timestamp)}</td>
+              <td style="font-size:0.72rem;color:${l.status === 'failed' ? '#f87171' : '#52525b'};max-width:150px;overflow:hidden;text-overflow:ellipsis;">${errorText}</td>
+              <td onclick="event.stopPropagation()">${retryBtn}</td>
+            </tr>
+            <tr id="detail-${l.lead_id}" style="display:none;">
+              <td colspan="6">
+                <div class="lead-detail">
+                  <div class="lead-detail-grid">
+                    <div>
+                      <h4>📥 Dane wejściowe (Facebook)</h4>
+                      ${renderDataPairs(l.fb_raw_data || {})}
+                    </div>
+                    <div>
+                      <h4>📤 Dane wyjściowe (Medidesk)</h4>
+                      ${renderDataPairs(l.mapped_values || {})}
+                    </div>
+                  </div>
+                  ${l.error ? `<div class="error-box">❌ ${l.error}</div>` : ''}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      showSection('room');
+    }
+
+    function renderDataPairs(obj) {
+      const entries = Object.entries(obj);
+      if (entries.length === 0) return '<div style="color:#52525b;">— brak danych —</div>';
+      return entries.map(([k, v]) => `
+        <div class="data-row">
+          <span class="data-key">${k}</span>
+          <span class="data-val">${v}</span>
+        </div>
+      `).join('');
+    }
+
+    function toggleLeadDetail(leadId) {
+      const row = document.getElementById('detail-' + leadId);
+      if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+    }
+
+    async function retryLead(leadId) {
+      if (DEMO) { showToast('DEMO: Ponowne przesłanie leada ' + leadId, 'success'); return; }
+      try {
+        const resp = await fetch(`/api/leads/${leadId}/retry`, { method: 'POST' });
+        const data = await resp.json();
+        if (resp.ok) {
+          showToast('✓ Lead przesłany pomyślnie!', 'success');
+          if (currentRoomId) await openRoom(currentRoomId);
+        } else {
+          showToast('Błąd: ' + (data.error || ''), 'error');
+        }
+      } catch (e) { showToast('Błąd: ' + e.message, 'error'); }
+    }
+
+    async function retryAllFailed() {
+      if (DEMO) { showToast('DEMO: Ponowne przesłanie wszystkich błędnych leadów', 'success'); return; }
+      const rows = document.querySelectorAll('#room-leads-body .badge-failed');
+      let count = 0;
+      for (const badge of rows) {
+        const tr = badge.closest('tr');
+        const retryBtn = tr.querySelector('.btn-success');
+        if (retryBtn) { retryBtn.click(); count++; }
+      }
+      if (count === 0) showToast('Brak leadów do ponowienia', 'error');
+    }
+
+    // ─── Utils ──────────────────────────────────────────
+    function timeAgo(ts) {
+      const diff = (Date.now() - new Date(ts).getTime()) / 1000;
+      if (diff < 60) return 'teraz';
+      if (diff < 3600) return Math.floor(diff / 60) + ' min temu';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h temu';
+      return Math.floor(diff / 86400) + 'd temu';
+    }
+
+    function showToast(msg, type) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = 'toast ' + type + ' show';
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+  </script>
+</body>
+</html>

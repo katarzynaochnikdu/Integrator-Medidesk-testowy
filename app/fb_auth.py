@@ -1,0 +1,256 @@
+"""Facebook OAuth authentication endpoints with cookie-based sessions."""
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import logging
+import time
+import base64
+from typing import Any
+
+from fastapi import APIRouter, Request, Response
+from fastapi.responses import JSONResponse, RedirectResponse
+
+from app.config import settings
+from app.fb_client import (
+    exchange_code_for_token,
+    get_login_url,
+    get_long_lived_token,
+    get_user_info,
+    get_user_pages,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/auth/facebook", tags=["Facebook Auth"])
+
+COOKIE_NAME = "fb_session"
+COOKIE_MAX_AGE = 7 * 24 * 3600  # 7 days
+
+
+# ─── Signed cookie helpers ─────────────────────────────────────────
+
+
+def _sign(payload: str) -> str:
+    """Create HMAC signature for cookie data."""
+    sig = hmac.new(
+        settings.fb_session_secret.encode(), payload.encode(), hashlib.sha256
+    ).hexdigest()[:16]
+    return f"{payload}.{sig}"
+
+
+def _verify(signed: str) -> str | None:
+    """Verify and extract cookie data, return None if invalid."""
+    if "." not in signed:
+        return None
+    payload, sig = signed.rsplit(".", 1)
+    expected = hmac.new(
+        settings.fb_session_secret.encode(), payload.encode(), hashlib.sha256
+    ).hexdigest()[:16]
+    if not hmac.compare_digest(sig, expected):
+        return None
+    return payload
+
+
+def set_session_cookie(response: Response, data: dict[str, Any]) -> None:
+    """Encode session data into a signed cookie."""
+    raw = base64.b64encode(json.dumps(data, ensure_ascii=False).encode()).decode()
+    signed = _sign(raw)
+    response.set_cookie(
+        COOKIE_NAME,
+        signed,
+        max_age=COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=False,  # set True in production with HTTPS
+    )
+
+
+def get_session_from_cookie(request: Request) -> dict[str, Any] | None:
+    """Extract and verify session data from cookie."""
+    cookie = request.cookies.get(COOKIE_NAME)
+    if not cookie:
+        return None
+    payload = _verify(cookie)
+    if not payload:
+        return None
+    try:
+        return json.loads(base64.b64decode(payload))
+    except Exception:
+        return None
+
+
+def get_current_user(request: Request) -> dict[str, Any] | None:
+    """Get current user from session cookie. Returns None if not logged in."""
+    session = get_session_from_cookie(request)
+    if not session:
+        return None
+    return session.get("user")
+
+
+# Also keep in-memory sessions for backward compatibility with setup wizard
+_sessions: dict[str, dict] = {}
+
+
+# ─── Endpoints ─────────────────────────────────────────────────────
+
+
+@router.get("")
+async def facebook_login(request: Request):
+    """Redirect the user to Facebook OAuth login dialog."""
+    # Capture the intended redirect destination
+    redirect_to = request.query_params.get("redirect", "/dashboard")
+    url = get_login_url(state=redirect_to)
+    return RedirectResponse(url)
+
+
+@router.get("/callback")
+async def facebook_callback(request: Request):
+    """Handle Facebook OAuth callback — exchange code for token."""
+    code = request.query_params.get("code")
+    error = request.query_params.get("error")
+    fb_state = request.query_params.get("state", "/dashboard")
+
+    if error:
+        logger.warning("FB OAuth error: %s — %s", error, request.query_params.get("error_description", ""))
+        return JSONResponse(
+            status_code=400,
+            content={"error": error, "description": request.query_params.get("error_description", "")},
+        )
+
+    if not code:
+        return JSONResponse(status_code=400, content={"error": "No authorization code received"})
+
+    # Exchange code for short-lived token
+    token_data = await exchange_code_for_token(code)
+    if "error" in token_data:
+        return JSONResponse(status_code=400, content={"error": "Token exchange failed", "details": token_data["error"]})
+
+    short_token = token_data.get("access_token", "")
+
+    # Exchange for long-lived token
+    ll_data = await get_long_lived_token(short_token)
+    access_token = ll_data.get("access_token", short_token)
+
+    # Get user info
+    user = await get_user_info(access_token)
+
+    # Get user pages
+    pages = await get_user_pages(access_token)
+
+    pages_data = [{"page_id": p.page_id, "name": p.name, "access_token": p.access_token} for p in pages]
+
+    # Store in memory (for setup wizard backward compatibility)
+    session_id = user.get("id", "unknown")
+    session_data = {
+        "access_token": access_token,
+        "user": user,
+        "pages": pages_data,
+        "role": "user",  # placówka
+    }
+    _sessions[session_id] = session_data
+
+    # Determine redirect target
+    if fb_state.startswith("/setup"):
+        redirect_url = f"/setup?fb_session={session_id}"
+    else:
+        redirect_url = "/dashboard"
+
+    # Set cookie and redirect
+    response = RedirectResponse(redirect_url)
+    set_session_cookie(response, session_data)
+    return response
+
+
+@router.get("/session/{session_id}")
+async def get_session(session_id: str):
+    """Get stored session data (user info, pages) — for setup wizard."""
+    session = _sessions.get(session_id)
+    if not session:
+        return JSONResponse(status_code=404, content={"error": "Session not found or expired"})
+    return {
+        "user": session["user"],
+        "pages": session["pages"],
+    }
+
+
+@router.get("/me")
+async def get_current_user_endpoint(request: Request):
+    """Get current logged-in user from cookie session."""
+    session = get_session_from_cookie(request)
+    if not session:
+        return JSONResponse(status_code=401, content={"error": "Not logged in"})
+    return {
+        "user": session["user"],
+        "pages": session.get("pages", []),
+        "role": session.get("role", "user"),
+    }
+
+
+@router.post("/logout")
+async def logout(request: Request):
+    """Clear session cookie."""
+    response = JSONResponse(content={"status": "logged_out"})
+    response.delete_cookie(COOKIE_NAME)
+    return response
+
+
+# ─── Admin auth ────────────────────────────────────────────────────
+
+
+@router.post("/admin/login")
+async def admin_login(request: Request):
+    """Authenticate admin with password."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(status_code=400, content={"error": "Invalid JSON"})
+
+    password = body.get("password", "")
+    if password != settings.admin_password:
+        return JSONResponse(status_code=401, content={"error": "Nieprawidłowe hasło"})
+
+    session_data = {
+        "user": {"name": "Administrator", "id": "admin"},
+        "pages": [],
+        "role": "admin",
+    }
+    response = JSONResponse(content={"status": "ok", "role": "admin"})
+    set_session_cookie(response, session_data)
+    return response
+
+
+@router.get("/pages/{session_id}/{page_id}/forms")
+async def get_page_forms(session_id: str, page_id: str):
+    """Get Lead Ad forms for a specific page from a session."""
+    from app.fb_client import get_page_lead_forms
+
+    session = _sessions.get(session_id)
+    if not session:
+        return JSONResponse(status_code=404, content={"error": "Session not found"})
+
+    # Find the page token
+    page_token = None
+    for p in session["pages"]:
+        if p["page_id"] == page_id:
+            page_token = p["access_token"]
+            break
+
+    if not page_token:
+        return JSONResponse(status_code=404, content={"error": f"Page {page_id} not found in session"})
+
+    forms = await get_page_lead_forms(page_id, page_token)
+    return {
+        "page_id": page_id,
+        "forms": [
+            {
+                "form_id": f.form_id,
+                "name": f.name,
+                "status": f.status,
+                "leads_count": f.leads_count,
+                "questions": f.questions,
+            }
+            for f in forms
+        ],
+    }
