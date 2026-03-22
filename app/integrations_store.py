@@ -1,4 +1,4 @@
-"""Simple JSON-file based storage for FB→Medidesk integrations."""
+"""SQLite-backed storage for FB→Medidesk integrations."""
 from __future__ import annotations
 
 import json
@@ -6,10 +6,10 @@ import logging
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from app.config import settings
+from app.db import get_connection
 
 logger = logging.getLogger(__name__)
 
@@ -75,43 +75,23 @@ class Integration:
     updated_at: str = ""
 
 
-def _storage_path() -> Path:
-    return Path(settings.integrations_file)
-
-
-def _load_all() -> list[dict[str, Any]]:
-    path = _storage_path()
-    if not path.exists():
-        return []
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        logger.error("Failed to read integrations file", exc_info=True)
-        return []
-
-
-def _save_all(data: list[dict[str, Any]]) -> None:
-    path = _storage_path()
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-def _dict_to_integration(d: dict[str, Any]) -> Integration:
-    mappings = [FieldMapping(**m) for m in d.get("field_mappings", [])]
+def _row_to_integration(row) -> Integration:
+    mappings = [FieldMapping(**m) for m in json.loads(row["field_mappings"])]
     return Integration(
-        id=d["id"],
-        fb_page_id=d["fb_page_id"],
-        fb_page_name=d["fb_page_name"],
-        fb_page_token=_decrypt_token(d["fb_page_token"]),
-        fb_form_id=d["fb_form_id"],
-        fb_form_name=d["fb_form_name"],
-        fb_form_questions=d.get("fb_form_questions", []),
-        medidesk_form_id=d["medidesk_form_id"],
-        medidesk_form_name=d.get("medidesk_form_name", ""),
-        medidesk_fields=d.get("medidesk_fields", []),
+        id=row["id"],
+        fb_page_id=row["fb_page_id"],
+        fb_page_name=row["fb_page_name"],
+        fb_page_token=_decrypt_token(row["fb_page_token"]),
+        fb_form_id=row["fb_form_id"],
+        fb_form_name=row["fb_form_name"],
+        fb_form_questions=json.loads(row["fb_form_questions"]),
+        medidesk_form_id=row["medidesk_form_id"],
+        medidesk_form_name=row["medidesk_form_name"],
+        medidesk_fields=json.loads(row["medidesk_fields"]),
         field_mappings=mappings,
-        active=d.get("active", False),
-        created_at=d.get("created_at", ""),
-        updated_at=d.get("updated_at", ""),
+        active=bool(row["active"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
     )
 
 
@@ -129,11 +109,12 @@ def create_integration(
 ) -> Integration:
     """Create and save a new integration."""
     now = datetime.now(timezone.utc).isoformat()
+    integration_id = str(uuid.uuid4())
     integration = Integration(
-        id=str(uuid.uuid4()),
+        id=integration_id,
         fb_page_id=fb_page_id,
         fb_page_name=fb_page_name,
-        fb_page_token=fb_page_token,  # stored in memory as plaintext
+        fb_page_token=fb_page_token,
         fb_form_id=fb_form_id,
         fb_form_name=fb_form_name,
         fb_form_questions=fb_form_questions,
@@ -145,80 +126,121 @@ def create_integration(
         created_at=now,
         updated_at=now,
     )
-    # Encrypt token before saving to disk
-    data = asdict(integration)
-    data["fb_page_token"] = _encrypt_token(fb_page_token)
-    all_data = _load_all()
-    all_data.append(data)
-    _save_all(all_data)
-    logger.info("Created integration %s (FB form %s → MD form %s)", integration.id, fb_form_id, medidesk_form_id)
+    conn = get_connection()
+    conn.execute(
+        """INSERT INTO integrations
+           (id, fb_page_id, fb_page_name, fb_page_token,
+            fb_form_id, fb_form_name, fb_form_questions,
+            medidesk_form_id, medidesk_form_name, medidesk_fields,
+            field_mappings, active, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            integration_id, fb_page_id, fb_page_name,
+            _encrypt_token(fb_page_token),
+            fb_form_id, fb_form_name,
+            json.dumps(fb_form_questions, ensure_ascii=False),
+            medidesk_form_id, medidesk_form_name,
+            json.dumps(medidesk_fields, ensure_ascii=False),
+            json.dumps([asdict(m) for m in field_mappings], ensure_ascii=False),
+            0, now, now,
+        ),
+    )
+    conn.commit()
+    logger.info("Created integration %s (FB form %s → MD form %s)", integration_id, fb_form_id, medidesk_form_id)
     return integration
 
 
 def get_integration(integration_id: str) -> Integration | None:
-    for d in _load_all():
-        if d["id"] == integration_id:
-            return _dict_to_integration(d)
-    return None
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM integrations WHERE id = ?", (integration_id,)).fetchone()
+    return _row_to_integration(row) if row else None
 
 
 def get_all_integrations() -> list[Integration]:
-    return [_dict_to_integration(d) for d in _load_all()]
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM integrations ORDER BY created_at DESC").fetchall()
+    return [_row_to_integration(r) for r in rows]
 
 
 def find_by_fb_form(fb_form_id: str) -> Integration | None:
-    """Find active integration by Facebook form ID (used by webhook)."""
-    for d in _load_all():
-        if d.get("fb_form_id") == fb_form_id and d.get("active"):
-            return _dict_to_integration(d)
-    return None
+    """Find active integration by Facebook form ID."""
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT * FROM integrations WHERE fb_form_id = ? AND active = 1",
+        (fb_form_id,),
+    ).fetchone()
+    return _row_to_integration(row) if row else None
 
 
 def find_by_fb_page(fb_page_id: str) -> Integration | None:
     """Find active integration by Facebook page ID (first match)."""
-    for d in _load_all():
-        if d.get("fb_page_id") == fb_page_id and d.get("active"):
-            return _dict_to_integration(d)
-    return None
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT * FROM integrations WHERE fb_page_id = ? AND active = 1",
+        (fb_page_id,),
+    ).fetchone()
+    return _row_to_integration(row) if row else None
 
 
 def find_by_fb_page_and_form(fb_page_id: str, fb_form_id: str | None = None) -> Integration | None:
     """Find active integration by page + form ID. Falls back to page-only if no form match."""
-    all_data = _load_all()
-    # First: exact match on page + form
+    conn = get_connection()
     if fb_form_id:
-        for d in all_data:
-            if (d.get("fb_page_id") == fb_page_id
-                    and d.get("fb_form_id") == fb_form_id
-                    and d.get("active")):
-                return _dict_to_integration(d)
+        row = conn.execute(
+            "SELECT * FROM integrations WHERE fb_page_id = ? AND fb_form_id = ? AND active = 1",
+            (fb_page_id, fb_form_id),
+        ).fetchone()
+        if row:
+            return _row_to_integration(row)
     # Fallback: match on page only
-    for d in all_data:
-        if d.get("fb_page_id") == fb_page_id and d.get("active"):
-            return _dict_to_integration(d)
-    return None
+    row = conn.execute(
+        "SELECT * FROM integrations WHERE fb_page_id = ? AND active = 1",
+        (fb_page_id,),
+    ).fetchone()
+    return _row_to_integration(row) if row else None
 
 
 def update_integration(integration_id: str, **updates: Any) -> Integration | None:
-    all_data = _load_all()
-    for i, d in enumerate(all_data):
-        if d["id"] == integration_id:
-            d.update(updates)
-            d["updated_at"] = datetime.now(timezone.utc).isoformat()
-            # Handle field_mappings if passed as list of FieldMapping
-            if "field_mappings" in updates and updates["field_mappings"]:
-                if hasattr(updates["field_mappings"][0], "__dataclass_fields__"):
-                    d["field_mappings"] = [asdict(m) for m in updates["field_mappings"]]
-            all_data[i] = d
-            _save_all(all_data)
-            return _dict_to_integration(d)
-    return None
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM integrations WHERE id = ?", (integration_id,)).fetchone()
+    if not row:
+        return None
+
+    now = datetime.now(timezone.utc).isoformat()
+    set_clauses = ["updated_at = ?"]
+    params: list[Any] = [now]
+
+    simple_fields = {"fb_page_id", "fb_page_name", "fb_form_id", "fb_form_name",
+                     "medidesk_form_id", "medidesk_form_name"}
+
+    for k, v in updates.items():
+        if k == "active":
+            set_clauses.append("active = ?")
+            params.append(1 if v else 0)
+        elif k == "fb_page_token":
+            set_clauses.append("fb_page_token = ?")
+            params.append(_encrypt_token(v))
+        elif k == "field_mappings":
+            set_clauses.append("field_mappings = ?")
+            if v and hasattr(v[0], "__dataclass_fields__"):
+                params.append(json.dumps([asdict(m) for m in v], ensure_ascii=False))
+            else:
+                params.append(json.dumps(v, ensure_ascii=False))
+        elif k in simple_fields:
+            set_clauses.append(f"{k} = ?")
+            params.append(v)
+
+    params.append(integration_id)
+    conn.execute(
+        f"UPDATE integrations SET {', '.join(set_clauses)} WHERE id = ?",
+        params,
+    )
+    conn.commit()
+    return get_integration(integration_id)
 
 
 def delete_integration(integration_id: str) -> bool:
-    all_data = _load_all()
-    new_data = [d for d in all_data if d["id"] != integration_id]
-    if len(new_data) == len(all_data):
-        return False
-    _save_all(new_data)
-    return True
+    conn = get_connection()
+    cursor = conn.execute("DELETE FROM integrations WHERE id = ?", (integration_id,))
+    conn.commit()
+    return cursor.rowcount > 0

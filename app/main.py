@@ -47,6 +47,14 @@ app.include_router(fb_auth_router)
 app.include_router(webhook_router)
 
 
+@app.on_event("startup")
+async def startup_db():
+    """Initialize SQLite and migrate JSON data if present."""
+    from app.db import get_connection, migrate_from_json
+    get_connection()  # ensure tables are created
+    migrate_from_json()  # import existing JSON data (idempotent)
+
+
 # ─── Existing endpoints ───────────────────────────────────────────────
 
 

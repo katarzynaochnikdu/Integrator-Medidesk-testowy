@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     fb_webhook_verify_token: str = "medidesk_integrator_verify_2026"
 
     # Integration storage
+    data_dir: str = "."  # set to /data on Render (persistent disk)
     integrations_file: str = "integrations.json"
     lead_log_file: str = "lead_log.json"
 
