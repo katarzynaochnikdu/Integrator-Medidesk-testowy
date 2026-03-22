@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # Encryption (Fernet) — generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
     encryption_key: str = ""
 
+    # Alerting (Make.com webhooks)
+    alert_email: str = ""  # email for token expiry alerts
+    make_webhook_send_email: str = ""  # Make.com webhook URL for sending emails
+    token_expiry_warn_days: int = 14  # warn when token expires within N days
+
     model_config = {"env_prefix": "MEDIDESK_"}
 
     @property

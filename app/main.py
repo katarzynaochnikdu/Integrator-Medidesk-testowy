@@ -49,10 +49,24 @@ app.include_router(webhook_router)
 
 @app.on_event("startup")
 async def startup_db():
-    """Initialize SQLite and migrate JSON data if present."""
+    """Initialize SQLite, migrate JSON data, and start token check scheduler."""
+    import asyncio
     from app.db import get_connection, migrate_from_json
     get_connection()  # ensure tables are created
     migrate_from_json()  # import existing JSON data (idempotent)
+
+    # Start background token health check (every 24h)
+    async def _token_check_loop():
+        from app.alerting import check_and_alert
+        await asyncio.sleep(60)  # wait 1 min after startup
+        while True:
+            try:
+                await check_and_alert()
+            except Exception:
+                logger.error("Token check failed", exc_info=True)
+            await asyncio.sleep(86400)  # 24 hours
+
+    asyncio.create_task(_token_check_loop())
 
 
 # ─── Existing endpoints ───────────────────────────────────────────────
@@ -392,8 +406,31 @@ async def retry_lead(lead_id: str, _session=Depends(require_auth)):
     })
 
 
+# ─── Token health check ─────────────────────────────────────────
 
-# ─── Pages: Demo, Setup Wizard & Dashboard ────────────────────────
+
+@app.get("/api/integrations/{integration_id}/token-status")
+async def get_token_status(integration_id: str, _session=Depends(require_auth)):
+    """Check FB token validity and expiration for an integration."""
+    from app.alerting import debug_fb_token
+    integration = get_integration(integration_id)
+    if not integration:
+        return JSONResponse(status_code=404, content={"error": "Integration not found"})
+    status = await debug_fb_token(integration.fb_page_token)
+    status["integration_id"] = integration_id
+    status["fb_page_name"] = integration.fb_page_name
+    return status
+
+
+@app.get("/api/token-health")
+async def get_all_token_health(_session=Depends(require_admin)):
+    """Check all integration tokens (admin only)."""
+    from app.alerting import check_all_tokens
+    results = await check_all_tokens()
+    return {"tokens": results, "warn_days": settings.token_expiry_warn_days}
+
+
+# ─── Pages: Demo, Setup Wizard & Dashboard ────────────────────
 
 
 @app.get("/demo/contact", response_class=HTMLResponse, include_in_schema=False)
