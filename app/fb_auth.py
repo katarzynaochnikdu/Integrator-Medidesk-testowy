@@ -27,6 +27,7 @@ router = APIRouter(prefix="/auth/facebook", tags=["Facebook Auth"])
 
 COOKIE_NAME = "fb_session"
 COOKIE_MAX_AGE = 7 * 24 * 3600  # 7 days
+SESSION_TTL = 3 * 3600  # 3 hours for SQLite sessions
 
 
 # ─── Signed cookie helpers ─────────────────────────────────────────
