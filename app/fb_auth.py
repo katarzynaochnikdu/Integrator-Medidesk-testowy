@@ -156,9 +156,10 @@ def _save_session(session_id: str, session_data: dict) -> None:
     from app.db import get_connection
     from app.integrations_store import _get_fernet
 
-    # Encrypt access_token at rest
+    # Encrypt access_token at rest (if encryption key configured)
     raw_token = session_data.get("access_token", "")
-    encrypted_token = _get_fernet().encrypt(raw_token.encode()).decode() if raw_token else ""
+    fernet = _get_fernet()
+    encrypted_token = fernet.encrypt(raw_token.encode()).decode() if (raw_token and fernet) else raw_token
 
     # Strip page access_tokens from pages data (sensitive, not needed in session)
     pages_safe = [
@@ -215,8 +216,12 @@ def _get_valid_session(session_id: str) -> dict | None:
 
     # Decrypt access_token
     encrypted_token = row["access_token"]
+    fernet = _get_fernet()
     try:
-        access_token = _get_fernet().decrypt(encrypted_token.encode()).decode() if encrypted_token else ""
+        if fernet and encrypted_token:
+            access_token = fernet.decrypt(encrypted_token.encode()).decode()
+        else:
+            access_token = encrypted_token or ""
     except Exception:
         access_token = ""  # corrupted token, session still valid for UI
 
@@ -243,6 +248,15 @@ async def facebook_login(request: Request):
 @router.get("/callback")
 async def facebook_callback(request: Request):
     """Handle Facebook OAuth callback — exchange code for token."""
+    try:
+        return await _do_facebook_callback(request)
+    except Exception as e:
+        logger.exception("Facebook callback error")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+async def _do_facebook_callback(request: Request):
+    """Inner callback logic."""
     code = request.query_params.get("code")
     error = request.query_params.get("error")
     fb_state = request.query_params.get("state", "/dashboard")
