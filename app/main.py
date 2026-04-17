@@ -520,6 +520,22 @@ async def get_all_token_health(_session=Depends(require_admin)):
 # ─── Admin password management ───────────────────────────────────
 
 
+@app.delete("/api/admin/reset-db")
+async def reset_database(_session=Depends(require_admin)):
+    """DANGER: Wipes all integrations, facilities, pending registrations, and sessions. Used for testing."""
+    conn = get_connection()
+    try:
+        conn.execute("DELETE FROM integrations")
+        conn.execute("DELETE FROM facilities")
+        conn.execute("DELETE FROM pending_registrations")
+        conn.execute("DELETE FROM sessions")
+        conn.commit()
+        return {"status": "ok", "message": "Database wiped successfully."}
+    except Exception as e:
+        logger.error("Error wiping DB: %s", e)
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
 @app.put("/api/admin/password")
 async def change_admin_password(request: Request, _session=Depends(require_admin)):
     """Change the admin password (persisted to disk)."""
