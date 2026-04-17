@@ -730,11 +730,30 @@
           const item = document.createElement('div');
           item.className = 'select-item';
           item.dataset.id = f.form_id;
+
+          // Format date
+          let dateStr = '';
+          if (f.created_time) {
+            const d = new Date(f.created_time);
+            dateStr = d.toLocaleDateString('pl-PL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+          }
+
+          // Status badge color
+          const statusColor = f.status === 'ACTIVE' ? '#22c55e'
+            : f.status === 'ARCHIVED' ? '#71717a'
+            : f.status === 'DRAFT' ? '#f59e0b'
+            : '#71717a';
+          const statusLabel = f.status || 'UNKNOWN';
+
           item.innerHTML = `
             <div class="radio-dot"></div>
             <div style="flex:1;">
               <div class="name">${f.name}</div>
-              <div class="meta">${f.status} · ${f.leads_count || 0} leadów · ${f.questions?.length || 0} pól</div>
+              <div class="meta">
+                <span style="color:${statusColor};font-weight:600;">${statusLabel}</span>
+                · ${f.leads_count || 0} leadów · ${f.questions?.length || 0} pól
+                ${dateStr ? ' · utworzony ' + dateStr : ''}
+              </div>
             </div>
           `;
           item.addEventListener('click', () => selectForm(f));

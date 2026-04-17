@@ -305,6 +305,7 @@ async def get_page_forms(session_id: str, page_id: str):
                 "status": f.status,
                 "leads_count": f.leads_count,
                 "questions": f.questions,
+                "created_time": f.created_time,
             }
             for f in forms
         ],

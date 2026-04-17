@@ -29,6 +29,7 @@ class FBLeadForm:
     status: str
     leads_count: int
     questions: list[dict[str, Any]]
+    created_time: str = ""
 
 
 @dataclass
@@ -199,10 +200,10 @@ async def get_business_pages(business_id: str, access_token: str) -> list[FBPage
 
 
 async def get_page_lead_forms(page_id: str, page_token: str) -> list[FBLeadForm]:
-    """Get Lead Ad forms for a Facebook Page."""
+    """Get Lead Ad forms for a Facebook Page, sorted newest-first."""
     url = _graph_url(f"{page_id}/leadgen_forms")
     params = {
-        "fields": "id,name,status,leads_count,questions",
+        "fields": "id,name,status,leads_count,questions,created_time",
         "access_token": page_token,
     }
     forms: list[FBLeadForm] = []
@@ -215,13 +216,23 @@ async def get_page_lead_forms(page_id: str, page_token: str) -> list[FBLeadForm]
 
     data = resp.json()
     for f in data.get("data", []):
+        raw_status = f.get("status", "")
+        logger.info(
+            "Form id=%s name=%s status=%s leads=%s created=%s",
+            f["id"], f.get("name", ""), raw_status,
+            f.get("leads_count", 0), f.get("created_time", ""),
+        )
         forms.append(FBLeadForm(
             form_id=f["id"],
             name=f.get("name", ""),
-            status=f.get("status", "ACTIVE"),
+            status=raw_status or "UNKNOWN",
             leads_count=f.get("leads_count", 0),
             questions=f.get("questions", []),
+            created_time=f.get("created_time", ""),
         ))
+
+    # Sort newest first
+    forms.sort(key=lambda f: f.created_time, reverse=True)
     return forms
 
 
