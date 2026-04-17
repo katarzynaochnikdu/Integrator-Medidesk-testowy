@@ -1176,10 +1176,12 @@
 
       row.innerHTML = `
         <span class="field-chip fb" style="${chipStyle}">${displayName}</span>
-        <span class="mapping-arrow">↔</span>
+        <span class="mapping-arrow" style="width:24px; text-align:center;">↔</span>
         <select class="md-select" data-fb="${fbField}">${options.join('')}</select>
-        ${isMerge ? '<span style="font-size:0.65rem;color:#f59e0b;font-weight:600;padding:0.1rem 0.4rem;background:rgba(245,158,11,0.12);border-radius:6px;">łączy</span>' : ''}
-        <span class="confidence-badge ${confClass}">${confText}</span>
+        <div style="display:flex; align-items:center; justify-content:flex-end; width:100px; gap:0.4rem; flex-shrink:0;">
+          ${isMerge ? '<span style="font-size:0.65rem;color:#f59e0b;font-weight:600;padding:0.1rem 0.4rem;background:rgba(245,158,11,0.12);border-radius:6px;">łączy</span>' : ''}
+          <span class="confidence-badge ${confClass}" style="min-width:auto;">${confText}</span>
+        </div>
       `;
 
       row.querySelector('.md-select').addEventListener('change', function() {
