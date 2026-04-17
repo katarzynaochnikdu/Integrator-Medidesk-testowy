@@ -53,10 +53,9 @@ def _verify(signed: str) -> str | None:
     return payload
 
 
-def set_session_cookie(response: Response, data: dict[str, Any]) -> None:
-    """Encode session data into a signed cookie."""
-    raw = base64.b64encode(json.dumps(data, ensure_ascii=False).encode()).decode()
-    signed = _sign(raw)
+def set_session_cookie(response: Response, session_id: str) -> None:
+    """Store session ID in a signed cookie. All data stays server-side."""
+    signed = _sign(session_id)
     response.set_cookie(
         COOKIE_NAME,
         signed,
@@ -68,17 +67,14 @@ def set_session_cookie(response: Response, data: dict[str, Any]) -> None:
 
 
 def get_session_from_cookie(request: Request) -> dict[str, Any] | None:
-    """Extract and verify session data from cookie."""
+    """Extract session ID from cookie and look up session server-side."""
     cookie = request.cookies.get(COOKIE_NAME)
     if not cookie:
         return None
-    payload = _verify(cookie)
-    if not payload:
+    session_id = _verify(cookie)
+    if not session_id:
         return None
-    try:
-        return json.loads(base64.b64decode(payload))
-    except Exception:
-        return None
+    return _get_valid_session(session_id)
 
 
 def get_current_user(request: Request) -> dict[str, Any] | None:
@@ -302,9 +298,9 @@ async def facebook_callback(request: Request):
     else:
         redirect_url = "/dashboard"
 
-    # Set cookie and redirect
+    # Set cookie (stores only session_id, not sensitive data) and redirect
     response = RedirectResponse(redirect_url)
-    set_session_cookie(response, session_data)
+    set_session_cookie(response, session_id)
     return response
 
 
@@ -368,8 +364,13 @@ async def admin_login(request: Request):
         "pages": [],
         "role": "admin",
     }
+    # Save admin session to SQLite
+    import uuid
+    admin_session_id = uuid.uuid4().hex
+    _save_session(admin_session_id, session_data)
+
     response = JSONResponse(content={"status": "ok", "role": "admin"})
-    set_session_cookie(response, session_data)
+    set_session_cookie(response, admin_session_id)
     return response
 
 
