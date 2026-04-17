@@ -795,6 +795,8 @@
     ];
 
     let currentRoomId = null;
+    let filterFacilityId = null;
+    let filterFacilityName = null;
 
     function setupRoleUI(role) {
       USER_ROLE = role;
@@ -953,7 +955,29 @@
         } catch { integrations = []; }
       }
 
+      if (filterFacilityId) {
+        integrations = integrations.filter(i => i.facility_id === filterFacilityId);
+      }
+
       const container = document.getElementById('integrations-list');
+      const filterMsgContainer = document.getElementById('integrations-filter-msg') || (() => {
+        const div = document.createElement('div');
+        div.id = 'integrations-filter-msg';
+        container.parentNode.insertBefore(div, container);
+        return div;
+      })();
+
+      if (filterFacilityId) {
+        filterMsgContainer.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);padding:0.6rem 1rem;border-radius:8px;margin-bottom:1rem;">
+            <span style="color:#93c5fd;font-size:0.85rem;">Widok ograniczony do placówki: <strong>${filterFacilityName}</strong></span>
+            <button class="btn btn-sm btn-outline" onclick="filterFacilityId=null; loadIntegrations();">Pokaż wszystkie (Admin)</button>
+          </div>
+        `;
+        filterMsgContainer.style.display = 'block';
+      } else {
+        filterMsgContainer.style.display = 'none';
+      }
       if (integrations.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
@@ -975,39 +999,44 @@
         const toggleClass = i.active ? 'btn-warning' : 'btn-success';
 
         return `
-        <div class="int-card" data-id="${i.id}">
-          <div class="int-card-top">
-            <div class="int-card-icon fb">📘</div>
-            <div class="int-card-info">
-              <div class="name">${i.fb_page_name}</div>
-              <div class="meta">${i.fb_form_name}</div>
+        <div class="int-card" data-id="${i.id}" style="display:flex; align-items:center; justify-content:space-between; padding:0.8rem 1rem; gap:1rem; margin-bottom:0.6rem;">
+          <!-- Left: Icon & Names -->
+          <div style="display:flex; align-items:center; gap:0.8rem; flex:1; min-width:0;">
+            <div class="int-card-icon fb" style="width:34px;height:34px;font-size:1.1rem;border-radius:8px;">📘</div>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:0.2rem;">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span class="name" style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${i.fb_page_name}</span>
+                <div class="int-card-status ${statusClass}" style="transform:scale(0.8); transform-origin:left; margin:0; padding:0.15rem 0.5rem;">
+                  <div class="status-dot"></div>${statusLabel}
+                </div>
+              </div>
+              <div class="int-card-flow" style="margin:0; padding:0; background:transparent; font-size:0.7rem;">
+                <span class="flow-box flow-fb" style="padding:0.15rem 0.3rem;">${i.fb_form_name}</span>
+                <span class="flow-arrow" style="margin:0 0.2rem;">→</span>
+                <span class="flow-box flow-md" style="padding:0.15rem 0.3rem;">${i.medidesk_form_name || i.medidesk_form_id}</span>
+              </div>
             </div>
-            <div class="int-card-status ${statusClass}">
-              <div class="status-dot"></div>
-              ${statusLabel}
+          </div>
+
+          <!-- Middle: Stats block -->
+          <div class="int-card-stats" style="flex-direction:column; gap:0.25rem; align-items:flex-end; white-space:nowrap; margin-right:1rem;">
+            <div style="display:flex; gap:0.8rem;">
+              <span style="min-width:70px;text-align:right;"><strong>${stats.total}</strong> leadów</span>
+              <span style="min-width:75px;text-align:right;"><strong>${stats.sent}</strong> wysłanych</span>
+            </div>
+            <div style="display:flex; gap:0.8rem;">
+              <span style="min-width:70px;text-align:right;color:#f87171;"><strong>${stats.failed}</strong> błędów</span>
+              <span style="min-width:75px;text-align:right;"><strong>${stats.success_rate}%</strong> sukcesu</span>
             </div>
           </div>
 
-          <div class="int-card-flow">
-            <span class="flow-box flow-fb">${i.fb_form_name}</span>
-            <span class="flow-arrow">→</span>
-            <span class="flow-box flow-md">${i.medidesk_form_name || i.medidesk_form_id}</span>
-          </div>
-
-          <div class="int-card-stats">
-            <span><strong>${stats.total}</strong> leadów</span>
-            <span><strong>${stats.sent}</strong> wysłanych</span>
-            <span><strong>${stats.failed}</strong> błędów</span>
-            <span><strong>${stats.success_rate}%</strong> sukcesu</span>
-            <span><strong>${i.mappings_count}</strong> zmapowanych ${polPole(i.mappings_count)}</span>
-          </div>
-
-          <div class="int-card-actions">
-            <button class="btn btn-sm btn-outline" onclick="openRoom('${i.id}')">📋 Szczegóły</button>
-            <button class="btn btn-sm ${toggleClass}" onclick="toggleIntegration('${i.id}', '${toggleAction}')">
-              ${toggleLabel}
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="deleteIntegration('${i.id}')">Usuń</button>
+          <!-- Right: Actions -->
+          <div class="int-card-actions" style="margin:0; padding:0; border:none; flex-direction:column; gap:0.3rem; width:130px; align-items:stretch;">
+            <button class="btn btn-sm btn-outline" style="justify-content:center; padding:0.25rem;" onclick="openRoom('${i.id}')">📋 Szczegóły</button>
+            <div style="display:flex; gap:0.3rem;">
+              <button class="btn btn-sm ${toggleClass}" style="flex:1; padding:0.25rem; font-size:0.68rem; justify-content:center;" onclick="toggleIntegration('${i.id}', '${toggleAction}')">${toggleLabel}</button>
+              <button class="btn btn-sm btn-outline" style="flex:1; padding:0.25rem; font-size:0.68rem; color:#f87171; border-color:#451a1d; justify-content:center;" onclick="deleteIntegration('${i.id}')">Usuń</button>
+            </div>
           </div>
         </div>
         `;
@@ -1481,16 +1510,24 @@
             <td style="color:#e4e4e7;">${f.fb_user_name || '<span style="color:#52525b;font-style:italic;">—</span>'}</td>
             <td style="text-align:center;"><span class="badge badge-sent">${f.integrations_count}</span></td>
             <td style="color:#52525b; font-size:0.75rem;">${date}</td>
-            <td style="text-align:right;"><button class="btn btn-sm btn-outline" style="color:#f87171; border-color:#451a1d;" onclick="deleteFac('${f.id}', '${f.name}')">🗑</button></td>
+            <td style="text-align:right;">
+              <div style="display:flex; gap:0.3rem; justify-content:flex-end;">
+                <button class="btn btn-sm btn-outline" style="border-color:#1e3a8a; color:#60a5fa;" onclick="openFacilityRoom('${f.id}', '${(f.name || '').replace(/'/g, "\\'")}')">🔍 Integracje</button>
+                <button class="btn btn-sm btn-outline" style="color:#f87171; border-color:#451a1d;" onclick="deleteFac('${f.id}', '${(f.name || '').replace(/'/g, "\\'")}')">🗑</button>
+              </div>
+            </td>
           </tr>`;
         });
 
         if (data.unassigned_count > 0) {
-          html += `<tr style="opacity:0.6;">
-            <td style="font-style:italic;">Nieprzypisane</td>
-            <td colspan="2" style="color:#52525b;">Integracje bez placówki</td>
-            <td><span class="badge badge-received">${data.unassigned_count}</span></td>
-            <td colspan="2"></td>
+          html += `<tr style="opacity:0.7; background:rgba(255,255,255,0.02);">
+            <td style="font-style:italic; padding:1rem 0.8rem; color:#a1a1aa;">Nieprzypisane</td>
+            <td colspan="2" style="font-size:0.75rem; color:#71717a;">Integracje bez przypisanej placówki</td>
+            <td style="text-align:center;"><div class="badge badge-yellow">${data.unassigned_count}</div></td>
+            <td>—</td>
+            <td style="text-align:right;">
+              <button class="btn btn-sm btn-outline" style="border-color:#1e3a8a; color:#60a5fa;" onclick="openFacilityRoom('', 'Nieprzypisane')">🔍 Integracje</button>
+            </td>
           </tr>`;
         }
 
@@ -1656,6 +1693,13 @@
       } catch (e) {
         showToast(e.message, 'error');
       }
+    }
+
+    function openFacilityRoom(id, name) {
+      filterFacilityId = id;
+      filterFacilityName = name;
+      showSection('integrations');
+      loadIntegrations();
     }
 
   </script>
