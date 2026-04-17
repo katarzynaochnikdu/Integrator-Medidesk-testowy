@@ -685,11 +685,19 @@
       });
     }
 
-    // Check if returning from FB OAuth
+    // Check if returning from FB OAuth or resuming saved session
     const fbSession = params.get('fb_session');
     if (fbSession) {
       state.sessionId = fbSession;
+      localStorage.setItem('md_fb_session', fbSession);
       loadSession();
+    } else if (!DEMO_MODE) {
+      // Try to resume from localStorage
+      const saved = localStorage.getItem('md_fb_session');
+      if (saved) {
+        state.sessionId = saved;
+        loadSession();
+      }
     }
 
     // ─── Step 1: Facebook ───────────────────────────────
@@ -720,10 +728,16 @@
         state.user = data.user;
         state.pages = data.pages;
 
+        // Save valid session for next visit
+        localStorage.setItem('md_fb_session', state.sessionId);
+
         showLoggedInUI();
         showToast('Zalogowano jako ' + state.user.name, 'success');
       } catch (e) {
-        showToast('Błąd sesji: ' + e.message, 'error');
+        // Session expired — clear saved state
+        localStorage.removeItem('md_fb_session');
+        state.sessionId = null;
+        showToast('Sesja wygasła — zaloguj się ponownie', 'error');
       }
     }
 
