@@ -11,12 +11,48 @@ logger = logging.getLogger(__name__)
 
 # Common synonyms/aliases for medical form fields (Polish & English)
 SYNONYMS: dict[str, list[str]] = {
-    "name": ["imie", "imię", "nazwisko", "full_name", "imie-i-nazwisko", "imię-i-nazwisko", "osoba", "name", "fullname"],
-    "email": ["email", "e-mail", "mail", "adres email", "adres e-mail", "e_mail"],
-    "phone": ["phone", "telefon", "phone_number", "tel", "numer telefonu", "numer_telefonu", "mobile"],
-    "message": ["message", "wiadomosc", "wiadomość", "dodatkowa informacja", "dodatkowa_informacja", "komentarz", "uwagi", "tresc", "treść", "zyczenie", "życzenie"],
-    "topic": ["topic", "temat", "w czym możemy pomóc", "w_czym_mozemy_pomoc", "w-czym-możemy-pomóc-", "lista", "rodzaj", "usluga", "usługa"],
-    "consent": ["consent", "zgoda", "wyrażam zgodę", "wyrazam-zgode", "wyrażam-zgodę-na-kontakt", "akceptacja", "rodo"],
+    "full_name": [
+        "full_name", "fullname", "full name",
+        "imie i nazwisko", "imie-i-nazwisko", "imię i nazwisko", "imię-i-nazwisko",
+        "imię oraz nazwisko",
+        "osoba", "osoba kontaktowa",
+        "dane osobowe",
+    ],
+    "first_name": [
+        "first_name", "firstname", "imie", "imię", "name",
+    ],
+    "last_name": [
+        "last_name", "lastname", "nazwisko", "surname",
+    ],
+    "company": [
+        "company", "company_name", "firma", "nazwa firmy", "nazwa_firmy",
+        "nazwa placówki", "placowka", "placówka", "klinika", "przychodnia",
+        "organization", "organisation", "instytucja",
+    ],
+    "email": [
+        "email", "e-mail", "mail", "adres email", "adres e-mail", "e_mail",
+    ],
+    "phone": [
+        "phone", "telefon", "phone_number", "tel", "numer telefonu",
+        "numer_telefonu", "mobile", "komórka", "komorka",
+    ],
+    "message": [
+        "message", "wiadomosc", "wiadomość", "dodatkowa informacja",
+        "dodatkowa_informacja", "komentarz", "uwagi", "tresc", "treść",
+        "zyczenie", "życzenie", "opis", "opis problemu",
+    ],
+    "topic": [
+        "topic", "temat", "w czym możemy pomóc", "w_czym_mozemy_pomoc",
+        "w-czym-możemy-pomóc-", "lista", "rodzaj", "usluga", "usługa",
+        "specjalizacja", "rodzaj badania",
+    ],
+    "consent": [
+        "consent", "zgoda", "wyrażam zgodę", "wyrazam-zgode",
+        "wyrażam-zgodę-na-kontakt", "akceptacja", "rodo",
+    ],
+    "city": [
+        "city", "miasto", "miejscowosc", "miejscowość",
+    ],
 }
 
 
@@ -29,11 +65,25 @@ def _normalize(text: str) -> str:
 
 
 def _find_synonym_group(name: str) -> str | None:
-    """Check if a normalized name belongs to a known synonym group."""
+    """Check if a normalized name belongs to a known synonym group.
+    
+    Uses exact match or full-word containment (not loose substring).
+    """
     norm = _normalize(name)
     for group, synonyms in SYNONYMS.items():
         for syn in synonyms:
-            if _normalize(syn) == norm or norm in _normalize(syn) or _normalize(syn) in norm:
+            nsyn = _normalize(syn)
+            # Exact match
+            if nsyn == norm:
+                return group
+    # Second pass: check if the full normalized name matches a synonym as whole words
+    norm_words = set(norm.split())
+    for group, synonyms in SYNONYMS.items():
+        for syn in synonyms:
+            nsyn = _normalize(syn)
+            syn_words = set(nsyn.split())
+            # All synonym words must be present in the name (word-level match)
+            if len(syn_words) >= 2 and syn_words.issubset(norm_words):
                 return group
     return None
 
@@ -51,6 +101,10 @@ def _similarity(a: str, b: str) -> float:
     group_b = _find_synonym_group(b)
     if group_a and group_b and group_a == group_b:
         return 0.95
+
+    # Penalize cross-group matches (e.g., company matching name group)
+    if group_a and group_b and group_a != group_b:
+        return 0.0
 
     # Fuzzy string matching
     return SequenceMatcher(None, na, nb).ratio()
