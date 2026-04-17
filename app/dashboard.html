@@ -612,6 +612,10 @@
 
       <!-- Section: Integrations -->
       <div class="section" id="sec-integrations">
+        <div style="margin-bottom:1rem; position:relative;">
+          <input type="text" id="integrations-search" placeholder="Szukaj..." style="width:100%; background:#111218; border:1px solid #27272a; color:#e4e4e7; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:8px; font-size:0.85rem; outline:none;" oninput="renderIntegrationsList()">
+          <span style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); font-size:0.9rem; opacity:0.5;">🔍</span>
+        </div>
         <div id="integrations-list"></div>
       </div>
 
@@ -797,6 +801,7 @@
     let currentRoomId = null;
     let filterFacilityId = null;
     let filterFacilityName = null;
+    let allIntegrationsData = [];
 
     function setupRoleUI(role) {
       USER_ROLE = role;
@@ -928,35 +933,56 @@
 
     // ─── Integrations ───────────────────────────────────
     async function loadIntegrations() {
-      let integrations;
       if (DEMO) {
-        integrations = MOCK_INTEGRATIONS;
-        // Filter for placówka demo: only show integrations matching their pages  
+        allIntegrationsData = MOCK_INTEGRATIONS;
         if (DEMO_ROLE === 'user') {
-          // In demo user mode, show only first 2 (their "own")
-          integrations = integrations.filter(i => i.active || i.id === 'int-001');
+          allIntegrationsData = allIntegrationsData.filter(i => i.active || i.id === 'int-001');
         }
       } else {
         try {
           const resp = await apiFetch('/api/integrations');
           const data = await resp.json();
-          integrations = data.integrations || [];
-          // Placówka: filter by their FB page IDs
+          allIntegrationsData = data.integrations || [];
           if (USER_ROLE === 'user' && USER_PAGES.length > 0) {
-            integrations = integrations.filter(i => USER_PAGES.includes(i.fb_page_id));
+            allIntegrationsData = allIntegrationsData.filter(i => USER_PAGES.includes(i.fb_page_id));
           }
-          // Enrich with stats
-          for (let i of integrations) {
+          // Enrich with stats (async)
+          for (let i of allIntegrationsData) {
             try {
               const sr = await apiFetch(`/api/stats/${i.id}`);
               if (sr.ok) i.stats = await sr.json();
             } catch {}
           }
-        } catch { integrations = []; }
+        } catch { allIntegrationsData = []; }
       }
+
+      // Re-setup search placeholder dynamically based on role
+      const searchBox = document.getElementById('integrations-search');
+      if (USER_ROLE === 'admin') {
+        searchBox.placeholder = 'Szukaj: nazwa placówki, nazwa/fb_id formularza, formularz medidesk...';
+      } else {
+        searchBox.placeholder = 'Szukaj: nazwa powiązanego formularza FB lub Medidesk...';
+      }
+
+      renderIntegrationsList();
+    }
+
+    function renderIntegrationsList() {
+      let integrations = [...allIntegrationsData];
+      const query = document.getElementById('integrations-search').value.toLowerCase().trim();
 
       if (filterFacilityId) {
         integrations = integrations.filter(i => i.facility_id === filterFacilityId);
+      }
+
+      if (query) {
+        integrations = integrations.filter(i => {
+          const fbPage = (i.fb_page_name || '').toLowerCase();
+          const fbForm = (i.fb_form_name || i.fb_form_id || '').toLowerCase();
+          const mdForm = (i.medidesk_form_name || i.medidesk_form_id || '').toLowerCase();
+          const facility = (i.facility_id || '').toLowerCase();
+          return fbPage.includes(query) || fbForm.includes(query) || mdForm.includes(query) || (USER_ROLE === 'admin' && facility.includes(query));
+        });
       }
 
       const container = document.getElementById('integrations-list');
@@ -975,18 +1001,31 @@
           </div>
         `;
         filterMsgContainer.style.display = 'block';
+      } else if (query && integrations.length === 0) {
+        filterMsgContainer.style.display = 'none';
       } else {
         filterMsgContainer.style.display = 'none';
       }
+
       if (integrations.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="icon">🔗</div>
-            <h3>Brak integracji</h3>
-            <p>Dodaj pierwszą integrację łączącą Facebook Lead Ads z Medidesk.</p>
-            <button class="btn btn-primary" style="margin-top:1rem;" onclick="location.href='/setup'">➕ Dodaj integrację</button>
-          </div>
-        `;
+        if (query) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">🔍</div>
+              <h3>Brak wyników</h3>
+              <p>Nie odnaleziono integracji pasujących do frazy: <strong>${document.getElementById('integrations-search').value}</strong></p>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">🔗</div>
+              <h3>Brak integracji</h3>
+              <p>Dodaj pierwszą integrację łączącą Facebook Lead Ads z Medidesk.</p>
+              <button class="btn btn-primary" style="margin-top:1rem;" onclick="location.href='/setup'">➕ Dodaj integrację</button>
+            </div>
+          `;
+        }
         return;
       }
 
