@@ -277,6 +277,35 @@ async def get_integration_detail(integration_id: str, _session=Depends(require_a
     return data
 
 
+@app.put("/api/integrations/{integration_id}/mappings")
+async def update_mappings(integration_id: str, request: Request, _session=Depends(require_auth)):
+    """Update field mappings for an existing integration."""
+    body = await request.json()
+    if "field_mappings" not in body:
+        return JSONResponse(status_code=400, content={"error": "Missing field_mappings"})
+
+    from app.integrations_store import FieldMapping, get_integration, update_integration
+    
+    integration = get_integration(integration_id)
+    if not integration:
+        return JSONResponse(status_code=404, content={"error": "Integration not found"})
+        
+    mappings = [
+        FieldMapping(
+            fb_field=m["fb_field"],
+            medidesk_field=m["medidesk_field"],
+            confidence=m.get("confidence", 0.0),
+        )
+        for m in body["field_mappings"]
+    ]
+    
+    updated = update_integration(integration_id, field_mappings=mappings)
+    
+    data = asdict(updated)
+    data.pop("fb_page_token", None)
+    return {"status": "success", "integration": data}
+
+
 @app.post("/api/integrations/{integration_id}/activate")
 async def activate_integration(integration_id: str, _session=Depends(require_auth)):
     """Activate an integration and subscribe page to webhooks."""
