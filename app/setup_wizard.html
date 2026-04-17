@@ -654,7 +654,7 @@
         showToast('Zalogowano jako ' + state.user.name, 'success');
         return;
       }
-      window.location.href = '/auth/facebook';
+      window.location.href = '/auth/facebook?redirect=/setup';
     });
 
     async function loadSession() {
