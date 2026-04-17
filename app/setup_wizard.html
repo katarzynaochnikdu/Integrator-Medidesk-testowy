@@ -1070,10 +1070,15 @@
         options.push(`<option value="${f.fieldId}"${sel}>${f.fieldId}</option>`);
       });
 
+      // Check if this MD field is used by another FB field (merge)
+      const mergeFields = state.mappings.filter(m => m.medidesk_field === mdField && m.fb_field !== fbField);
+      const isMerge = mdField && mergeFields.length > 0;
+
       row.innerHTML = `
         <span class="field-chip fb">${fbField}</span>
         <span class="mapping-arrow">↔</span>
         <select class="md-select" data-fb="${fbField}">${options.join('')}</select>
+        ${isMerge ? '<span style="font-size:0.65rem;color:#f59e0b;font-weight:600;padding:0.1rem 0.4rem;background:rgba(245,158,11,0.12);border-radius:6px;">łączy</span>' : ''}
         <span class="confidence-badge ${confClass}">${confText}</span>
       `;
 
@@ -1089,8 +1094,7 @@
       if (mdField === '') {
         if (existing >= 0) state.mappings.splice(existing, 1);
       } else {
-        // Remove any other mapping to the same md field
-        state.mappings = state.mappings.filter(m => m.medidesk_field !== mdField || m.fb_field === fbField);
+        // Allow multiple FB fields to map to the same MD field (merge)
         if (existing >= 0) {
           state.mappings[existing].medidesk_field = mdField;
           state.mappings[existing].confidence = 1.0;
@@ -1098,8 +1102,23 @@
           state.mappings.push({ fb_field: fbField, medidesk_field: mdField, confidence: 1.0 });
         }
       }
+      // Detect merges and update info text
+      const mergeCount = countMerges();
       const info = document.getElementById('mapping-info-text');
-      info.textContent = `Zmapowano ${state.mappings.length} pól. Użyj list aby poprawić.`;
+      info.textContent = `Zmapowano ${state.mappings.length} pól.`
+        + (mergeCount > 0 ? ` ${mergeCount} łączeń.` : '')
+        + ' Użyj list aby poprawić.';
+
+      // Re-render to show/update merge badges
+      renderMappings();
+    }
+
+    function countMerges() {
+      const mdCounts = {};
+      state.mappings.forEach(m => {
+        if (m.medidesk_field) mdCounts[m.medidesk_field] = (mdCounts[m.medidesk_field] || 0) + 1;
+      });
+      return Object.values(mdCounts).filter(c => c > 1).length;
     }
 
     // ─── Step 3 → 4: Save & Activate ────────────────────

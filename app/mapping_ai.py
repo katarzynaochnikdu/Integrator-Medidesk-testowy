@@ -124,6 +124,9 @@ def suggest_mapping(
 ) -> list[MappingSuggestion]:
     """Suggest field mappings between FB Lead Ads questions and Medidesk form fields.
 
+    Supports merging: if first_name + last_name exist but no full_name,
+    both will be mapped to the same target full_name field.
+
     Args:
         fb_questions: List of FB form questions, each with at least 'key' or 'label'.
         medidesk_fields: List of Medidesk form fields, each with at least 'fieldId' and 'name'.
@@ -149,9 +152,45 @@ def suggest_mapping(
         name = f.get("name", field_id)
         md_fields.append((field_id, name))
 
-    # For each FB field, find best matching Medidesk field
+    # ── Merge detection: first_name + last_name → full_name target ──
+    fb_keys = {k for k, _ in fb_fields}
+    fb_groups = {_find_synonym_group(k) for k in fb_keys}
+
+    has_first = "first_name" in fb_groups
+    has_last = "last_name" in fb_groups
+    has_full = "full_name" in fb_groups
+
+    if has_first and has_last and not has_full:
+        # Find the target full_name MD field
+        full_name_md = None
+        for md_id, md_name in md_fields:
+            if _find_synonym_group(md_id) == "full_name" or _find_synonym_group(md_name) == "full_name":
+                full_name_md = md_id
+                break
+
+        if full_name_md:
+            # Map both first_name and last_name to the same MD field
+            for fb_key, fb_label in fb_fields:
+                group = _find_synonym_group(fb_key)
+                if group == "first_name":
+                    suggestions.append(MappingSuggestion(
+                        fb_field=fb_key, medidesk_field=full_name_md, confidence=0.90,
+                    ))
+                elif group == "last_name":
+                    suggestions.append(MappingSuggestion(
+                        fb_field=fb_key, medidesk_field=full_name_md, confidence=0.90,
+                    ))
+            # Mark these FB fields and MD field as used
+            used_fb_merge = {s.fb_field for s in suggestions}
+            # Don't add full_name_md to used_medidesk — it's intentionally shared
+    else:
+        used_fb_merge = set()
+
+    # ── Standard 1:1 matching for remaining fields ──
     scored_pairs: list[tuple[float, str, str, str, str]] = []
     for fb_key, fb_label in fb_fields:
+        if fb_key in used_fb_merge:
+            continue
         for md_id, md_name in md_fields:
             # Compare both key-to-id and label-to-name, take the best
             score = max(
@@ -165,10 +204,13 @@ def suggest_mapping(
 
     # Sort by score descending, greedily assign (each field used once)
     scored_pairs.sort(key=lambda x: x[0], reverse=True)
-    used_fb: set[str] = set()
+    used_fb: set[str] = set(used_fb_merge)
+
+    # Block MD fields already used by merge
+    merge_md_ids = {s.medidesk_field for s in suggestions}
 
     for score, fb_key, fb_label, md_id, md_name in scored_pairs:
-        if fb_key in used_fb or md_id in used_medidesk:
+        if fb_key in used_fb or md_id in used_medidesk or md_id in merge_md_ids:
             continue
         suggestions.append(MappingSuggestion(
             fb_field=fb_key,

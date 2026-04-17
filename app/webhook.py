@@ -123,12 +123,16 @@ async def handle_webhook(request: Request):
                 )
                 continue
 
-            # Map FB fields to Medidesk fields
+            # Map FB fields to Medidesk fields (supports merge: multiple FB → one MD)
             fields_values: dict[str, str] = {}
             for mapping in integration.field_mappings:
                 fb_value = lead.field_data.get(mapping.fb_field, "")
                 if fb_value:
-                    fields_values[mapping.medidesk_field] = fb_value
+                    if mapping.medidesk_field in fields_values:
+                        # Merge: append with space (e.g., first_name + last_name)
+                        fields_values[mapping.medidesk_field] += " " + fb_value
+                    else:
+                        fields_values[mapping.medidesk_field] = fb_value
 
             if not fields_values:
                 logger.warning("No mapped fields with values for lead %s", lead_id)
