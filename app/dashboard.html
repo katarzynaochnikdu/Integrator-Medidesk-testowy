@@ -570,7 +570,7 @@
     </div>
     <div style="padding:0.5rem 1rem;border-top:1px solid #1e2030;" id="logout-area">
       <button class="btn btn-sm btn-outline" style="width:100%; margin-bottom:0.4rem;" onclick="doLogout()">Wyloguj</button>
-      <button class="btn btn-sm btn-outline" style="width:100%; font-size:0.68rem;" id="btn-change-pw" onclick="togglePasswordChange()" style="display:none;">🔑 Zmień hasło admina</button>
+      <button class="btn btn-sm btn-outline" style="width:100%; font-size:0.68rem; display:none;" id="btn-change-pw" onclick="togglePasswordChange()">🔑 Zmień hasło admina</button>
       <div id="pw-change-form" style="display:none; margin-top:0.5rem;">
         <input type="password" id="pw-current" placeholder="Obecne hasło" style="width:100%; background:#090a0f; border:1px solid #27272a; color:#e4e4e7; padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
         <input type="password" id="pw-new" placeholder="Nowe hasło (min. 6 znaków)" style="width:100%; background:#090a0f; border:1px solid #27272a; color:#e4e4e7; padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
@@ -833,6 +833,7 @@
     async function adminLogin() {
       if (DEMO) {
         hideLogin('admin');
+        setUser({ name: 'Administrator', id: 'admin' });
         return;
       }
       const pw = document.getElementById('admin-password').value;
@@ -844,6 +845,7 @@
           body: JSON.stringify({ password: pw }),
         });
         if (resp.ok) {
+          setUser({ name: 'Administrator', id: 'admin' });
           hideLogin('admin');
         } else {
           const data = await resp.json();
