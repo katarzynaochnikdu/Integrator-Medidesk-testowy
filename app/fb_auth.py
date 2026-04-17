@@ -154,11 +154,11 @@ def _save_session(session_id: str, session_data: dict) -> None:
     import json
     import time
     from app.db import get_connection
-    from app.integrations_store import _fernet
+    from app.integrations_store import _get_fernet
 
     # Encrypt access_token at rest
     raw_token = session_data.get("access_token", "")
-    encrypted_token = _fernet.encrypt(raw_token.encode()).decode() if raw_token else ""
+    encrypted_token = _get_fernet().encrypt(raw_token.encode()).decode() if raw_token else ""
 
     # Strip page access_tokens from pages data (sensitive, not needed in session)
     pages_safe = [
@@ -200,7 +200,7 @@ def _get_valid_session(session_id: str) -> dict | None:
     import json
     import time
     from app.db import get_connection
-    from app.integrations_store import _fernet
+    from app.integrations_store import _get_fernet
 
     conn = get_connection()
     row = conn.execute(
@@ -216,7 +216,7 @@ def _get_valid_session(session_id: str) -> dict | None:
     # Decrypt access_token
     encrypted_token = row["access_token"]
     try:
-        access_token = _fernet.decrypt(encrypted_token.encode()).decode() if encrypted_token else ""
+        access_token = _get_fernet().decrypt(encrypted_token.encode()).decode() if encrypted_token else ""
     except Exception:
         access_token = ""  # corrupted token, session still valid for UI
 
