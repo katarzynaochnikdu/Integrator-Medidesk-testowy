@@ -135,8 +135,12 @@ async def handle_webhook(request: Request):
             for mapping in sorted_mappings:
                 fb_key = mapping.fb_field
 
+                # Constant value: extract static text
+                if fb_key.startswith("__const:") and fb_key.endswith("__"):
+                    fb_value = fb_key[8:-2]  # strip __const: and __
+
                 # Virtual fields: inject computed values from lead metadata
-                if fb_key.startswith("__fb_"):
+                elif fb_key.startswith("__fb_"):
                     from datetime import datetime, timezone
                     virtual_map = {
                         "__fb_form_name__": integration.fb_form_name,

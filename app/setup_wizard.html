@@ -1105,6 +1105,25 @@
           renderMappings();
         });
       }
+
+      // "Add constant value" row
+      const constRow = document.createElement('div');
+      constRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.5rem;border:1px dashed #27272a;border-radius:10px;';
+      constRow.innerHTML = `
+        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="flex:1;background:#111218;border:1px solid #27272a;color:#e4e4e7;padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;" />
+        <button id="btn-add-const" class="btn" style="background:#27272a;color:#a1a1aa;font-size:0.75rem;padding:0.4rem 0.8rem;" disabled>Dodaj</button>
+      `;
+      container.appendChild(constRow);
+
+      const constInput = constRow.querySelector('#const-value-input');
+      const constBtn = constRow.querySelector('#btn-add-const');
+      constInput.addEventListener('input', () => { constBtn.disabled = !constInput.value.trim(); });
+      constBtn.addEventListener('click', () => {
+        const val = constInput.value.trim();
+        if (!val) return;
+        state.mappings.push({ fb_field: `__const:${val}__`, medidesk_field: '', confidence: 0 });
+        renderMappings();
+      });
     }
 
     function createMappingRow(fbField, mdField, confidence, isVirtual = false) {
@@ -1114,13 +1133,32 @@
       const confClass = confidence >= 0.9 ? 'confidence-high' : confidence >= 0.6 ? 'confidence-med' : 'confidence-low';
       const confText = confidence > 0 ? Math.round(confidence * 100) + '%' : '—';
 
-      // Friendly label for virtual fields
+      // Friendly label for virtual/constant fields
+      const isConst = fbField.startsWith('__const:');
       const virtualLabels = {
         '__fb_form_name__': '📋 Nazwa formularza',
         '__fb_lead_date__': '📅 Data leada',
+        '__fb_ad_name__': '📢 Nazwa reklamy',
+        '__fb_adset_name__': '🎯 Zestaw reklam',
+        '__fb_campaign_name__': '📊 Kampania',
+        '__fb_platform__': '🌐 Platforma',
+        '__fb_is_organic__': '🌱 Organiczny',
+        '__fb_lead_id__': '🔑 ID leada',
       };
-      const displayName = isVirtual ? (virtualLabels[fbField] || fbField) : fbField;
-      const chipStyle = isVirtual ? 'border-style:dashed;opacity:0.8;' : '';
+
+      let displayName;
+      let chipStyle;
+      if (isConst) {
+        const constVal = fbField.replace('__const:', '').replace('__', '');
+        displayName = `✏️ "${constVal}"`;
+        chipStyle = 'border-style:dashed;border-color:#8b5cf6;opacity:0.9;';
+      } else if (isVirtual) {
+        displayName = virtualLabels[fbField] || fbField;
+        chipStyle = 'border-style:dashed;opacity:0.8;';
+      } else {
+        displayName = fbField;
+        chipStyle = '';
+      }
 
       // Build MD field <select>
       const options = ['<option value="">— nie mapuj —</option>'];

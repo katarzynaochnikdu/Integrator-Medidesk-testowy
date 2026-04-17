@@ -355,9 +355,9 @@ async def get_page_forms(session_id: str, page_id: str):
     """Get Lead Ad forms for a specific page from a session."""
     from app.fb_client import get_page_lead_forms
 
-    session = _sessions.get(session_id)
+    session = _get_valid_session(session_id)
     if not session:
-        return JSONResponse(status_code=404, content={"error": "Session not found"})
+        return JSONResponse(status_code=404, content={"error": "Session not found or expired"})
 
     # Find the page token
     page_token = None
