@@ -981,11 +981,12 @@
 
       if (query) {
         integrations = integrations.filter(i => {
+          const name = (i.name || '').toLowerCase();
           const fbPage = (i.fb_page_name || '').toLowerCase();
           const fbForm = (i.fb_form_name || i.fb_form_id || '').toLowerCase();
           const mdForm = (i.medidesk_form_name || i.medidesk_form_id || '').toLowerCase();
           const facility = (i.facility_id || '').toLowerCase();
-          return fbPage.includes(query) || fbForm.includes(query) || mdForm.includes(query) || (USER_ROLE === 'admin' && facility.includes(query));
+          return name.includes(query) || fbPage.includes(query) || fbForm.includes(query) || mdForm.includes(query) || (USER_ROLE === 'admin' && facility.includes(query));
         });
       }
 
@@ -1041,23 +1042,30 @@
         const toggleAction = i.active ? 'deactivate' : 'activate';
         const toggleClass = i.active ? 'btn-warning' : 'btn-success';
 
+        // Display name = user-provided integration label, fall back to auto-generated if missing.
+        const displayName = (i.name && i.name.trim()) || `${i.fb_form_name} → ${i.medidesk_form_name || i.medidesk_form_id}`;
+        // Context line under the name — only show if the user set a custom name (avoid duplication).
+        const showContext = !!(i.name && i.name.trim());
+
         return `
         <div class="int-card" data-id="${i.id}" style="display:flex; align-items:center; justify-content:space-between; padding:0.8rem 1rem; gap:1rem; margin-bottom:0.6rem;">
           <!-- Left: Icon & Names -->
           <div style="display:flex; align-items:center; gap:0.8rem; flex:1; min-width:0;">
             <div class="int-card-icon fb" style="width:34px;height:34px;font-size:1.1rem;border-radius:8px;">📘</div>
-            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:0.2rem;">
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:0.25rem;">
               <div style="display:flex; align-items:center; gap:0.5rem;">
-                <span class="name" style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${i.fb_page_name}</span>
+                <span class="name" title="${displayName}" style="font-size:0.92rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${displayName}</span>
                 <div class="int-card-status ${statusClass}" style="transform:scale(0.8); transform-origin:left; margin:0; padding:0.15rem 0.5rem;">
                   <div class="status-dot"></div>${statusLabel}
                 </div>
               </div>
+              ${showContext ? `
+              <div style="font-size:0.68rem; color:#71717a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                📘 ${i.fb_page_name} · ${i.fb_form_name} → ${i.medidesk_form_name || i.medidesk_form_id}
+              </div>` : `
               <div class="int-card-flow" style="margin:0; padding:0; background:transparent; font-size:0.7rem;">
-                <span class="flow-box flow-fb" style="padding:0.15rem 0.3rem;">${i.fb_form_name}</span>
-                <span class="flow-arrow" style="margin:0 0.2rem;">→</span>
-                <span class="flow-box flow-md" style="padding:0.15rem 0.3rem;">${i.medidesk_form_name || i.medidesk_form_id}</span>
-              </div>
+                <span style="color:#71717a;">${i.fb_page_name}</span>
+              </div>`}
             </div>
           </div>
 
@@ -1164,9 +1172,10 @@
       }
 
       // Set titles
-      document.getElementById('room-title').textContent = integration.fb_page_name || 'Integracja';
-      document.getElementById('room-subtitle').textContent = `${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
-      document.getElementById('nav-room-label').textContent = (integration.fb_page_name || 'Połączenie').substring(0, 16);
+      const roomTitle = (integration.name && integration.name.trim()) || integration.fb_page_name || 'Integracja';
+      document.getElementById('room-title').textContent = roomTitle;
+      document.getElementById('room-subtitle').textContent = `📘 ${integration.fb_page_name} · ${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
+      document.getElementById('nav-room-label').textContent = roomTitle.substring(0, 16);
 
       // KPIs
       const failCount = stats.failed || 0;
