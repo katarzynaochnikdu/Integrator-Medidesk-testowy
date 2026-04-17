@@ -38,6 +38,14 @@ from app.webhook import router as webhook_router
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+def _check_integration_access(integration, session: dict) -> bool:
+    """Verify the session user owns this integration (or is admin)."""
+    if session.get("role") == "admin":
+        return True
+    facility_id = session.get("facility_id", "")
+    return bool(facility_id and integration.facility_id == facility_id)
+
 app = FastAPI(title="Medidesk Integrator", version="2.0.0")
 
 if settings.cors_origins_list:
@@ -62,14 +70,22 @@ async def startup_db():
     get_connection()  # ensure tables are created
     migrate_from_json()  # import existing JSON data (idempotent)
 
-    # Load persisted admin password (if changed via dashboard)
+    # Load persisted admin password hash (if changed via dashboard)
     pw_path = Path(settings.data_dir) / ".admin_password"
     if pw_path.exists():
         try:
             saved_pw = pw_path.read_text(encoding="utf-8").strip()
             if saved_pw:
-                settings.admin_password = saved_pw
-                logger.info("Loaded admin password from persistent storage")
+                # Auto-migrate: if stored as plaintext (no $2b$ prefix), hash it now
+                if not saved_pw.startswith("$2b$"):
+                    import bcrypt
+                    hashed = bcrypt.hashpw(saved_pw.encode(), bcrypt.gensalt()).decode()
+                    pw_path.write_text(hashed, encoding="utf-8")
+                    settings.admin_password = hashed
+                    logger.info("Migrated admin password from plaintext to bcrypt hash")
+                else:
+                    settings.admin_password = saved_pw
+                    logger.info("Loaded admin password hash from persistent storage")
         except Exception:
             logger.warning("Failed to load admin password file", exc_info=True)
 
@@ -309,6 +325,8 @@ async def get_integration_detail(integration_id: str, _session=Depends(require_a
     integration = get_integration(integration_id)
     if not integration:
         return JSONResponse(status_code=404, content={"error": "Integration not found"})
+    if not _check_integration_access(integration, _session):
+        return JSONResponse(status_code=403, content={"error": "Brak dostępu do tej integracji"})
     data = asdict(integration)
     data.pop("fb_page_token", None)  # Never expose token via API
     return data
@@ -326,6 +344,8 @@ async def update_mappings(integration_id: str, request: Request, _session=Depend
     integration = get_integration(integration_id)
     if not integration:
         return JSONResponse(status_code=404, content={"error": "Integration not found"})
+    if not _check_integration_access(integration, _session):
+        return JSONResponse(status_code=403, content={"error": "Brak dostępu do tej integracji"})
         
     mappings = [
         FieldMapping(
@@ -349,6 +369,8 @@ async def activate_integration(integration_id: str, _session=Depends(require_aut
     integration = get_integration(integration_id)
     if not integration:
         return JSONResponse(status_code=404, content={"error": "Integration not found"})
+    if not _check_integration_access(integration, _session):
+        return JSONResponse(status_code=403, content={"error": "Brak dostępu do tej integracji"})
 
     # Subscribe page to webhooks
     success = await subscribe_page_to_webhooks(
@@ -371,6 +393,8 @@ async def deactivate_integration(integration_id: str, _session=Depends(require_a
     integration = get_integration(integration_id)
     if not integration:
         return JSONResponse(status_code=404, content={"error": "Integration not found"})
+    if not _check_integration_access(integration, _session):
+        return JSONResponse(status_code=403, content={"error": "Brak dostępu do tej integracji"})
     update_integration(integration_id, active=False)
     return {"status": "deactivated", "integration_id": integration_id}
 
@@ -408,6 +432,8 @@ async def integration_stats(integration_id: str, _session=Depends(require_auth))
     integration = get_integration(integration_id)
     if not integration:
         return JSONResponse(status_code=404, content={"error": "Integration not found"})
+    if not _check_integration_access(integration, _session):
+        return JSONResponse(status_code=403, content={"error": "Brak dostępu do tej integracji"})
 
     stats = get_stats(integration_id)
     return {
@@ -538,7 +564,8 @@ async def reset_database(_session=Depends(require_admin)):
 
 @app.put("/api/admin/password")
 async def change_admin_password(request: Request, _session=Depends(require_admin)):
-    """Change the admin password (persisted to disk)."""
+    """Change the admin password (persisted as bcrypt hash)."""
+    import bcrypt
     body = await request.json()
     current = body.get("current_password", "")
     new_pw = body.get("new_password", "")
@@ -546,20 +573,28 @@ async def change_admin_password(request: Request, _session=Depends(require_admin
     if not current or not new_pw:
         return JSONResponse(status_code=400, content={"error": "Podaj obecne i nowe hasło"})
 
-    if current != settings.admin_password:
-        return JSONResponse(status_code=401, content={"error": "Obecne hasło jest nieprawidłowe"})
+    # Verify current password (supports both bcrypt hash and legacy plaintext)
+    stored = settings.admin_password
+    if stored.startswith("$2b$"):
+        if not bcrypt.checkpw(current.encode(), stored.encode()):
+            return JSONResponse(status_code=401, content={"error": "Obecne hasło jest nieprawidłowe"})
+    else:
+        import hmac
+        if not hmac.compare_digest(current.encode(), stored.encode()):
+            return JSONResponse(status_code=401, content={"error": "Obecne hasło jest nieprawidłowe"})
 
     if len(new_pw) < 6:
         return JSONResponse(status_code=400, content={"error": "Nowe hasło musi mieć co najmniej 6 znaków"})
 
-    # Persist to file so it survives restarts (env var stays as fallback)
+    # Hash and persist
+    hashed = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
     pw_path = Path(settings.data_dir) / ".admin_password"
-    pw_path.write_text(new_pw, encoding="utf-8")
+    pw_path.write_text(hashed, encoding="utf-8")
 
     # Update in-memory setting
-    settings.admin_password = new_pw
+    settings.admin_password = hashed
 
-    logger.info("Admin password changed successfully")
+    logger.info("Admin password changed successfully (bcrypt)")
     return {"status": "ok", "message": "Hasło zostało zmienione"}
 
 

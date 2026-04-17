@@ -552,11 +552,11 @@
       <button class="btn btn-sm btn-outline" style="width:100%; margin-bottom:0.4rem;" onclick="doLogout()">Wyloguj</button>
       <button class="btn btn-sm btn-outline" style="width:100%; margin-bottom:0.4rem; font-size:0.68rem; display:none;" id="btn-change-pw" onclick="togglePasswordChange()">🔑 Zmień hasło admina</button>
       <button class="btn btn-sm btn-outline" style="width:100%; font-size:0.68rem; display:none; color:#f87171; border-color:#451a1d;" id="btn-reset-db" onclick="resetDatabase()">⚠️ Wyczyść wszystko (Testowe)</button>
-      <div id="pw-change-form" style="display:none; margin-top:0.5rem;">
-        <input type="password" id="pw-current" placeholder="Obecne hasło" style="width:100%; background:#090a0f; border:1px solid #27272a; color:#e4e4e7; padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
-        <input type="password" id="pw-new" placeholder="Nowe hasło (min. 6 znaków)" style="width:100%; background:#090a0f; border:1px solid #27272a; color:#e4e4e7; padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
-        <button class="btn btn-sm btn-success" style="width:100%; font-size:0.72rem;" onclick="changePassword()">Zapisz nowe hasło</button>
-      </div>
+      <form id="pw-change-form" style="display:none; margin-top:0.5rem;" onsubmit="event.preventDefault(); changePassword();" autocomplete="off">
+        <input type="password" id="pw-current" placeholder="Obecne hasło" autocomplete="current-password" style="width:100%; background:#090a0f; border:1px solid #27272a; color:#e4e4e7; padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
+        <input type="password" id="pw-new" placeholder="Nowe hasło (min. 6 znaków)" autocomplete="new-password" style="width:100%; background:#090a0f; border:1px solid #27272a; color:#e4e4e7; padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
+        <button type="submit" class="btn btn-sm btn-success" style="width:100%; font-size:0.72rem;">Zapisz nowe hasło</button>
+      </form>
     </div>
   </aside>
 
@@ -726,10 +726,14 @@
     let USER_PAGES = []; // FB page IDs for placówka filtering
     let SESSION_ID = localStorage.getItem('fb_session_id') || params.get('fb_session') || '';
 
-    // Save session from URL to localStorage
+    // Save session from URL to localStorage, then clean URL (security: prevent session ID leak via Referer/history)
     if (params.get('fb_session')) {
       localStorage.setItem('fb_session_id', params.get('fb_session'));
       SESSION_ID = params.get('fb_session');
+      // Remove fb_session from URL without reload
+      const cleanUrl = new URL(window.location);
+      cleanUrl.searchParams.delete('fb_session');
+      window.history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
     }
 
     // Wrapper for API calls that attaches session info

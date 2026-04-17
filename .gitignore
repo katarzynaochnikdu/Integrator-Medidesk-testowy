@@ -31,3 +31,5 @@ medidesk.db*
 # Runtime data (should be on persistent disk in production)
 lead_log.json
 integrations.json
+render_services.json
+.admin_password

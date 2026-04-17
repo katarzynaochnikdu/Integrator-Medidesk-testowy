@@ -694,6 +694,10 @@
     if (fbSession) {
       state.sessionId = fbSession;
       localStorage.setItem('md_fb_session', fbSession);
+      // Security: clean session ID from URL
+      const cleanUrl = new URL(window.location);
+      cleanUrl.searchParams.delete('fb_session');
+      window.history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search);
       loadSession();
     } else if (!DEMO_MODE) {
       // Try to resume from localStorage

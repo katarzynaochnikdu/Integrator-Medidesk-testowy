@@ -349,8 +349,15 @@ async def _do_facebook_callback(request: Request):
 
 
 @router.get("/session/{session_id}")
-async def get_session(session_id: str):
-    """Get stored session data (user info, pages) — for setup wizard."""
+async def get_session(session_id: str, request: Request):
+    """Get stored session data (user info, pages) — for setup wizard. Requires matching cookie."""
+    # Verify that the requester owns this session (cookie must match)
+    cookie_session = get_session_from_cookie(request)
+    cookie_raw = request.cookies.get(COOKIE_NAME)
+    cookie_sid = _verify(cookie_raw) if cookie_raw else None
+    if cookie_sid != session_id and (not cookie_session or cookie_session.get("role") != "admin"):
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    
     session = _get_valid_session(session_id)
     if not session:
         return JSONResponse(status_code=404, content={"error": "Session not found or expired"})
@@ -402,8 +409,15 @@ async def admin_login(request: Request):
         return JSONResponse(status_code=400, content={"error": "Invalid JSON"})
 
     password = body.get("password", "")
-    if password != settings.admin_password:
-        return JSONResponse(status_code=401, content={"error": "Nieprawidłowe hasło"})
+    stored = settings.admin_password
+    # Support both bcrypt hash ($2b$...) and legacy plaintext passwords
+    if stored.startswith("$2b$"):
+        import bcrypt
+        if not bcrypt.checkpw(password.encode(), stored.encode()):
+            return JSONResponse(status_code=401, content={"error": "Nieprawidłowe hasło"})
+    else:
+        if not hmac.compare_digest(password.encode(), stored.encode()):
+            return JSONResponse(status_code=401, content={"error": "Nieprawidłowe hasło"})
 
     session_data = {
         "user": {"name": "Administrator", "id": "admin"},

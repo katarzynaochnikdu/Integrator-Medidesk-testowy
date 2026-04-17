@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 def _verify_signature(payload: bytes, signature_header: str | None) -> bool:
     """Verify X-Hub-Signature-256 from Facebook using app_secret."""
     if not settings.fb_app_secret:
-        logger.warning("fb_app_secret not set — skipping webhook signature check")
-        return True  # allow in dev
+        logger.critical("fb_app_secret NOT SET — rejecting webhook (fail-closed)")
+        return False  # fail-closed: never allow unsigned webhooks
     if not signature_header:
         return False
     if not signature_header.startswith("sha256="):
