@@ -26,7 +26,12 @@ def _get_fernet():
     if not settings.encryption_key:
         return None
     from cryptography.fernet import Fernet
-    _fernet = Fernet(settings.encryption_key.encode())
+    try:
+        _fernet = Fernet(settings.encryption_key.encode())
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Invalid encryption_key format: {e}")
+        return None
     return _fernet
 
 
