@@ -118,8 +118,6 @@ def _init_tables(conn: sqlite3.Connection) -> None:
             ON integrations(fb_page_id);
         CREATE INDEX IF NOT EXISTS idx_integrations_fb_form
             ON integrations(fb_page_id, fb_form_id);
-        CREATE INDEX IF NOT EXISTS idx_integrations_facility
-            ON integrations(facility_id);
         CREATE INDEX IF NOT EXISTS idx_facilities_fb_user
             ON facilities(fb_user_id);
     """)
@@ -128,6 +126,13 @@ def _init_tables(conn: sqlite3.Connection) -> None:
     _safe_add_column(conn, "integrations", "facility_id", "TEXT DEFAULT ''")
     _safe_add_column(conn, "sessions", "facility_id", "TEXT DEFAULT ''")
     _safe_add_column(conn, "sessions", "facility_name", "TEXT DEFAULT ''")
+
+    # Create indexes on migrated columns (safe — column now exists)
+    try:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_integrations_facility ON integrations(facility_id)")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
 
 
 def migrate_from_json() -> None:
