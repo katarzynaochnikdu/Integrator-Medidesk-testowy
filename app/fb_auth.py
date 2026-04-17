@@ -348,8 +348,18 @@ async def facebook_login(request: Request):
         # Any authenticated role with a usable session skips OAuth within 3h sliding TTL.
         # "unregistered" intentionally NOT in this list — those users must re-auth to get approved.
         if session and session.get("role") in ("user", "admin", "owner", "viewer"):
-            audit_log("login_skip_oauth", session_id="", fb_user_id=session.get("fb_user_id", ""), request=request)
-            return RedirectResponse(redirect_to)
+            # Recover session_id from signed cookie so the setup wizard JS (which can't read
+            # HttpOnly cookies) can hydrate client state. Mirrors the ?fb_session= pattern used
+            # by the OAuth callback. The wizard immediately strips this param from the URL via
+            # history.replaceState, so it does not linger in history/referrers beyond page load.
+            cookie = request.cookies.get(COOKIE_NAME)
+            sid = _verify(cookie) if cookie else ""
+            audit_log("login_skip_oauth", session_id=sid or "", fb_user_id=session.get("fb_user_id", ""), request=request)
+            target = redirect_to
+            if sid and redirect_to.startswith("/setup"):
+                sep = "&" if "?" in redirect_to else "?"
+                target = f"{redirect_to}{sep}fb_session={sid}"
+            return RedirectResponse(target)
 
     url = get_login_url(state=redirect_to)
     return RedirectResponse(url)
