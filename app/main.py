@@ -91,9 +91,11 @@ async def startup_db():
 
 
 @app.get("/")
-async def root():
+async def root(request: Request):
     """Redirect to the facility login page."""
-    return RedirectResponse(url="/login")
+    qs = request.scope.get("query_string", b"").decode("utf-8")
+    url = f"/login?{qs}" if qs else "/login"
+    return RedirectResponse(url=url)
 
 
 @app.get("/login")
