@@ -74,6 +74,13 @@ async def startup_db():
 
 @app.get("/")
 async def root():
+    """Landing page — login via Facebook, then navigate to setup or dashboard."""
+    html_path = Path(__file__).parent / "landing.html"
+    return HTMLResponse(html_path.read_text(encoding="utf-8"))
+
+
+@app.get("/api/info")
+async def api_info():
     return {
         "service": "Medidesk Integrator",
         "version": "2.0.0",

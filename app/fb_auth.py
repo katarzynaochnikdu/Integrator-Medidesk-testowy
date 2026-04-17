@@ -243,6 +243,8 @@ async def facebook_callback(request: Request):
     # Determine redirect target
     if fb_state.startswith("/setup"):
         redirect_url = f"/setup?fb_session={session_id}"
+    elif fb_state == "/" or fb_state == "":
+        redirect_url = f"/?fb_session={session_id}"
     else:
         redirect_url = "/dashboard"
 
