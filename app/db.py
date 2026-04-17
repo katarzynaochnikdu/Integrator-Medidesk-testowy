@@ -114,8 +114,8 @@ def _init_tables(conn: sqlite3.Connection) -> None:
             ON session_audit(ts);
         CREATE INDEX IF NOT EXISTS idx_session_audit_fb_user
             ON session_audit(fb_user_id);
-        CREATE INDEX IF NOT EXISTS idx_sessions_fb_user
-            ON sessions(fb_user_id);
+        -- NOTE: idx_sessions_fb_user created below, AFTER _safe_add_column adds the column
+        -- on pre-existing production DBs.
 
         CREATE TABLE IF NOT EXISTS facilities (
             id TEXT PRIMARY KEY,
@@ -145,6 +145,37 @@ def _init_tables(conn: sqlite3.Connection) -> None:
             fb_user_name TEXT DEFAULT '',
             attempted_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS users (
+            fb_user_id TEXT PRIMARY KEY,
+            fb_user_name TEXT DEFAULT '',
+            email TEXT DEFAULT '',
+            facility_id TEXT DEFAULT '',
+            role TEXT NOT NULL DEFAULT 'viewer',
+            label TEXT DEFAULT '',
+            first_seen_at TEXT NOT NULL,
+            last_seen_at TEXT NOT NULL,
+            active INTEGER DEFAULT 1
+        );
+        CREATE INDEX IF NOT EXISTS idx_users_facility ON users(facility_id);
+
+        CREATE TABLE IF NOT EXISTS integrations_audit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts REAL NOT NULL,
+            action TEXT NOT NULL,
+            integration_id TEXT DEFAULT '',
+            facility_id TEXT DEFAULT '',
+            fb_user_id TEXT DEFAULT '',
+            fb_user_name TEXT DEFAULT '',
+            before TEXT DEFAULT '',
+            after TEXT DEFAULT '',
+            ip TEXT DEFAULT '',
+            user_agent TEXT DEFAULT ''
+        );
+        CREATE INDEX IF NOT EXISTS idx_int_audit_ts ON integrations_audit(ts);
+        CREATE INDEX IF NOT EXISTS idx_int_audit_facility ON integrations_audit(facility_id);
+        CREATE INDEX IF NOT EXISTS idx_int_audit_user ON integrations_audit(fb_user_id);
+        CREATE INDEX IF NOT EXISTS idx_int_audit_integration ON integrations_audit(integration_id);
     """)
 
     # Migration: add columns to existing tables if missing
@@ -157,6 +188,7 @@ def _init_tables(conn: sqlite3.Connection) -> None:
     # Create indexes on migrated columns (safe — column now exists)
     try:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_integrations_facility ON integrations(facility_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_fb_user ON sessions(fb_user_id)")
         conn.commit()
     except sqlite3.OperationalError:
         pass
@@ -170,6 +202,24 @@ def _init_tables(conn: sqlite3.Connection) -> None:
             conn.commit()
     except Exception:
         pass
+
+    # Migration: backfill users from facilities (owner of each facility)
+    try:
+        from datetime import datetime, timezone
+        now_iso = datetime.now(timezone.utc).isoformat()
+        rows = conn.execute("SELECT id, fb_user_id, fb_user_name, created_at FROM facilities").fetchall()
+        for r in rows:
+            if not r["fb_user_id"]:
+                continue
+            conn.execute(
+                """INSERT OR IGNORE INTO users
+                   (fb_user_id, fb_user_name, facility_id, role, first_seen_at, last_seen_at, active)
+                   VALUES (?, ?, ?, 'owner', ?, ?, 1)""",
+                (r["fb_user_id"], r["fb_user_name"] or "", r["id"], r["created_at"] or now_iso, r["created_at"] or now_iso),
+            )
+        conn.commit()
+    except Exception:
+        logger.warning("backfill users from facilities failed", exc_info=True)
 
 
 def migrate_from_json() -> None:
