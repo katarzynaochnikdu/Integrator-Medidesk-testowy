@@ -568,6 +568,14 @@
           </div>
         </div>
 
+        <div style="margin-bottom:1rem;padding:0.8rem 1rem;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.25);border-radius:10px;">
+          <label for="integration-name-input" style="display:block;font-size:0.78rem;color:#93c5fd;font-weight:600;margin-bottom:0.4rem;">Nazwa integracji</label>
+          <input type="text" id="integration-name-input"
+                 placeholder="np. Warszawa — formularz wakacje (nazwa pojawi się na liście)"
+                 style="width:100%;box-sizing:border-box;padding:0.55rem 0.8rem;background:#0a0a0f;border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#e4e4e7;font-size:0.88rem;" />
+          <div style="margin-top:0.3rem;font-size:0.7rem;color:#71717a;">Opcjonalne — jeśli puste, użyjemy domyślnej „Formularz FB → Formularz Medidesk".</div>
+        </div>
+
         <div class="mapping-header">
           <h2>Mapowanie pól</h2>
           <div class="mapping-info" id="mapping-info">
@@ -621,6 +629,10 @@
       mdFormName: null,
       mdFields: [],
       mappings: [],
+      integrationName: '',
+      // Set of `${fb_page_id}:${fb_form_id}` for forms already connected in an integration
+      // (so we can mark them visually on the forms list in step 1).
+      existingFormKeys: new Set(),
     };
 
     // ─── Demo mode detection ────────────────────────────
@@ -754,11 +766,34 @@
 
         showLoggedInUI();
         showToast('Zalogowano jako ' + state.user.name, 'success');
+
+        // Fire-and-forget: load existing integrations to mark already-connected forms.
+        loadExistingIntegrations();
       } catch (e) {
         // Session expired — clear saved state
         localStorage.removeItem('md_fb_session');
         state.sessionId = null;
         showToast('Sesja wygasła — zaloguj się ponownie', 'error');
+      }
+    }
+
+    // Fetch current-facility integrations once and store a Set of "pageId:formId" so that
+    // the forms table (step 1) can show a "Podpięty" badge and dim rows that already have
+    // an integration. Users can still click them (they might want a second integration on
+    // the same form with different mapping) — this is only a visual warning.
+    async function loadExistingIntegrations() {
+      if (DEMO_MODE) return;
+      try {
+        const resp = await fetch('/api/integrations', {
+          headers: { 'X-Session-Id': state.sessionId || '' },
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const list = data.integrations || [];
+        state.existingFormKeys = new Set(list.map(i => `${i.fb_page_id}:${i.fb_form_id}`));
+      } catch (e) {
+        // Non-fatal — badge simply won't appear.
+        console.warn('Could not load existing integrations:', e);
       }
     }
 
@@ -920,9 +955,16 @@
                 dateStr = d.toLocaleDateString('pl-PL', { year: 'numeric', month: '2-digit', day: '2-digit' });
               }
 
+              // Mark forms already connected in an existing integration for this facility.
+              const alreadyConnected = state.existingFormKeys &&
+                state.existingFormKeys.has(`${state.selectedPage.page_id}:${f.form_id}`);
+              const connectedBadge = alreadyConnected
+                ? '<span title="Ten formularz ma już integrację — kolejna jest możliwa, ale rozważ edycję istniejącej." style="display:inline-block;margin-left:0.4rem;font-size:0.62rem;font-weight:700;padding:0.1rem 0.4rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);border-radius:4px;color:#93c5fd;">✓ Podpięty</span>'
+                : '';
+              if (alreadyConnected) tr.style.opacity = '0.55';
               tr.innerHTML = `
                 <td><div class="radio-dot" style="width:14px;height:14px;"></div></td>
-                <td class="form-name">${f.name || '—'}</td>
+                <td class="form-name">${f.name || '—'}${connectedBadge}</td>
                 <td>${f.leads_count || 0}</td>
                 <td>${(f.questions||[]).length}</td>
                 <td style="color:#71717a;">${dateStr || '—'}</td>
@@ -1053,6 +1095,15 @@
       document.getElementById('map-fb-sub').textContent = (state.selectedForm.questions || []).length + ' pól';
       document.getElementById('map-md-name').textContent = state.mdFormName;
       document.getElementById('map-md-sub').textContent = 'ID: ' + state.mdFormId.substring(0, 13) + '…';
+
+      // Integration name — autofill with sensible default but allow override.
+      const nameInput = document.getElementById('integration-name-input');
+      if (nameInput) {
+        const defaultName = `${state.selectedForm.name || 'Formularz FB'} → ${state.mdFormName || 'Medidesk'}`;
+        if (!state.integrationName) state.integrationName = defaultName;
+        nameInput.value = state.integrationName;
+        nameInput.oninput = () => { state.integrationName = nameInput.value; };
+      }
 
       // Call AI mapping suggest
       try {
@@ -1463,6 +1514,7 @@
               medidesk_form_name: state.mdFormName,
               medidesk_fields: state.mdFields,
               field_mappings: state.mappings,
+              name: (state.integrationName || '').trim(),
             }),
           });
           const createData = await createResp.json();

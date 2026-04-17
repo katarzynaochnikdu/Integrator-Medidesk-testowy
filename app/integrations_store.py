@@ -88,6 +88,7 @@ class Integration:
     created_at: str = ""
     updated_at: str = ""
     facility_id: str = ""
+    name: str = ""  # User-provided label for this integration (display name in lists/dashboards)
 
 
 def _row_to_integration(row) -> Integration:
@@ -108,6 +109,7 @@ def _row_to_integration(row) -> Integration:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         facility_id=row["facility_id"] if "facility_id" in row.keys() else "",
+        name=row["name"] if "name" in row.keys() and row["name"] else "",
     )
 
 
@@ -123,10 +125,13 @@ def create_integration(
     medidesk_fields: list[dict[str, Any]],
     field_mappings: list[FieldMapping],
     facility_id: str = "",
+    name: str = "",
 ) -> Integration:
     """Create and save a new integration."""
     now = datetime.now(timezone.utc).isoformat()
     integration_id = str(uuid.uuid4())
+    # Default display name if user didn't supply one — easier to distinguish in lists
+    display_name = (name or "").strip() or f"{fb_form_name} → {medidesk_form_name}"
     integration = Integration(
         id=integration_id,
         fb_page_id=fb_page_id,
@@ -143,6 +148,7 @@ def create_integration(
         created_at=now,
         updated_at=now,
         facility_id=facility_id,
+        name=display_name,
     )
     conn = get_connection()
     conn.execute(
@@ -150,8 +156,8 @@ def create_integration(
            (id, fb_page_id, fb_page_name, fb_page_token,
             fb_form_id, fb_form_name, fb_form_questions,
             medidesk_form_id, medidesk_form_name, medidesk_fields,
-            field_mappings, active, created_at, updated_at, facility_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            field_mappings, active, created_at, updated_at, facility_id, name)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             integration_id, fb_page_id, fb_page_name,
             _encrypt_token(fb_page_token),
@@ -160,7 +166,7 @@ def create_integration(
             medidesk_form_id, medidesk_form_name,
             json.dumps(medidesk_fields, ensure_ascii=False),
             json.dumps([asdict(m) for m in field_mappings], ensure_ascii=False),
-            0, now, now, facility_id,
+            0, now, now, facility_id, display_name,
         ),
     )
     conn.commit()
@@ -229,7 +235,7 @@ def update_integration(integration_id: str, **updates: Any) -> Integration | Non
     params: list[Any] = [now]
 
     simple_fields = {"fb_page_id", "fb_page_name", "fb_form_id", "fb_form_name",
-                     "medidesk_form_id", "medidesk_form_name", "facility_id"}
+                     "medidesk_form_id", "medidesk_form_name", "facility_id", "name"}
 
     for k, v in updates.items():
         if k == "active":

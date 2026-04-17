@@ -357,6 +357,7 @@ async def create_new_integration(request: Request, _session=Depends(require_writ
             medidesk_fields=body.get("medidesk_fields") or [],
             field_mappings=valid_mappings,
             facility_id=_session.get("facility_id", "") or "",
+            name=(body.get("name") or "").strip(),
         )
     except Exception as e:
         logger.exception("POST /api/integrations: create_integration failed")

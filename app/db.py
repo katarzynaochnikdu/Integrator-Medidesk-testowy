@@ -180,6 +180,7 @@ def _init_tables(conn: sqlite3.Connection) -> None:
 
     # Migration: add columns to existing tables if missing
     _safe_add_column(conn, "integrations", "facility_id", "TEXT DEFAULT ''")
+    _safe_add_column(conn, "integrations", "name", "TEXT DEFAULT ''")
     _safe_add_column(conn, "sessions", "facility_id", "TEXT DEFAULT ''")
     _safe_add_column(conn, "sessions", "facility_name", "TEXT DEFAULT ''")
     _safe_add_column(conn, "sessions", "last_activity_at", "REAL")
