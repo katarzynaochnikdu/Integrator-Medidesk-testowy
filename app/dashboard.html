@@ -633,6 +633,20 @@
 
     let USER_ROLE = null; // 'admin' or 'user'
     let USER_PAGES = []; // FB page IDs for placówka filtering
+    let SESSION_ID = localStorage.getItem('fb_session_id') || params.get('fb_session') || '';
+
+    // Save session from URL to localStorage
+    if (params.get('fb_session')) {
+      localStorage.setItem('fb_session_id', params.get('fb_session'));
+      SESSION_ID = params.get('fb_session');
+    }
+
+    // Wrapper for API calls that attaches session info
+    function apiFetch(url, opts = {}) {
+      opts.headers = opts.headers || {};
+      if (SESSION_ID) opts.headers['X-Session-Id'] = SESSION_ID;
+      return fetch(url, opts);
+    }
 
     if (DEMO) document.getElementById('demo-banner').style.display = 'block';
 
@@ -793,7 +807,7 @@
         stats = MOCK_STATS;
       } else {
         try {
-          const resp = await fetch('/api/stats');
+          const resp = await apiFetch('/api/stats');
           stats = await resp.json();
         } catch { stats = { total_leads: 0, sent: 0, failed: 0, success_rate: 0, active_integrations: 0, total_integrations: 0, recent_leads: [] }; }
       }
@@ -835,7 +849,7 @@
         }
       } else {
         try {
-          const resp = await fetch('/api/integrations');
+          const resp = await apiFetch('/api/integrations');
           const data = await resp.json();
           integrations = data.integrations || [];
           // Placówka: filter by their FB page IDs
@@ -845,7 +859,7 @@
           // Enrich with stats
           for (let i of integrations) {
             try {
-              const sr = await fetch(`/api/stats/${i.id}`);
+              const sr = await apiFetch(`/api/stats/${i.id}`);
               if (sr.ok) i.stats = await sr.json();
             } catch {}
           }
@@ -919,7 +933,7 @@
         return;
       }
       try {
-        const resp = await fetch(`/api/integrations/${id}/${action}`, { method: 'POST' });
+        const resp = await apiFetch(`/api/integrations/${id}/${action}`, { method: 'POST' });
         if (resp.ok) {
           showToast(action === 'activate' ? 'Integracja aktywowana' : 'Integracja dezaktywowana', 'success');
           await loadIntegrations();
@@ -935,7 +949,7 @@
       if (!confirm('Na pewno usunąć tę integrację?')) return;
       if (DEMO) { showToast('DEMO: Usunięto integrację', 'success'); return; }
       try {
-        const resp = await fetch(`/api/integrations/${id}`, { method: 'DELETE' });
+        const resp = await apiFetch(`/api/integrations/${id}`, { method: 'DELETE' });
         if (resp.ok) {
           showToast('Integracja usunięta', 'success');
           await loadIntegrations();
@@ -977,8 +991,8 @@
       } else {
         try {
           const [iResp, sResp] = await Promise.all([
-            fetch(`/api/integrations/${integrationId}`),
-            fetch(`/api/stats/${integrationId}`),
+            apiFetch(`/api/integrations/${integrationId}`),
+            apiFetch(`/api/stats/${integrationId}`),
           ]);
           integration = await iResp.json();
           const statsData = await sResp.json();
@@ -1084,7 +1098,7 @@
     async function retryLead(leadId) {
       if (DEMO) { showToast('DEMO: Ponowne przesłanie leada ' + leadId, 'success'); return; }
       try {
-        const resp = await fetch(`/api/leads/${leadId}/retry`, { method: 'POST' });
+        const resp = await apiFetch(`/api/leads/${leadId}/retry`, { method: 'POST' });
         const data = await resp.json();
         if (resp.ok) {
           showToast('✓ Lead przesłany pomyślnie!', 'success');
