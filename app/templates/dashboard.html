@@ -2795,14 +2795,16 @@
       const unusedVirtuals = VIRTUAL_FIELDS.filter(vf => !mappedFb.has(vf.key));
       if (unusedVirtuals.length > 0) {
         const addRow = document.createElement('div');
-        addRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.8rem;padding:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
+        addRow.style.cssText = 'display:grid;grid-template-columns:auto minmax(0,0.5fr) 32px minmax(0,1fr);align-items:center;gap:0.7rem;margin-top:0.8rem;';
         const opts = unusedVirtuals.map(vf => `<option value="${vf.key}">${vf.label}</option>`).join('');
         addRow.innerHTML = `
-          <select id="add-virtual-select" style="flex:1;background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-secondary);padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;">
-            <option value="">➕ Dodaj pole meta-danych...</option>
+          <span style="visibility:hidden;font-size:0.72rem;padding:0.3rem 0.6rem;white-space:nowrap;border:1px solid transparent;border-radius:6px;">📌 stała</span>
+          <select id="add-virtual-select" style="width:100%;background:var(--bg-surface);border:1px dashed var(--border-color-hover);color:var(--text-secondary);padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+            <option value="">🌐 Dodaj pole meta-danych...</option>
             ${opts}
           </select>
-          <button id="btn-add-virtual" class="btn btn-outline" style="font-size:0.75rem;padding:0.4rem 0.8rem;" disabled>Dodaj</button>
+          <span></span>
+          <button id="btn-add-virtual" class="btn btn-outline" style="font-size:0.75rem;padding:0.4rem 0.8rem;width:100%;" disabled>Dodaj</button>
         `;
         container.appendChild(addRow);
         
@@ -2826,10 +2828,12 @@
 
       // "Add constant value" row
       const constRow = document.createElement('div');
-      constRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
+      constRow.style.cssText = 'display:grid;grid-template-columns:auto minmax(0,0.5fr) 32px minmax(0,1fr);align-items:center;gap:0.7rem;margin-top:0.5rem;';
       constRow.innerHTML = `
-        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="flex:1;background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-primary);padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;" />
-        <button id="btn-add-const" class="btn btn-outline" style="font-size:0.75rem;padding:0.4rem 0.8rem;" disabled>Dodaj</button>
+        <span style="visibility:hidden;font-size:0.72rem;padding:0.3rem 0.6rem;white-space:nowrap;border:1px solid transparent;border-radius:6px;">📌 stała</span>
+        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="width:100%;background:var(--bg-surface);border:1px dashed var(--border-color-hover);color:var(--text-primary);padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;" />
+        <span></span>
+        <button id="btn-add-const" class="btn btn-outline" style="font-size:0.75rem;padding:0.4rem 0.8rem;width:100%;" disabled>Dodaj</button>
       `;
       container.appendChild(constRow);
       
