@@ -1996,8 +1996,9 @@
         if (VIRT_LABELS[key]) return VIRT_LABELS[key];
         const q = getQuestion(key);
         if (q && q.is_consent) {
-          const icon = q.consent_kind === 'text' ? '📝' : '✅';
-          return `${icon} ${q.label || key}` + (q.consent_kind === 'text' ? ' (treść)' : '');
+          return q.consent_kind === 'text' 
+            ? `${q.label || key}`
+            : `☑ ${q.label || key}`;
         }
         return key;
       };
