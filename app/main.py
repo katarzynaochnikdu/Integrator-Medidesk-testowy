@@ -137,7 +137,12 @@ def render_template(request: Request, name: str, **kwargs):
         "app_icon_path": settings.app_icon_path,
     }
     context.update(kwargs)
-    return templates.TemplateResponse(name, context)
+    # Starlette >=0.28 uses TemplateResponse(request, name, context)
+    # Starlette <0.28 uses TemplateResponse(name, context)
+    try:
+        return templates.TemplateResponse(request=request, name=name, context=context)
+    except TypeError:
+        return templates.TemplateResponse(name, context)
 
 if settings.cors_origins_list:
     app.add_middleware(
