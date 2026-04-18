@@ -1463,7 +1463,7 @@
       const row = document.getElementById(`missing-row-${fieldId}`);
       if (!row) return;
       const fbSelect = row.querySelector('.fb-quickmap-select');
-      const meta = row.querySelector('.row-meta');
+      const meta = row.querySelector('.row-meta-left');
       if (!fbSelect || !meta) return;
 
       const suggest = guessConstantDefault(fieldId);
@@ -1496,18 +1496,41 @@
       const origFbHtml = fbSelect.outerHTML;
       const origMetaHtml = meta.innerHTML;
 
-      // Swap left column: FB-select → const input.
+      // SWAP:
+      //   - center column (FB-select) → const value input (same height/width)
+      //   - left-meta column (📌 stała btn) → the FB-select itself, so user can still
+      //     switch back to FB mapping without leaving the row. Plus Apply/Cancel buttons.
       const wrapper = document.createElement('div');
       wrapper.className = 'const-input-wrapper';
-      wrapper.style.cssText = 'flex:1;width:100%;display:flex;';
+      wrapper.style.cssText = 'width:100%;display:flex;';
       wrapper.innerHTML = inputHtml;
       fbSelect.replaceWith(wrapper);
 
-      // Swap meta column: stała button → ✓ Dodaj / ✕
-      meta.innerHTML = `
-        <button class="btn btn-sm btn-primary btn-apply-const" title="Zapisz stałą wartość" style="padding:4px 10px;font-size:0.72rem;">✓ Dodaj</button>
-        <button class="btn btn-sm btn-outline btn-cancel-const" title="Anuluj" style="padding:4px 8px;font-size:0.72rem;margin-left:4px;">✕</button>
-      `;
+      // Rebuild left meta: shrunken FB-select (so user can still pick a FB field)
+      // plus compact Apply/Cancel icon buttons.
+      meta.innerHTML = '';
+      const relocatedSelect = document.createElement('select');
+      relocatedSelect.className = 'fb-quickmap-select';
+      relocatedSelect.dataset.md = fieldId;
+      relocatedSelect.style.cssText = 'width:100%;padding:0 0.4rem;height:32px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:#6B7280;font-size:0.72rem;cursor:pointer;';
+      relocatedSelect.innerHTML = fbOpts;
+      meta.appendChild(relocatedSelect);
+      relocatedSelect.addEventListener('change', function() {
+        const fb = this.value;
+        if (!fb) return;
+        // User chose a FB field instead of constant — apply it, which re-renders row.
+        quickMapField(fieldId, fb);
+      });
+
+      // Apply/Cancel buttons go into the right-side meta column for clean separation.
+      const rightMeta = row.querySelector('.row-meta');
+      const origRightMetaHtml = rightMeta ? rightMeta.innerHTML : '';
+      if (rightMeta) {
+        rightMeta.innerHTML = `
+          <button class="btn-apply-const" title="Zapisz stałą" style="background:#8b5cf6;border:1px solid #8b5cf6;color:#fff;font-size:0.75rem;padding:4px 8px;border-radius:6px;cursor:pointer;">✓</button>
+          <button class="btn-cancel-const" title="Anuluj" style="background:none;border:1px solid #D1D5DB;color:#6B7280;font-size:0.75rem;padding:4px 8px;border-radius:6px;cursor:pointer;margin-left:4px;">✕</button>
+        `;
+      }
 
       const input = wrapper.querySelector('.const-input');
       const readValue = () => {
@@ -1528,6 +1551,7 @@
       const restore = () => {
         wrapper.outerHTML = origFbHtml;
         meta.innerHTML = origMetaHtml;
+        if (rightMeta) rightMeta.innerHTML = origRightMetaHtml;
         // Re-bind handlers on the freshly restored nodes.
         const newSelect = row.querySelector('.fb-quickmap-select');
         if (newSelect) {
@@ -1542,8 +1566,10 @@
         if (newBtn) newBtn.addEventListener('click', () => openConstantEditor(fieldId));
       };
 
-      meta.querySelector('.btn-apply-const').addEventListener('click', () => applyConstantToField(fieldId, readValue()));
-      meta.querySelector('.btn-cancel-const').addEventListener('click', restore);
+      if (rightMeta) {
+        rightMeta.querySelector('.btn-apply-const').addEventListener('click', () => applyConstantToField(fieldId, readValue()));
+        rightMeta.querySelector('.btn-cancel-const').addEventListener('click', restore);
+      }
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') applyConstantToField(fieldId, readValue());
         if (e.key === 'Escape') restore();
@@ -1600,12 +1626,13 @@
         // Attachment-type MD fields can only be populated by a real FB upload — a constant
         // value makes no sense (we can't fabricate a file), so hide the "stała" shortcut.
         const isAttachment = /^attach/i.test(f.type || '');
-        const metaHtml = isAttachment
+        const leftMetaHtml = isAttachment
           ? `<span style="font-size:0.68rem;color:#6B7280;white-space:nowrap;" title="Załączniki muszą przyjść z FB — nie da się ustawić stałej wartości">tylko z FB</span>`
           : `<button class="btn-open-const" data-md="${f.fieldId}" title="Ustaw stałą wartość"
                      style="background:none;border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;font-size:0.7rem;padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;">📌 stała</button>`;
         return `
         <div id="missing-row-${f.fieldId}" class="mapping-row" style="border-bottom:1px solid #E5E7EB;">
+          <div class="row-meta-left">${leftMetaHtml}</div>
           <select class="fb-quickmap-select" data-md="${f.fieldId}"
                   style="width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:#6B7280;font-size:0.82rem;line-height:38px;cursor:pointer;">
             ${fbOpts}
@@ -1615,7 +1642,7 @@
             ${f.fieldId}
             <span style="margin-left:0.5rem;padding:2px 7px;border-radius:10px;background:${palette.tagBg};color:${palette.chipText};font-size:0.66rem;font-weight:500;">${palette.tagText}</span>
           </div>
-          <div class="row-meta">${metaHtml}</div>
+          <div class="row-meta"></div>
           <div class="const-editor" style="grid-column:1 / -1;display:none;"></div>
         </div>`;
       };
