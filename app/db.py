@@ -159,6 +159,18 @@ def _init_tables(conn: sqlite3.Connection) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_users_facility ON users(facility_id);
 
+        CREATE TABLE IF NOT EXISTS user_facilities (
+            fb_user_id TEXT NOT NULL,
+            facility_id TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'user',
+            is_primary INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1,
+            assigned_at TEXT NOT NULL,
+            PRIMARY KEY (fb_user_id, facility_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_user_facilities_user ON user_facilities(fb_user_id);
+        CREATE INDEX IF NOT EXISTS idx_user_facilities_facility ON user_facilities(facility_id);
+
         CREATE TABLE IF NOT EXISTS facility_invites (
             token TEXT PRIMARY KEY,
             facility_id TEXT NOT NULL,
@@ -216,6 +228,26 @@ def _init_tables(conn: sqlite3.Connection) -> None:
             conn.commit()
     except Exception:
         pass
+
+    # Migration: backfill user_facilities from users table (one-to-one → one-to-many bridge)
+    try:
+        from datetime import datetime, timezone
+        now_iso = datetime.now(timezone.utc).isoformat()
+        rows = conn.execute(
+            "SELECT fb_user_id, facility_id, role, active, first_seen_at FROM users "
+            "WHERE facility_id IS NOT NULL AND facility_id != ''"
+        ).fetchall()
+        for r in rows:
+            conn.execute(
+                """INSERT OR IGNORE INTO user_facilities
+                   (fb_user_id, facility_id, role, is_primary, active, assigned_at)
+                   VALUES (?, ?, ?, 1, ?, ?)""",
+                (r["fb_user_id"], r["facility_id"], r["role"] or "user",
+                 1 if r["active"] else 0, r["first_seen_at"] or now_iso),
+            )
+        conn.commit()
+    except Exception:
+        logger.warning("backfill user_facilities failed", exc_info=True)
 
     # Migration: backfill users from facilities (owner of each facility)
     try:

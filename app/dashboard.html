@@ -561,6 +561,11 @@
         <div class="sub" id="sidebar-sub">Panel</div>
       </div>
     </div>
+    <div id="facility-switcher" style="display:none;padding:0 14px 10px;">
+      <label style="display:block;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.04em;color:#9CA3AF;margin-bottom:4px;">Placówka</label>
+      <select id="facility-switcher-select" onchange="switchFacility(this.value)"
+              style="width:100%;padding:7px 8px;border-radius:6px;border:1px solid #E5E7EB;background:#FFFFFF;font-size:0.82rem;color:#111827;cursor:pointer;"></select>
+    </div>
     <nav class="sidebar-nav">
       <div class="nav-item active" data-section="overview" onclick="showSection('overview')">
         <span class="icon">📊</span> <span>Przegląd</span>
@@ -668,12 +673,17 @@
           <span style="margin:0 6px;">›</span>
           <span id="detail-breadcrumb-name"></span>
         </nav>
-        <div class="room-header">
-          <button class="back" onclick="showSection('integrations')">← Wróć</button>
-          <div>
-            <h3 id="room-title" style="font-size:1rem;font-weight:700;"></h3>
-            <div id="room-subtitle" style="font-size:0.75rem;color:#6B7280;"></div>
+        <div class="room-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button class="back" onclick="showSection('integrations')">← Wróć</button>
+            <div>
+              <h3 id="room-title" style="font-size:1rem;font-weight:700;"></h3>
+              <div id="room-subtitle" style="font-size:0.75rem;color:#6B7280;"></div>
+            </div>
           </div>
+          <button class="btn btn-sm btn-primary" onclick="openTestFlowModal()" title="Przetestuj end-to-end: wyślij testowy lead z FB i sprawdź czy dotarł do Medidesk">
+            🧪 Test połączenia
+          </button>
         </div>
 
         <div class="kpi-grid" id="room-kpis"></div>
@@ -763,6 +773,52 @@
   </div><!-- /.app-layout -->
 
   <!-- Edit Mappings Modal -->
+  <!-- End-to-end test modal -->
+  <div id="test-flow-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div class="card" style="width:100%; max-width:680px; max-height:92vh; overflow-y:auto; background:#FFFFFF; border:1px solid #E5E7EB; padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="font-size:1.1rem; font-weight:700;">🧪 Test połączenia end-to-end</h2>
+        <button onclick="closeTestFlowModal()" style="background:transparent; border:none; color:#71717a; cursor:pointer; font-size:1.2rem;">✕</button>
+      </div>
+      <div style="font-size:0.82rem; color:#6B7280;">Sprawdź, czy lead z formularza Facebook dociera do Medidesk. Każdy krok otwiera się w nowej karcie.</div>
+
+      <!-- Step 1 -->
+      <div style="display:flex; gap:12px; padding:14px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px;">
+        <div style="flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#1877F2; color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">1</div>
+        <div style="flex:1;">
+          <div style="font-weight:600; color:#111827; margin-bottom:4px;">Wyślij testowy lead z Facebooka</div>
+          <div style="font-size:0.78rem; color:#6B7280; margin-bottom:8px;">W narzędziu FB wybierz stronę <strong id="test-flow-page"></strong> i formularz <strong id="test-flow-form"></strong>, wypełnij pola i kliknij "Track test lead".</div>
+          <a id="test-flow-fb-link" href="https://developers.facebook.com/tools/lead-ads-testing/" target="_blank" rel="noopener" class="btn btn-sm btn-primary" style="background:#1877F2; border-color:#1877F2;">Otwórz Lead Ads Testing Tool ↗</a>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div style="display:flex; gap:12px; padding:14px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px;">
+        <div style="flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#10B981; color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">2</div>
+        <div style="flex:1;">
+          <div style="font-weight:600; color:#111827; margin-bottom:4px;">Sprawdź, czy lead doszedł do Medidesk</div>
+          <div style="font-size:0.78rem; color:#6B7280; margin-bottom:8px;">Otwórz listę leadów w trakcie — testowy zgłoszeniowiec powinien pojawić się w ciągu kilkunastu sekund.</div>
+          <a href="https://app.medidesk.io/registration/leads/in-progress/" target="_blank" rel="noopener" class="btn btn-sm btn-success">Otwórz Medidesk — Leady w trakcie ↗</a>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div style="display:flex; gap:12px; padding:14px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px;">
+        <div style="flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#6366F1; color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">3</div>
+        <div style="flex:1;">
+          <div style="font-weight:600; color:#111827; margin-bottom:4px;">Sprawdź historię tutaj</div>
+          <div style="font-size:0.78rem; color:#6B7280; margin-bottom:8px;">Testowy lead pojawi się poniżej w "Historia leadów". Status <span style="background:#DCFCE7; color:#166534; padding:1px 6px; border-radius:4px; font-size:0.7rem;">sent</span> = dotarł, <span style="background:#FEE2E2; color:#991B1B; padding:1px 6px; border-radius:4px; font-size:0.7rem;">failed</span> = błąd.</div>
+          <button class="btn btn-sm btn-outline" onclick="refreshTestFlowStatus()">🔄 Odśwież historię</button>
+          <span id="test-flow-status" style="margin-left:8px; font-size:0.78rem; color:#6B7280;"></span>
+        </div>
+      </div>
+
+      <div style="font-size:0.72rem; color:#9CA3AF; border-top:1px solid #F3F4F6; padding-top:10px;">
+        💡 Wskazówka: w narzędziu FB po wysłaniu testowego leada użyj "Delete Lead", żeby nie zaśmiecać historii. Lead nadal trafi do Medidesk i zostanie zarejestrowany tutaj.
+      </div>
+    </div>
+  </div>
+
   <div id="edit-mappings-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
     <div class="card" style="width:100%; max-width:700px; max-height:90vh; overflow-y:auto; background:#FFFFFF; border:1px solid #E5E7EB; padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -952,6 +1008,7 @@
             USER_ROLE = role;
             USER_PAGES = (data.pages || []).map(p => p.page_id);
             setupRoleUI(USER_ROLE);
+            renderFacilitySwitcher(data.memberships || [], data.facility_id || '');
             
             // Show facility name in sidebar for non-admin
             if (role === 'user' && data.facility_name) {
@@ -972,6 +1029,41 @@
         await loadStats();
         await loadIntegrations();
         startAutoRefresh();
+      }
+    }
+
+    function renderFacilitySwitcher(memberships, currentFacilityId) {
+      const wrap = document.getElementById('facility-switcher');
+      const sel = document.getElementById('facility-switcher-select');
+      if (!wrap || !sel) return;
+      if (!memberships || memberships.length < 2) {
+        wrap.style.display = 'none';
+        return;
+      }
+      sel.innerHTML = memberships.map(m => {
+        const sel = m.facility_id === currentFacilityId ? 'selected' : '';
+        const primary = m.is_primary ? ' ★' : '';
+        return `<option value="${m.facility_id}" ${sel}>${m.facility_name || m.facility_id}${primary}</option>`;
+      }).join('');
+      wrap.style.display = 'block';
+    }
+
+    async function switchFacility(facilityId) {
+      if (!facilityId) return;
+      try {
+        const resp = await apiFetch('/auth/facebook/session/facility', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ facility_id: facilityId }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          showToast(err.error || 'Nie udało się przełączyć placówki', 'error');
+          return;
+        }
+        location.reload();
+      } catch (e) {
+        showToast('Błąd przełączania placówki', 'error');
       }
     }
 
@@ -1504,6 +1596,41 @@
       } catch (e) { showToast('Błąd: ' + e.message, 'error'); }
     }
 
+    // ─── End-to-end test modal ───────────────────────────
+    let _currentRoomIntegration = null;
+
+    function openTestFlowModal() {
+      const i = _currentRoomIntegration;
+      if (!i) { showToast('Najpierw otwórz integrację', 'error'); return; }
+      document.getElementById('test-flow-page').textContent = i.fb_page_name || '—';
+      document.getElementById('test-flow-form').textContent = i.fb_form_name || '—';
+      // FB tool doesn't accept deep-link params for a specific form, but we can point
+      // the user to the correct page via the page_id query string (FB respects it).
+      const fbUrl = i.fb_page_id
+        ? `https://developers.facebook.com/tools/lead-ads-testing/?page_id=${encodeURIComponent(i.fb_page_id)}`
+        : 'https://developers.facebook.com/tools/lead-ads-testing/';
+      document.getElementById('test-flow-fb-link').href = fbUrl;
+      document.getElementById('test-flow-status').textContent = '';
+      document.getElementById('test-flow-modal').style.display = 'flex';
+    }
+
+    function closeTestFlowModal() {
+      document.getElementById('test-flow-modal').style.display = 'none';
+    }
+
+    async function refreshTestFlowStatus() {
+      const statusEl = document.getElementById('test-flow-status');
+      statusEl.textContent = 'Odświeżam…';
+      try {
+        if (currentRoomId) await openRoom(currentRoomId);
+        statusEl.textContent = '✓ Historia odświeżona — sprawdź listę niżej';
+        statusEl.style.color = '#166534';
+      } catch (e) {
+        statusEl.textContent = 'Błąd odświeżania';
+        statusEl.style.color = '#991B1B';
+      }
+    }
+
     // ─── Integration Room ────────────────────────────────
     async function openRoom(integrationId) {
       currentRoomId = integrationId;
@@ -1551,6 +1678,7 @@
 
       // Set titles
       const roomTitle = (integration.name && integration.name.trim()) || integration.fb_page_name || 'Integracja';
+      _currentRoomIntegration = integration;
       document.getElementById('room-title').textContent = roomTitle;
       document.getElementById('room-subtitle').textContent = `${integration.fb_page_name} · ${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
       const bcName = document.getElementById('detail-breadcrumb-name');
@@ -2170,6 +2298,7 @@
           return;
         }
         const data = await resp.json();
+        _allFacilities = data.facilities || [];
         const list = document.getElementById('facilities-list');
 
         if (data.facilities.length === 0 && !data.unassigned_count) {
@@ -2230,13 +2359,15 @@
         }
       } catch {}
 
-      // Also load pending registrations + users
+      // Also load pending registrations + users + facilities (needed for membership picker)
       loadPending();
       loadUsers();
+      loadFacilities();
     }
 
     // ─── Users (admin) ──────────────────────────────────
     let _allUsers = [];
+    let _allFacilities = [];
     async function loadUsers() {
       const list = document.getElementById('users-list');
       if (!list) return;
@@ -2296,7 +2427,7 @@
             <div style="font-size:0.7rem;color:#71717a;">${u.email || ''}</div>
             <div style="font-family:monospace;font-size:0.65rem;color:#9CA3AF;">${u.fb_user_id}</div>
           </td>
-          <td style="padding:0.7rem;color:#111827;">${u.facility_name || '<span style="color:#9CA3AF;font-style:italic;">—</span>'}</td>
+          <td style="padding:0.7rem;color:#111827;">${renderMembershipsCell(u)}</td>
           <td style="padding:0.7rem;">
             <select onchange="changeUserRole('${u.fb_user_id}', this.value)" style="background:#FFFFFF;border:1px solid #E5E7EB;color:#111827;padding:0.25rem 0.4rem;border-radius:5px;font-size:0.75rem;">${opts}</select>
           </td>
@@ -2315,6 +2446,72 @@
       });
       html += '</tbody></table>';
       list.innerHTML = html;
+    }
+
+    function renderMembershipsCell(u) {
+      const ms = u.memberships || [];
+      if (ms.length === 0) {
+        const legacy = u.facility_name
+          ? `<div style="font-size:0.75rem;">${u.facility_name}</div>`
+          : '<span style="color:#9CA3AF;font-style:italic;">—</span>';
+        return legacy + addMembershipBtn(u.fb_user_id);
+      }
+      const chips = ms.map(m => {
+        const star = m.is_primary ? '★ ' : '';
+        const primBtn = m.is_primary ? '' :
+          `<button title="Ustaw jako główną" onclick="setPrimaryMembership('${u.fb_user_id}','${m.facility_id}')" style="background:none;border:none;cursor:pointer;color:#6B7280;font-size:0.7rem;">☆</button>`;
+        const rmBtn = `<button title="Usuń przypisanie" onclick="removeMembership('${u.fb_user_id}','${m.facility_id}','${(m.facility_name||'').replace(/'/g,"\\'")}')" style="background:none;border:none;cursor:pointer;color:#B45309;font-size:0.7rem;">✕</button>`;
+        return `<div style="display:inline-flex;align-items:center;gap:4px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:999px;padding:2px 8px;margin:2px 4px 2px 0;font-size:0.72rem;">
+          <span style="color:#111827;">${star}${m.facility_name || m.facility_id}</span>
+          <span style="color:#6B7280;font-size:0.65rem;">${m.role}</span>
+          ${primBtn}${rmBtn}
+        </div>`;
+      }).join('');
+      return chips + addMembershipBtn(u.fb_user_id);
+    }
+
+    function addMembershipBtn(fbUserId) {
+      return `<button onclick="addMembership('${fbUserId}')" title="Dodaj placówkę" style="background:#EFF6FF;border:1px solid #DBEAFE;color:#1D4ED8;border-radius:999px;padding:2px 8px;font-size:0.72rem;cursor:pointer;margin:2px 0;">+ placówka</button>`;
+    }
+
+    async function addMembership(fbUserId) {
+      const facs = (_allFacilities || []);
+      if (facs.length === 0) { showToast('Brak placówek w systemie', 'error'); return; }
+      const list = facs.map((f, i) => `${i+1}. ${f.name} (${f.id})`).join('\n');
+      const pick = prompt('Wybierz numer placówki do dodania:\n\n' + list);
+      const idx = parseInt(pick, 10) - 1;
+      if (isNaN(idx) || idx < 0 || idx >= facs.length) return;
+      const role = prompt('Rola (user / viewer):', 'user');
+      if (!role) return;
+      try {
+        const resp = await apiFetch(`/api/admin/users/${fbUserId}/memberships`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ facility_id: facs[idx].id, role }),
+        });
+        if (!resp.ok) { const d = await resp.json().catch(()=>({})); throw new Error(d.error || 'Błąd'); }
+        showToast('Placówka dodana', 'success');
+        loadUsers();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function removeMembership(fbUserId, facilityId, facilityName) {
+      if (!confirm(`Odebrać dostęp do placówki "${facilityName}"?`)) return;
+      try {
+        const resp = await apiFetch(`/api/admin/users/${fbUserId}/memberships/${facilityId}`, { method: 'DELETE' });
+        if (!resp.ok) { const d = await resp.json().catch(()=>({})); throw new Error(d.error || 'Błąd'); }
+        showToast('Dostęp odebrany', 'success');
+        loadUsers();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function setPrimaryMembership(fbUserId, facilityId) {
+      try {
+        const resp = await apiFetch(`/api/admin/users/${fbUserId}/memberships/${facilityId}/primary`, { method: 'PUT' });
+        if (!resp.ok) { const d = await resp.json().catch(()=>({})); throw new Error(d.error || 'Błąd'); }
+        showToast('Ustawiono jako główną', 'success');
+        loadUsers();
+      } catch (e) { showToast(e.message, 'error'); }
     }
 
     async function changeUserRole(fbUserId, role) {

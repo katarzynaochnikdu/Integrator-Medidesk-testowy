@@ -599,27 +599,83 @@ async def global_stats(_session=Depends(require_auth)):
 @app.get("/api/admin/users")
 async def admin_list_users(_session=Depends(require_admin)):
     """List all users across facilities (admin only)."""
-    from app.users_store import list_users
+    from app.users_store import list_users, list_user_facilities
     users = list_users()
-    # Enrich with facility name
     facilities = {f.id: f.name for f in get_all_facilities()}
-    return {
-        "users": [
+    result = []
+    for u in users:
+        memberships = [
             {
-                "fb_user_id": u.fb_user_id,
-                "fb_user_name": u.fb_user_name,
-                "email": u.email,
-                "facility_id": u.facility_id,
-                "facility_name": facilities.get(u.facility_id, ""),
-                "role": u.role,
-                "label": u.label,
-                "first_seen_at": u.first_seen_at,
-                "last_seen_at": u.last_seen_at,
-                "active": u.active,
+                "facility_id": m.facility_id,
+                "facility_name": facilities.get(m.facility_id, ""),
+                "role": m.role,
+                "is_primary": m.is_primary,
             }
-            for u in users
+            for m in list_user_facilities(u.fb_user_id, only_active=True)
         ]
-    }
+        result.append({
+            "fb_user_id": u.fb_user_id,
+            "fb_user_name": u.fb_user_name,
+            "email": u.email,
+            "facility_id": u.facility_id,
+            "facility_name": facilities.get(u.facility_id, ""),
+            "role": u.role,
+            "label": u.label,
+            "first_seen_at": u.first_seen_at,
+            "last_seen_at": u.last_seen_at,
+            "active": u.active,
+            "memberships": memberships,
+        })
+    return {"users": result}
+
+
+@app.post("/api/admin/users/{fb_user_id}/memberships")
+async def admin_add_membership(fb_user_id: str, request: Request, _session=Depends(require_admin)):
+    """Add a facility membership for a user (allows multi-facility access)."""
+    from app.users_store import add_user_facility
+    body = await request.json()
+    facility_id = body.get("facility_id", "")
+    role = body.get("role", "user")
+    make_primary = bool(body.get("make_primary", False))
+    if not facility_id:
+        return JSONResponse(status_code=400, content={"error": "facility_id required"})
+    try:
+        add_user_facility(fb_user_id, facility_id, role=role, make_primary=make_primary)
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={"error": str(e)})
+    # Clear pending registration — user now has at least one active membership.
+    try:
+        from app.db import get_connection
+        conn = get_connection()
+        conn.execute("DELETE FROM pending_registrations WHERE fb_user_id = ?", (fb_user_id,))
+        conn.commit()
+    except Exception:
+        pass
+    _audit(request, _session, "user.add_membership",
+           after={"fb_user_id": fb_user_id, "facility_id": facility_id, "role": role, "primary": make_primary})
+    return {"status": "ok"}
+
+
+@app.delete("/api/admin/users/{fb_user_id}/memberships/{facility_id}")
+async def admin_remove_membership(fb_user_id: str, facility_id: str, request: Request, _session=Depends(require_admin)):
+    """Revoke a facility membership (soft — sets active=0)."""
+    from app.users_store import remove_user_facility
+    remove_user_facility(fb_user_id, facility_id)
+    _audit(request, _session, "user.remove_membership",
+           after={"fb_user_id": fb_user_id, "facility_id": facility_id})
+    return {"status": "ok"}
+
+
+@app.put("/api/admin/users/{fb_user_id}/memberships/{facility_id}/primary")
+async def admin_set_primary_membership(fb_user_id: str, facility_id: str, request: Request, _session=Depends(require_admin)):
+    """Mark a membership as the user's primary (default at login)."""
+    from app.users_store import set_primary_facility
+    ok = set_primary_facility(fb_user_id, facility_id)
+    if not ok:
+        return JSONResponse(status_code=404, content={"error": "Aktywne przypisanie nie istnieje"})
+    _audit(request, _session, "user.set_primary",
+           after={"fb_user_id": fb_user_id, "facility_id": facility_id})
+    return {"status": "ok"}
 
 
 @app.get("/api/admin/users/facility/{facility_id}")

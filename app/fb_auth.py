@@ -463,15 +463,17 @@ async def _do_facebook_callback(request: Request):
             fb_user_id=fb_user_id, fb_user_name=fb_user_name, email=fb_user_email,
         )
 
-    # Role derived from users table; "unregistered" if no facility assigned or user deactivated.
-    if user_record.active and user_record.facility_id:
-        role = user_record.role or "viewer"
-        if not facility_id:
-            facility_id = user_record.facility_id
-            # Refresh facility_name from assigned facility
-            from app.integrations_store import get_facility
-            fac = get_facility(user_record.facility_id)
-            facility_name = fac.name if fac else facility_name
+    # Role derived from user_facilities memberships (multi-facility capable).
+    # Pick primary if set, otherwise most-recently-assigned active membership.
+    from app.users_store import list_user_facilities
+    from app.integrations_store import get_facility
+    memberships = list_user_facilities(fb_user_id, only_active=True) if user_record.active else []
+    if memberships:
+        chosen = next((m for m in memberships if m.is_primary), memberships[0])
+        facility_id = chosen.facility_id
+        role = chosen.role or "user"
+        fac = get_facility(chosen.facility_id)
+        facility_name = fac.name if fac else facility_name
     else:
         role = "unregistered"
 
@@ -564,13 +566,71 @@ async def get_current_user_endpoint(request: Request):
                 facility_name = fac.name
         except Exception:
             pass
+    # Memberships list — enables the facility switcher in UI.
+    memberships: list[dict] = []
+    try:
+        from app.users_store import list_user_facilities
+        from app.integrations_store import get_facility
+        fb_uid = (session.get("user") or {}).get("id", "")
+        if fb_uid:
+            for m in list_user_facilities(fb_uid, only_active=True):
+                f = get_facility(m.facility_id)
+                memberships.append({
+                    "facility_id": m.facility_id,
+                    "facility_name": f.name if f else "",
+                    "role": m.role,
+                    "is_primary": m.is_primary,
+                })
+    except Exception:
+        pass
+
     return {
         "user": session["user"],
         "pages": session.get("pages", []),
         "role": session.get("role", "user"),
         "facility_id": facility_id,
         "facility_name": facility_name,
+        "memberships": memberships,
     }
+
+
+@router.post("/session/facility")
+async def switch_facility(request: Request):
+    """Switch the active facility on the current session.
+
+    Validates the target facility is an active membership of the logged-in user.
+    """
+    from app.users_store import get_user_facility_role
+    from app.integrations_store import get_facility
+    session = get_session_from_cookie(request)
+    if not session:
+        return JSONResponse(status_code=401, content={"error": "Not logged in"})
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    target = (body or {}).get("facility_id", "")
+    if not target:
+        return JSONResponse(status_code=400, content={"error": "facility_id required"})
+    fb_uid = (session.get("user") or {}).get("id", "")
+    role = get_user_facility_role(fb_uid, target)
+    if not role:
+        return JSONResponse(status_code=403, content={"error": "Brak dostępu do tej placówki"})
+    fac = get_facility(target)
+    # Mutate server-side session record
+    from app.db import get_connection
+    cookie_raw = request.cookies.get(COOKIE_NAME)
+    sid = _verify(cookie_raw) if cookie_raw else None
+    if not sid:
+        return JSONResponse(status_code=401, content={"error": "Session invalid"})
+    conn = get_connection()
+    conn.execute(
+        "UPDATE sessions SET facility_id = ?, facility_name = ?, role = ? WHERE session_id = ?",
+        (target, fac.name if fac else "", role, sid),
+    )
+    conn.commit()
+    audit_log("facility_switch", session_id=sid, fb_user_id=fb_uid, request=request)
+    return {"status": "ok", "facility_id": target, "facility_name": fac.name if fac else "", "role": role}
 
 
 @router.post("/logout")

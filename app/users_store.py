@@ -19,6 +19,148 @@ ROLES = ("owner", "admin", "viewer")
 
 
 @dataclass
+class UserFacility:
+    fb_user_id: str
+    facility_id: str
+    role: str
+    is_primary: bool
+    active: bool
+    assigned_at: str
+
+
+def list_user_facilities(fb_user_id: str, only_active: bool = True) -> list[UserFacility]:
+    """All facility memberships for a user (joined with facility name via caller)."""
+    if not fb_user_id:
+        return []
+    conn = get_connection()
+    q = "SELECT * FROM user_facilities WHERE fb_user_id = ?"
+    params: list[Any] = [fb_user_id]
+    if only_active:
+        q += " AND active = 1"
+    q += " ORDER BY is_primary DESC, assigned_at ASC"
+    rows = conn.execute(q, params).fetchall()
+    return [
+        UserFacility(
+            fb_user_id=r["fb_user_id"],
+            facility_id=r["facility_id"],
+            role=r["role"] or "user",
+            is_primary=bool(r["is_primary"]),
+            active=bool(r["active"]),
+            assigned_at=r["assigned_at"] or "",
+        )
+        for r in rows
+    ]
+
+
+def list_facility_members(facility_id: str, only_active: bool = True) -> list[UserFacility]:
+    if not facility_id:
+        return []
+    conn = get_connection()
+    q = "SELECT * FROM user_facilities WHERE facility_id = ?"
+    params: list[Any] = [facility_id]
+    if only_active:
+        q += " AND active = 1"
+    rows = conn.execute(q, params).fetchall()
+    return [
+        UserFacility(
+            fb_user_id=r["fb_user_id"],
+            facility_id=r["facility_id"],
+            role=r["role"] or "user",
+            is_primary=bool(r["is_primary"]),
+            active=bool(r["active"]),
+            assigned_at=r["assigned_at"] or "",
+        )
+        for r in rows
+    ]
+
+
+def add_user_facility(fb_user_id: str, facility_id: str, role: str = "user", make_primary: bool = False) -> None:
+    """Add a facility membership. If first membership for user, auto-set primary.
+    If make_primary=True, unsets any other primary for this user."""
+    if not fb_user_id or not facility_id:
+        raise ValueError("fb_user_id and facility_id required")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    conn = get_connection()
+    existing = conn.execute(
+        "SELECT COUNT(*) AS n FROM user_facilities WHERE fb_user_id = ?", (fb_user_id,)
+    ).fetchone()
+    is_primary = 1 if (make_primary or existing["n"] == 0) else 0
+    if make_primary:
+        conn.execute("UPDATE user_facilities SET is_primary = 0 WHERE fb_user_id = ?", (fb_user_id,))
+    conn.execute(
+        """INSERT INTO user_facilities (fb_user_id, facility_id, role, is_primary, active, assigned_at)
+           VALUES (?, ?, ?, ?, 1, ?)
+           ON CONFLICT(fb_user_id, facility_id) DO UPDATE SET
+             role = excluded.role,
+             active = 1""",
+        (fb_user_id, facility_id, role, is_primary, now_iso),
+    )
+    conn.commit()
+
+
+def remove_user_facility(fb_user_id: str, facility_id: str) -> None:
+    """Soft-remove (active=0) so audit stays. If removed was primary, promote another active one."""
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT is_primary FROM user_facilities WHERE fb_user_id = ? AND facility_id = ?",
+        (fb_user_id, facility_id),
+    ).fetchone()
+    if not row:
+        return
+    conn.execute(
+        "UPDATE user_facilities SET active = 0, is_primary = 0 WHERE fb_user_id = ? AND facility_id = ?",
+        (fb_user_id, facility_id),
+    )
+    if row["is_primary"]:
+        next_row = conn.execute(
+            "SELECT facility_id FROM user_facilities WHERE fb_user_id = ? AND active = 1 ORDER BY assigned_at ASC LIMIT 1",
+            (fb_user_id,),
+        ).fetchone()
+        if next_row:
+            conn.execute(
+                "UPDATE user_facilities SET is_primary = 1 WHERE fb_user_id = ? AND facility_id = ?",
+                (fb_user_id, next_row["facility_id"]),
+            )
+    conn.commit()
+
+
+def set_primary_facility(fb_user_id: str, facility_id: str) -> bool:
+    """Designate one membership as primary (default at login). Returns True if changed."""
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT active FROM user_facilities WHERE fb_user_id = ? AND facility_id = ?",
+        (fb_user_id, facility_id),
+    ).fetchone()
+    if not row or not row["active"]:
+        return False
+    conn.execute("UPDATE user_facilities SET is_primary = 0 WHERE fb_user_id = ?", (fb_user_id,))
+    conn.execute(
+        "UPDATE user_facilities SET is_primary = 1 WHERE fb_user_id = ? AND facility_id = ?",
+        (fb_user_id, facility_id),
+    )
+    conn.commit()
+    return True
+
+
+def user_has_facility(fb_user_id: str, facility_id: str) -> bool:
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT 1 FROM user_facilities WHERE fb_user_id = ? AND facility_id = ? AND active = 1",
+        (fb_user_id, facility_id),
+    ).fetchone()
+    return row is not None
+
+
+def get_user_facility_role(fb_user_id: str, facility_id: str) -> str | None:
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT role FROM user_facilities WHERE fb_user_id = ? AND facility_id = ? AND active = 1",
+        (fb_user_id, facility_id),
+    ).fetchone()
+    return row["role"] if row else None
+
+
+@dataclass
 class User:
     fb_user_id: str
     fb_user_name: str
@@ -101,6 +243,14 @@ def upsert_user(
     row = conn.execute(
         "SELECT * FROM users WHERE fb_user_id = ?", (fb_user_id,)
     ).fetchone()
+
+    # Mirror into user_facilities so memberships stay consistent with legacy writers.
+    if facility_id:
+        try:
+            add_user_facility(fb_user_id, facility_id, role=(role or "user"))
+        except Exception:
+            logger.warning("mirror to user_facilities failed", exc_info=True)
+
     return _row_to_user(row)
 
 
@@ -154,6 +304,10 @@ def set_facility(fb_user_id: str, facility_id: str, role: str = "viewer") -> boo
         (facility_id, role, fb_user_id),
     )
     conn.commit()
+    try:
+        add_user_facility(fb_user_id, facility_id, role=role, make_primary=True)
+    except Exception:
+        logger.warning("mirror set_facility→user_facilities failed", exc_info=True)
     return cur.rowcount > 0
 
 
