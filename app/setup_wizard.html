@@ -481,11 +481,38 @@
     }
     .demo-banner a { color: #000; text-decoration: underline; }
 
+    /* ─── Back button ─── */
+    .topbar-back {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.35rem 0.7rem; border-radius: 6px;
+      border: 1px solid #27272a; background: transparent;
+      color: #71717a; font-size: 0.75rem; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .topbar-back:hover { border-color: #3b82f6; color: #93c5fd; }
+
+    /* ─── Confirm modal ─── */
+    .confirm-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box {
+      background: #13141b; border: 1px solid #27272a; border-radius: 14px;
+      padding: 2rem; width: 380px; text-align: center;
+    }
+    .confirm-box .warn-icon { font-size: 2.2rem; margin-bottom: 0.8rem; }
+    .confirm-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: #fbbf24; }
+    .confirm-box p { font-size: 0.82rem; color: #a1a1aa; line-height: 1.5; margin-bottom: 1.2rem; }
+    .confirm-box .confirm-actions { display: flex; gap: 0.6rem; justify-content: center; }
+
     /* ─── Responsive ─── */
     @media (max-width: 640px) {
       .topbar { padding: 0.8rem 1rem; flex-direction: column; gap: 0.6rem; }
       .form-summary { flex-direction: column; }
       .container { padding: 1rem; }
+      .topbar-back span { display: none; }
     }
   </style>
 </head>
@@ -500,6 +527,7 @@
   <div class="topbar">
     <div class="topbar-brand">
       <div class="topbar-brand-icon"><img src="/static/icon.jpg" alt="Medidesk Integrator" /></div>
+      <button class="topbar-back" onclick="confirmExit()">← <span>Dashboard</span></button>
       <h1>Połącz formularze</h1>
     </div>
     <div class="steps-nav">
@@ -633,10 +661,31 @@
     </div>
   </div>
 
+  <!-- Confirm exit modal -->
+  <div class="confirm-overlay" id="confirm-exit-modal">
+    <div class="confirm-box">
+      <div class="warn-icon">⚠️</div>
+      <h3>Na pewno chcesz wyjść?</h3>
+      <p>Wszystkie wprowadzone dane w kreatorze integracji zostaną utracone.</p>
+      <div class="confirm-actions">
+        <button class="btn btn-outline" onclick="closeConfirmExit()">Zostań</button>
+        <button class="btn btn-primary" onclick="location.href='/dashboard'">📊 Przejdź do Dashboard</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
   <script>
+    // ─── Confirm exit ────────────────────────────────────
+    function confirmExit() {
+      document.getElementById('confirm-exit-modal').classList.add('open');
+    }
+    function closeConfirmExit() {
+      document.getElementById('confirm-exit-modal').classList.remove('open');
+    }
+
     // ─── State ──────────────────────────────────────────
     let state = {
       sessionId: null,
