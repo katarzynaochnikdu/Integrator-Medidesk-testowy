@@ -2008,13 +2008,13 @@
       const consentMap = new Map(); // baseKey => [entries]
 
       mappings.forEach(m => {
-        const q = getQuestion(m.fb_field);
-        if (q && q.is_consent) {
-          const isText = q.consent_kind === 'text';
-          // Pair by medidesk_field: "Zgoda-1-tekst" → "Zgoda-1", "Zgoda-1" → "Zgoda-1"
-          const mdField = m.medidesk_field || '';
+        const mdField = (m.medidesk_field || '').trim();
+        // Detect consent by medidesk_field pattern (Zgoda-*, consent-*, etc.)
+        const isConsent = /zgoda|consent/i.test(mdField);
+        if (isConsent) {
+          const isText = /-tekst$|_tekst$|-text$|_text$/i.test(mdField);
           const baseKey = isText
-            ? mdField.replace(/-tekst$|_tekst$|_text$/i, '')
+            ? mdField.replace(/-tekst$|_tekst$|-text$|_text$/i, '')
             : mdField;
           if (!consentMap.has(baseKey)) consentMap.set(baseKey, []);
           // checkbox first, then text
@@ -2031,13 +2031,13 @@
 
       // Render — consent text rows get truncated label with tooltip
       const renderRow = (m) => {
-        const q = getQuestion(m.fb_field);
-        const isConsentText = q && q.is_consent && q.consent_kind === 'text';
+        const mdField = (m.medidesk_field || '').trim();
+        const isConsentText = /zgoda|consent/i.test(mdField) && /-tekst$|_tekst$|-text$|_text$/i.test(mdField);
         let fbLabel = formatFbField(m.fb_field);
         const fullLabel = fbLabel.replace(/"/g, '&quot;');
-        // Truncate long consent text labels to 80 chars
-        if (isConsentText && fbLabel.length > 80) {
-          fbLabel = `<span title="${fullLabel}">${fbLabel.substring(0, 77)}…</span>`;
+        // Truncate long labels to 60 chars
+        if (fbLabel.length > 60) {
+          fbLabel = `<span title="${fullLabel}">${fbLabel.substring(0, 57)}…</span>`;
         }
         return `
         <tr>
