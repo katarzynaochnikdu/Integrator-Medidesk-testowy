@@ -568,9 +568,6 @@
       <div class="nav-item" data-section="integrations" onclick="showSection('integrations')">
         <span class="icon">🔗</span> <span>Integracje</span>
       </div>
-      <div class="nav-item" data-section="room" id="nav-room" onclick="showSection('room')" style="display:none;">
-        <span class="icon">🏠</span> <span id="nav-room-label">Połączenie</span>
-      </div>
       <div class="nav-item" data-section="facilities" id="nav-facilities" onclick="showSection('facilities')" style="display:none;">
         <span class="icon">🏥</span> <span>Placówki</span>
       </div>
@@ -1511,7 +1508,6 @@
     // ─── Integration Room ────────────────────────────────
     async function openRoom(integrationId) {
       currentRoomId = integrationId;
-      document.getElementById('nav-room').style.display = 'flex';
 
       let integration, stats, leads;
 
@@ -1558,7 +1554,6 @@
       const roomTitle = (integration.name && integration.name.trim()) || integration.fb_page_name || 'Integracja';
       document.getElementById('room-title').textContent = roomTitle;
       document.getElementById('room-subtitle').textContent = `📘 ${integration.fb_page_name} · ${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
-      document.getElementById('nav-room-label').textContent = roomTitle.substring(0, 16);
       const bcName = document.getElementById('detail-breadcrumb-name');
       if (bcName) bcName.textContent = integration.name || integration.fb_form_name || '';
 
