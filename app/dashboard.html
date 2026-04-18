@@ -793,9 +793,24 @@
               <div id="room-subtitle" style="font-size:0.75rem;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
             </div>
           </div>
-          <button class="btn btn-sm btn-primary" onclick="openTestFlowModal()" title="Przetestuj end-to-end: wyślij testowy lead z FB i sprawdź czy dotarł do Medidesk">
-            🧪 Test połączenia
-          </button>
+          <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;justify-content:flex-end;">
+            <button id="btn-room-toggle-active"
+                    class="btn btn-sm btn-outline"
+                    style="display:none;color:#B45309;border-color:#FDE68A;"
+                    onclick="toggleRoomIntegrationActive()"
+                    title="Wstrzymaj/Wznów odbieranie leadów dla tej integracji"></button>
+            <button class="btn btn-sm btn-primary" onclick="openTestFlowModal()"
+                    title="Przetestuj end-to-end: wyślij testowy lead z FB i sprawdź czy dotarł do Medidesk">
+              🧪 Test połączenia
+            </button>
+            <button id="btn-room-delete"
+                    class="btn btn-sm btn-outline"
+                    style="color:#B91C1C;border-color:#FECACA;"
+                    onclick="deleteRoomIntegration()"
+                    title="Usuń tę integrację — przestanie odbierać nowe leady. Historia zostaje.">
+              🗑 Usuń
+            </button>
+          </div>
         </div>
 
         <div class="kpi-grid" id="room-kpis"></div>
@@ -1746,6 +1761,98 @@
     // ─── End-to-end test modal ───────────────────────────
     let _currentRoomIntegration = null;
 
+    // Sync the Pause/Wznów button label with _currentRoomIntegration.active.
+    // Active integration → button reads "⏸ Wstrzymaj" (amber). Paused →
+    // "▶ Wznów" (green). Hides entirely if no integration is loaded.
+    function refreshRoomActionButtons() {
+      const btn = document.getElementById('btn-room-toggle-active');
+      if (!btn) return;
+      const i = _currentRoomIntegration;
+      if (!i) { btn.style.display = 'none'; return; }
+      btn.style.display = '';
+      if (i.active) {
+        btn.textContent = '⏸ Wstrzymaj';
+        btn.style.color = '#B45309';
+        btn.style.borderColor = '#FDE68A';
+        btn.title = 'Wstrzymaj integrację — przestanie odbierać nowe leady (mapowania zostają)';
+      } else {
+        btn.textContent = '▶ Wznów';
+        btn.style.color = '#15803D';
+        btn.style.borderColor = '#BBF7D0';
+        btn.title = 'Wznów integrację — zacznie ponownie odbierać leady z FB';
+      }
+    }
+
+    // Pause/resume the currently-open integration. Backend handles the FB
+    // webhook subscription (activate also re-subscribes the page); we just
+    // POST and re-render the room view so KPIs/badges update in place.
+    async function toggleRoomIntegrationActive() {
+      const i = _currentRoomIntegration;
+      if (!i) return;
+      const action = i.active ? 'deactivate' : 'activate';
+      const verb = i.active ? 'Wstrzymać' : 'Wznowić';
+      const ok = await appConfirm(
+        `${verb} integrację "${i.fb_form_name || i.fb_page_name}"? ` +
+          (i.active
+            ? 'Nowe leady NIE będą trafiały do Medidesk dopóki nie wznowisz.'
+            : 'Integracja zacznie ponownie odbierać leady z FB.'),
+        { title: i.active ? 'Wstrzymaj integrację' : 'Wznów integrację', okLabel: i.active ? 'Wstrzymaj' : 'Wznów' }
+      );
+      if (!ok) return;
+      const btn = document.getElementById('btn-room-toggle-active');
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+      try {
+        if (DEMO) {
+          showToast(`DEMO: integracja ${action === 'activate' ? 'wznowiona' : 'wstrzymana'}`, 'success');
+          i.active = !i.active;
+        } else {
+          const resp = await apiFetch(`/api/integrations/${i.id}/${action}`, { method: 'POST' });
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error || `HTTP ${resp.status}`);
+          }
+          showToast(action === 'activate' ? 'Integracja wznowiona' : 'Integracja wstrzymana', 'success');
+        }
+        await loadIntegrations();   // refresh sidebar list state
+        await openRoom(i.id);       // re-fetch + re-render this room (button label flips)
+      } catch (e) {
+        showToast('Błąd: ' + e.message, 'error');
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      }
+    }
+
+    // Delete the currently-open integration. After delete there's nothing to
+    // show in this room, so we navigate back to the integrations list.
+    async function deleteRoomIntegration() {
+      const i = _currentRoomIntegration;
+      if (!i) return;
+      const ok = await appConfirm(
+        `Na pewno usunąć integrację "${i.fb_form_name || i.fb_page_name}"? ` +
+          'Nowe leady przestaną trafiać do Medidesk. Historia leadów zostanie zachowana, ' +
+          'ale integracja zniknie z listy.',
+        { title: 'Usuń integrację', danger: true, okLabel: 'Usuń integrację' }
+      );
+      if (!ok) return;
+      try {
+        if (DEMO) {
+          showToast('DEMO: integracja usunięta', 'success');
+        } else {
+          const resp = await apiFetch(`/api/integrations/${i.id}`, { method: 'DELETE' });
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error || `HTTP ${resp.status}`);
+          }
+          showToast('Integracja usunięta', 'success');
+        }
+        _currentRoomIntegration = null;
+        await loadIntegrations();
+        await loadStats();
+        showSection('integrations');
+      } catch (e) {
+        showToast('Błąd: ' + e.message, 'error');
+      }
+    }
+
     function openTestFlowModal() {
       const i = _currentRoomIntegration;
       if (!i) { showToast('Najpierw otwórz integrację', 'error'); return; }
@@ -1828,6 +1935,10 @@
       const chain = `${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
       const roomTitle = hasCustomName ? integration.name.trim() : chain;
       _currentRoomIntegration = integration;
+      // Refresh the Pause/Wznów button label + color based on the integration's
+      // current active state. Done here (after _currentRoomIntegration is set)
+      // so it runs on every openRoom + every refresh cycle.
+      refreshRoomActionButtons();
       document.getElementById('room-title').textContent = roomTitle;
       document.getElementById('room-subtitle').textContent = hasCustomName
         ? `${integration.fb_page_name} · ${chain}`
