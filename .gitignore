@@ -20,6 +20,8 @@ htmlcov/
 # IDE
 .idea/
 .vscode/
+.claude/
+.gemini/
 *.swp
 *.swo
 
