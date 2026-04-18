@@ -471,18 +471,11 @@
       border-collapse: collapse;
       font-size: 0.78rem;
       margin-bottom: 0;
-      table-layout: fixed;
     }
-    .mapping-table th:nth-child(1),
-    .mapping-table td:nth-child(1) { width: 55%; overflow: hidden; text-overflow: ellipsis; }
-    .mapping-table th:nth-child(2),
-    .mapping-table td:nth-child(2) { width: 40px; }
-    .mapping-table th:nth-child(3),
-    .mapping-table td:nth-child(3) { width: calc(45% - 40px); }
     .mapping-table td { padding: 0.4rem 0.6rem; }
     .mapping-table .arrow { color: var(--text-dim); text-align: center; width: 40px; }
-    .mapping-table .fb-col { color: #60a5fa; }
-    .mapping-table .md-col { color: #4ade80; }
+    .mapping-table .fb-col { color: #60a5fa; max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mapping-table .md-col { color: #4ade80; white-space: nowrap; min-width: 150px; }
 
     .lead-row { cursor: pointer; transition: background 0.1s; }
     .lead-row:hover { background: rgba(255,255,255,0.02); }
@@ -669,10 +662,10 @@
   </div>
 
   <!-- Token expiry alert -->
-  <div id="token-expiry-alert" style="display:none;background:#FEF3C7;border-bottom:1px solid #F59E0B;padding:10px 24px;align-items:center;gap:12px;font-size:14px;color:#92400E;">
+  <div id="token-expiry-alert" style="display:none;background:rgba(245,158,11,0.15);border-bottom:1px solid rgba(245,158,11,0.4);padding:10px 24px;align-items:center;gap:12px;font-size:14px;color:#fbbf24;">
     🟡 Twój dostęp do Facebook wygasa za <strong id="token-days-left" style="margin:0 4px;"></strong> dni. Połączenia przestaną działać.
     <button onclick="location.href='/auth/facebook/login'" style="margin-left:8px;padding:4px 12px;background:#D97706;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">Odnów dostęp</button>
-    <button onclick="this.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:18px;color:#92400E;">×</button>
+    <button onclick="this.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);">×</button>
   </div>
 
   <div class="app-layout">
@@ -1261,8 +1254,8 @@
 
       const chipBase = 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:0.65rem;font-weight:500;margin-right:4px;margin-top:4px;white-space:nowrap;';
       const chips = [];
-      if (fbId) chips.push(`<span style="${chipBase}background:#EEF2FF;color:#4338CA;" title="Facebook User ID">🆔 ${fbId}</span>`);
-      if (facilityName) chips.push(`<span style="${chipBase}background:#DCFCE7;color:#166534;" title="Placówka">🏥 ${facilityName}</span>`);
+      if (fbId) chips.push(`<span style="${chipBase}background:rgba(67,56,202,0.15);color:#818cf8;" title="Facebook User ID">🆔 ${fbId}</span>`);
+      if (facilityName) chips.push(`<span style="${chipBase}background:rgba(22,163,74,0.15);color:#4ade80;" title="Placówka">🏥 ${facilityName}</span>`);
       const emailEl = document.getElementById('user-email');
       emailEl.innerHTML = chips.join('');
       emailEl.style.marginTop = '0';
@@ -1270,8 +1263,8 @@
       const topbarUser = document.getElementById('topbar-user');
       if (topbarUser) {
         const topChips = [];
-        if (facilityName) topChips.push(`<span style="${chipBase}background:#DCFCE7;color:#166534;">🏥 ${facilityName}</span>`);
-        if (fbId) topChips.push(`<span style="${chipBase}background:#EEF2FF;color:#4338CA;font-family:monospace;">${fbId}</span>`);
+        if (facilityName) topChips.push(`<span style="${chipBase}background:rgba(22,163,74,0.15);color:#4ade80;">🏥 ${facilityName}</span>`);
+        if (fbId) topChips.push(`<span style="${chipBase}background:rgba(67,56,202,0.15);color:#818cf8;font-family:monospace;">${fbId}</span>`);
         topbarUser.innerHTML = `
           <div style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;">
             <span style="font-size:0.82rem;color:var(--text-primary);font-weight:600;">${name}</span>
@@ -1371,8 +1364,8 @@
               <span class="acc-arrow" style="display:inline-block;transition:transform 0.15s;transform:rotate(${open ? 90 : 0}deg);color:var(--text-muted);">▶</span>
               <span style="font-weight:600;color:var(--text-primary);">${integLabel(integId)}</span>
               <span style="font-size:0.7rem;color:var(--text-muted);background:var(--bg-surface);border:1px solid var(--border-primary);padding:2px 8px;border-radius:10px;">${total} ${total === 1 ? 'lead' : 'leadów'}</span>
-              ${sentUnique ? `<span style="font-size:0.7rem;color:#166534;background:#DCFCE7;padding:2px 8px;border-radius:10px;">✓ ${sentUnique}</span>` : ''}
-              ${failedUnique ? `<span style="font-size:0.7rem;color:#991B1B;background:#FEE2E2;padding:2px 8px;border-radius:10px;">✗ ${failedUnique}</span>` : ''}
+              ${sentUnique ? `<span style="font-size:0.7rem;color:#22c55e;background:rgba(22,163,74,0.15);padding:2px 8px;border-radius:10px;">✓ ${sentUnique}</span>` : ''}
+              ${failedUnique ? `<span style="font-size:0.7rem;color:#f87171;background:rgba(220,38,38,0.15);padding:2px 8px;border-radius:10px;">✗ ${failedUnique}</span>` : ''}
               <span style="margin-left:auto;font-size:0.7rem;color:var(--text-muted);">najnowszy: ${timeAgo(newestTs)}</span>
             </div>
           </td>
@@ -2211,11 +2204,11 @@
     // ─── Lead status badge ──────────────────────────────
     function leadStatusBadge(status) {
       const map = {
-        sent:     '<span style="background:#DCFCE7;color:#16A34A;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Wysłany</span>',
-        success:  '<span style="background:#DCFCE7;color:#16A34A;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Wysłany</span>',
-        failed:   '<span style="background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Nieudane</span>',
-        received: '<span style="background:#FEF3C7;color:#D97706;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;" title="Lead odebrany z FB (przed wysłaniem do MD)">Odebrano z FB</span>',
-        skipped_duplicate: '<span style="background:#E0E7FF;color:#4338CA;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;" title="Ten sam lead_id już trafił do MD — FB ponowił webhook, pominęliśmy żeby nie duplikować">Duplikat (pominięty)</span>',
+        sent:     '<span style="background:rgba(22,163,74,0.15);color:#22c55e;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Wysłany</span>',
+        success:  '<span style="background:rgba(22,163,74,0.15);color:#22c55e;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Wysłany</span>',
+        failed:   '<span style="background:rgba(220,38,38,0.15);color:#f87171;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Nieudane</span>',
+        received: '<span style="background:rgba(217,119,6,0.15);color:#fbbf24;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;" title="Lead odebrany z FB (przed wysłaniem do MD)">Odebrano z FB</span>',
+        skipped_duplicate: '<span style="background:rgba(67,56,202,0.15);color:#818cf8;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;" title="Ten sam lead_id już trafił do MD — FB ponowił webhook, pominęliśmy żeby nie duplikować">Duplikat (pominięty)</span>',
         pending:  '<span style="background:var(--border-subtle);color:var(--text-muted);padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Oczekuje</span>',
       };
       return map[status] || `<span style="color:var(--text-muted);">${status}</span>`;
@@ -2922,9 +2915,9 @@
       } else {
         const palette = { border: '#FECACA', text: '#b91c1c', icon: '⚠️' };
         reqBanner.innerHTML = `
-          <div style="padding:0.8rem 1rem;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;margin-bottom:0.8rem;">
-            <div style="color:#b91c1c;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">Brakuje wymaganych pól Medidesk (${requiredMissing.length})</div>
-            <div style="color:#7f1d1d;font-size:0.75rem;margin-bottom:0.5rem;">Bez nich Medidesk odrzuci leady (HTTP 400). Zmapuj każde wymagane pole — z FB lub jako stała wartość.</div>
+          <div style="padding:0.8rem 1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:10px;margin-bottom:0.8rem;">
+            <div style="color:#f87171;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">Brakuje wymaganych pól Medidesk (${requiredMissing.length})</div>
+            <div style="color:var(--text-muted);font-size:0.75rem;margin-bottom:0.5rem;">Bez nich Medidesk odrzuci leady (HTTP 400). Zmapuj każde wymagane pole — z FB lub jako stała wartość.</div>
             ${requiredMissing.map(f => buildRow(f, palette)).join('')}
           </div>
         `;
@@ -2939,9 +2932,9 @@
       } else {
         const palette = { border: '#FDE68A', text: '#B45309', icon: '💡' };
         optBanner.innerHTML = `
-          <div style="padding:0.8rem 1rem;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;margin-top:0.8rem;">
-            <div style="color:#B45309;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">💡 Opcjonalne pola Medidesk bez mapowania (${optionalMissing.length})</div>
-            <div style="color:#92400E;font-size:0.75rem;margin-bottom:0.5rem;">Lead przejdzie bez nich, ale jeśli chcesz — zmapuj je z FB lub ustaw stałą wartość.</div>
+          <div style="padding:0.8rem 1rem;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;margin-top:0.8rem;">
+            <div style="color:#fbbf24;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">💡 Opcjonalne pola Medidesk bez mapowania (${optionalMissing.length})</div>
+            <div style="color:var(--text-muted);font-size:0.75rem;margin-bottom:0.5rem;">Lead przejdzie bez nich, ale jeśli chcesz — zmapuj je z FB lub ustaw stałą wartość.</div>
             ${optionalMissing.map(f => buildRow(f, palette)).join('')}
           </div>
         `;
