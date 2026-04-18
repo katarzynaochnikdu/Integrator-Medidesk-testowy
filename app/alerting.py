@@ -120,7 +120,7 @@ async def check_and_alert() -> None:
         return
 
     # Build alert message
-    lines = ["⚠️ Medidesk Integrator — Token Alert\n"]
+    lines = ["⚠️ Integracja Leadów do Medidesk — Token Alert\n"]
     for r in expiring:
         name = r.get("fb_page_name", "?")
         days = r.get("days_remaining", "?")

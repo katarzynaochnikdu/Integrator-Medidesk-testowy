@@ -1,4 +1,4 @@
-# Medidesk Integrator — Przebudowa UX/UI
+# Integracja Leadów do Medidesk — Przebudowa UX/UI
 > Dokument projektowy · Wersja 1.0 · Kwiecień 2026
 
 ---
@@ -104,7 +104,7 @@ Nawigacja górna (topbar), nie boczna. Tylko 2 elementy:
 ```
 ┌──────────────────────────────────────────────────┐
 │                                                  │
-│              🏥 Medidesk Integrator              │
+│              🏥 Integracja Leadów do Medidesk              │
 │                                                  │
 │   Połącz reklamy Facebook z formularzami         │
 │   Medidesk — automatycznie.                      │
@@ -286,7 +286,7 @@ Nawigacja górna (topbar), nie boczna. Tylko 2 elementy:
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  🏥 Medidesk Integrator          [Kasia K.]  [+ Nowe połączenie] │
+│  🏥 Integracja Leadów do Medidesk          [Kasia K.]  [+ Nowe połączenie] │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  Twoje połączenia (3)                                            │
@@ -356,7 +356,7 @@ Toast (auto-znikający po 8 sek., z opcją „Sprawdź teraz"):
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  🏥 Medidesk Integrator     Moje połączenia > Stomatologia       │
+│  🏥 Integracja Leadów do Medidesk     Moje połączenia > Stomatologia       │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  🟢 Stomatologia — Promocja wiosenna                             │

@@ -1,4 +1,4 @@
-# Medidesk Integrator — Analiza techniczna dla UX
+# Integracja Leadów do Medidesk — Analiza techniczna dla UX
 > Supplement do UX_REDESIGN.md · Co faktycznie działa pod spodem i jak to wpływa na UI
 
 ---

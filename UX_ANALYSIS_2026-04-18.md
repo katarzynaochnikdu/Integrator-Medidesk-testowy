@@ -1,4 +1,4 @@
-# Analiza UX/UI – Medidesk Integrator
+# Analiza UX/UI – Integracja Leadów do Medidesk
 
 **Data:** 2026-04-18
 **Aplikacja:** https://md-integrator-v1.onrender.com
@@ -31,7 +31,7 @@ Zakres oceny:
 **Minus:**
 - Layout "kafelki 2 kolumny" sugeruje, że "Nowa integracja" i "Dashboard" są równorzędne, a dla nowego usera primary to "Nowa integracja".
 - Stopka "API Docs" widoczna dla użytkownika operacyjnego – nie jego target.
-- "Medidesk Integrator v2.0" w stopce to metadata developerska.
+- "Integracja Leadów do Medidesk v2.0" w stopce to metadata developerska.
 
 ### Setup wizard – krok 1 (Facebook)
 

@@ -87,7 +87,7 @@ def _integration_snapshot(i) -> dict:
         "facility_id": i.facility_id,
     }
 
-app = FastAPI(title="Medidesk Integrator", version="2.0.0")
+app = FastAPI(title="Integracja Leadów do Medidesk", version="2.0.0")
 
 if settings.cors_origins_list:
     app.add_middleware(
@@ -172,7 +172,7 @@ async def login_page():
 @app.get("/api/info")
 async def api_info():
     return {
-        "service": "Medidesk Integrator",
+        "service": "Integracja Leadów do Medidesk",
         "version": "2.0.0",
         "docs": "/docs",
         "usage": "POST /api/submit/{medidesk_form_id} with JSON body of field values",
@@ -1339,7 +1339,7 @@ async def invite_page(token: str):
     fac_name = fac.name if fac else "placówki"
     role = row["role"]
     body = f"""
-        <div class="icon"><img src="/static/icon.jpg" alt="Medidesk Integrator"/></div>
+        <div class="icon"><img src="/static/icon.jpg" alt="Integracja Leadów do Medidesk"/></div>
         <h2>Dołącz do {fac_name}</h2>
         <p>Zostałeś zaproszony jako <strong>{role}</strong>. Zaloguj się przez Facebook,
            aby dokończyć dołączenie.</p>
@@ -1357,7 +1357,7 @@ async def invite_page(token: str):
 def _invite_html(body: str) -> str:
     return f"""<!DOCTYPE html>
 <html lang="pl"><head><meta charset="UTF-8"/>
-<title>Zaproszenie — Medidesk Integrator</title>
+<title>Zaproszenie — Integracja Leadów do Medidesk</title>
 <style>
   body {{ font-family: Inter, system-ui, sans-serif; background: #0a0c10; color: #e4e4e7;
          display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }}

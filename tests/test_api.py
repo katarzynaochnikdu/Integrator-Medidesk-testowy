@@ -27,7 +27,7 @@ class TestRoot:
     def test_api_info_returns_service(self):
         resp = client.get("/api/info")
         assert resp.status_code == 200
-        assert "Medidesk Integrator" in resp.json()["service"]
+        assert "Integracja Leadów do Medidesk" in resp.json()["service"]
 
 
 class TestGetFormFields:
@@ -138,4 +138,4 @@ class TestDemoPage:
         monkeypatch.setattr(settings, "demo_page_enabled", True)
         resp = client.get("/demo/contact")
         assert resp.status_code == 200
-        assert "Medidesk Integrator" in resp.text
+        assert "Integracja Leadów do Medidesk" in resp.text
