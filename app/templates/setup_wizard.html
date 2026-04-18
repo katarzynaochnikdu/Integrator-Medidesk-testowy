@@ -723,9 +723,10 @@
         <p id="md-form-intro">Podaj ID formularza z panelu Medidesk, do którego mają trafiać leady.</p>
         <label for="md-form-id">ID formularza Medidesk</label>
         <div style="display:flex;gap:0.6rem;">
-          <input type="text" id="md-form-id" placeholder="np. d908ee01-0b7d-44a0-a494-a707ab5a55ef" style="flex:1;margin-bottom:0;" />
+          <input type="text" id="md-form-id" placeholder="np. d908ee01-0b7d-44a0-a494-a707ab5a55ef" style="flex:1;margin-bottom:0;" aria-describedby="md-form-id-error" />
           <button class="btn btn-primary" id="btn-fetch-md">Pobierz pola</button>
         </div>
+        <div id="md-form-id-error" role="alert" style="display:none;margin-top:6px;font-size:0.78rem;color:#dc2626;"></div>
         <div class="field-guidance" id="md-form-guidance" style="margin-top:8px;background:rgba(59,130,246,0.08);border-left:3px solid #3B82F6;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:var(--text-secondary);">
           <strong>Gdzie znajdziesz numer formularza?</strong>
           <ol style="margin:6px 0 0 16px;padding:0;">
@@ -804,8 +805,8 @@
       <h3>Na pewno chcesz wyjść?</h3>
       <p>Wszystkie wprowadzone dane w kreatorze integracji zostaną utracone.</p>
       <div class="confirm-actions">
-        <button class="btn btn-outline" onclick="closeConfirmExit()">Zostań</button>
-        <button class="btn btn-primary" onclick="location.href='/dashboard'">📊 Przejdź do Dashboard</button>
+        <button class="btn btn-outline" onclick="location.href='/dashboard'">Przejdź do Dashboard</button>
+        <button class="btn btn-primary" onclick="closeConfirmExit()">Zostań w kreatorze</button>
       </div>
     </div>
   </div>
@@ -822,6 +823,32 @@
     }
     function closeConfirmExit() {
       document.getElementById('confirm-exit-modal').classList.remove('open');
+    }
+
+    // ─── Friendly labels ─────────────────────────────────
+    // Medidesk czasem zwraca etykiety bez polskich diakrytyków. Naprawiamy typowe przypadki
+    // po stronie UI żeby użytkownik widział poprawne "Życzenie" zamiast "Zyczenie".
+    const MD_LABEL_FIXES = {
+      'Zyczenie': 'Życzenie',
+      'Imie-i-nazwisko': 'Imię i nazwisko',
+    };
+    function fixMdLabel(label) {
+      if (!label) return label;
+      return MD_LABEL_FIXES[label] || label;
+    }
+    // Standardowe FB Lead Ads field keys → przyjazne nazwy po polsku.
+    const FB_FIELD_LABELS = {
+      'first_name': 'Imię', 'last_name': 'Nazwisko', 'full_name': 'Imię i nazwisko',
+      'email': 'E-mail', 'phone_number': 'Numer telefonu',
+      'city': 'Miasto', 'state': 'Województwo', 'country': 'Kraj',
+      'zip_code': 'Kod pocztowy', 'post_code': 'Kod pocztowy',
+      'street_address': 'Adres', 'date_of_birth': 'Data urodzenia', 'gender': 'Płeć',
+      'company_name': 'Nazwa firmy', 'job_title': 'Stanowisko',
+      'work_email': 'E-mail służbowy', 'work_phone_number': 'Telefon służbowy',
+    };
+    function friendlyFbLabel(key) {
+      const f = FB_FIELD_LABELS[key];
+      return f ? `${f} (${key})` : key;
     }
 
     // ─── State ──────────────────────────────────────────
@@ -1533,9 +1560,37 @@
       document.getElementById('md-form-id').value = 'd908ee01-0b7d-44a0-a494-a707ab5a55ef';
     }
 
+    // ─── Inline walidacja pola "ID formularza Medidesk" ───
+    // UUID v4 format (Medidesk używa standardowych GUID-ów).
+    const MD_FORM_ID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    function setMdFormIdError(msg) {
+      const errEl = document.getElementById('md-form-id-error');
+      const input = document.getElementById('md-form-id');
+      if (!errEl) return;
+      if (msg) {
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+        if (input) input.style.borderColor = '#dc2626';
+      } else {
+        errEl.textContent = '';
+        errEl.style.display = 'none';
+        if (input) input.style.borderColor = '';
+      }
+    }
+    // Czyść błąd od razu gdy user zaczyna pisać — nie chcemy by wisiał przy poprawianiu.
+    document.getElementById('md-form-id').addEventListener('input', () => setMdFormIdError(''));
+
     document.getElementById('btn-fetch-md').addEventListener('click', async () => {
       const formId = document.getElementById('md-form-id').value.trim();
-      if (!formId) { showToast('Podaj ID formularza', 'error'); return; }
+      if (!formId) {
+        setMdFormIdError('Podaj ID formularza z panelu Medidesk.');
+        return;
+      }
+      if (!MD_FORM_ID_REGEX.test(formId)) {
+        setMdFormIdError('Niepoprawny format — oczekiwane ID w formacie GUID (np. d908ee01-0b7d-44a0-a494-a707ab5a55ef).');
+        return;
+      }
+      setMdFormIdError('');
 
       const btn = document.getElementById('btn-fetch-md');
       btn.disabled = true;
@@ -1545,7 +1600,7 @@
         const resp = await fetch('/api/forms/' + formId + '/fields');
         const data = await resp.json();
 
-        if (data.error) { showToast(data.error, 'error'); return; }
+        if (data.error) { setMdFormIdError(data.error); return; }
 
         state.mdFormId = formId;
         state.mdFormName = data.form_name || formId;
@@ -1565,7 +1620,7 @@
 
           el.innerHTML = `
             <div style="display:flex; align-items:center; flex:1; gap:0.6rem; min-width:0;">
-              <span class="field-chip md" style="flex:1; width:100%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis;">${f.fieldId}</span>
+              <span class="field-chip md" style="flex:1; width:100%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis;" title="${(f.fieldId || '').replace(/"/g,'&quot;')}">${fixMdLabel(f.fieldId)}</span>
             </div>
             <div style="display:flex; align-items:center; gap:0.8rem; flex-shrink:0;">
               <span style="font-size:0.72rem;color:var(--text-dim);font-weight:600;line-height:1;width:90px;text-align:left;display:inline-block;">${polishFieldType(f.type)}</span>
@@ -1586,7 +1641,7 @@
         updateStickyBanner();
         showToast('Pobrano ' + state.mdFields.length + ' pól', 'success');
       } catch (e) {
-        showToast('Błąd: ' + e.message, 'error');
+        setMdFormIdError('Błąd: ' + e.message);
       } finally {
         btn.disabled = false;
         btn.textContent = 'Pobierz pola';
@@ -2017,12 +2072,12 @@
       const fbOpts = ['<option value="">— wybierz FB pole —</option>']
         .concat((state.selectedForm && state.selectedForm.questions || []).map(q => {
           const key = q.key || q.name || q.id;
-          const originalLbl = q.label || key;
+          const originalLbl = q.label || friendlyFbLabel(key);
           let lbl = originalLbl;
           if (q.is_consent) {
             lbl = q.consent_kind === 'text' ? `${lbl} (tekst)` : `☑ ${lbl}`;
           }
-          return `<option value="${key}">${lbl}${originalLbl !== key ? ' ('+key+')' : ''}</option>`;
+          return `<option value="${key}">${lbl}${originalLbl !== key && !originalLbl.includes('('+key+')') ? ' ('+key+')' : ''}</option>`;
         }))
         .join('');
 
@@ -2045,14 +2100,14 @@
         const rowFbOpts = ['<option value="">— wybierz FB pole —</option>']
           .concat((state.selectedForm && state.selectedForm.questions || []).map(q => {
             const key = q.key || q.name || q.id;
-            const originalLbl = q.label || key;
+            const originalLbl = q.label || friendlyFbLabel(key);
             let lbl = originalLbl;
             if (q.is_consent) {
               lbl = q.consent_kind === 'text' ? `${lbl} (tekst)` : `☑ ${lbl}`;
             }
             const c = checkTypeCompat(q.type, f.type);
             const hint = c.level === 'block' ? '  🚫' : c.level === 'warn' ? '  ⚠️' : '';
-            return `<option value="${key}">${lbl}${originalLbl !== key ? ' ('+key+')' : ''}${hint}</option>`;
+            return `<option value="${key}">${lbl}${originalLbl !== key && !originalLbl.includes('('+key+')') ? ' ('+key+')' : ''}${hint}</option>`;
           }))
           .join('');
         return `
@@ -2063,8 +2118,8 @@
             ${rowFbOpts}
           </select>
           <span class="mapping-arrow" style="text-align:center;">↔</span>
-          <div class="field-chip" style="background:${palette.chipBg};border:1px solid ${palette.chipBorder};color:${palette.chipText};font-weight:600;">
-            ${f.fieldId}
+          <div class="field-chip" style="background:${palette.chipBg};border:1px solid ${palette.chipBorder};color:${palette.chipText};font-weight:600;" title="${(f.fieldId || '').replace(/"/g,'&quot;')}">
+            ${fixMdLabel(f.fieldId)}
             <span style="margin-left:0.5rem;padding:2px 7px;border-radius:10px;background:${palette.tagBg};color:${palette.chipText};font-size:0.66rem;font-weight:500;">${palette.tagText}</span>
           </div>
           <div class="row-meta"></div>
@@ -2213,7 +2268,7 @@
         // it's a boolean!"), the [typ] suffix reveals what MD actually
         // reports this field as (e.g. [tekst krótki] vs expected [checkbox]).
         const typeTag = f.type ? `  [${polishFieldType(f.type)}]` : '';
-        options.push(`<option value="${f.fieldId}"${sel}>${f.fieldId}${typeTag}${hint}</option>`);
+        options.push(`<option value="${f.fieldId}"${sel}>${fixMdLabel(f.fieldId)}${typeTag}${hint}</option>`);
       });
 
       // Compat for the *currently selected* MD field — drives the middle column icon.

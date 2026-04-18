@@ -144,6 +144,9 @@
     .kpi-green .value { color: #4ade80; }
     .kpi-yellow .value { color: #fbbf24; }
     .kpi-red .value { color: #f87171; }
+    /* Neutral — używamy gdy wartość jest "pusta" semantycznie (0 błędów, brak leadów).
+       Wówczas kolor nie sugeruje stanu dobrego ani złego — tylko brak danych. */
+    .kpi-neutral .value { color: var(--text-muted); }
 
     /* ─── Cards ─── */
     .card {
@@ -757,7 +760,7 @@
             <div class="value" id="kpi-rate">—</div>
             <div class="sub">procent sukcesu</div>
           </div>
-          <div class="kpi-card kpi-red">
+          <div class="kpi-card kpi-green" id="kpi-active-card">
             <div class="label">Aktywne integracje</div>
             <div class="value" id="kpi-active">—</div>
             <div class="sub" id="kpi-active-sub">połączonych formularzy</div>
@@ -775,10 +778,10 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Integracja / Lead ID</th><th>Status</th><th>Pola</th><th>Kiedy</th><th>Integracja</th></tr>
+                <tr><th>Integracja / Lead ID</th><th>Status</th><th>Pola</th><th>Kiedy</th></tr>
               </thead>
               <tbody id="recent-leads-body">
-                <tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:1.5rem;">Ładowanie...</td></tr>
+                <tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:1.5rem;">Ładowanie...</td></tr>
               </tbody>
             </table>
           </div>
@@ -971,6 +974,7 @@
       <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.5rem;">Wprowadź zmiany w przepisaniu wartości z Facebooka na odpowiednie pola formularza w Medidesk. Zapobiegaj mapowaniu tych samych pól FB wielokrotnie.</div>
       
       <div id="edit-missing-required-banner" style="display:none;"></div>
+      <div id="edit-duplicate-banner" style="display:none;"></div>
       <div id="edit-mapping-rows"></div>
       <div id="edit-missing-optional-banner" style="display:none;"></div>
 
@@ -1089,6 +1093,45 @@
     let filterFacilityName = null;
     let allIntegrationsData = [];
 
+    // ─── Friendly labels ─────────────────────────────────
+    // FB Lead Ads standardowe pola przychodzą jako raw snake_case — dla
+    // nie-technicznych użytkowników tłumaczymy na polski, zachowując raw key
+    // w nawiasie dla audytu / debugowania.
+    const FB_FIELD_LABELS = {
+      'first_name': 'Imię',
+      'last_name': 'Nazwisko',
+      'full_name': 'Imię i nazwisko',
+      'email': 'E-mail',
+      'phone_number': 'Numer telefonu',
+      'city': 'Miasto',
+      'state': 'Województwo',
+      'country': 'Kraj',
+      'zip_code': 'Kod pocztowy',
+      'post_code': 'Kod pocztowy',
+      'street_address': 'Adres',
+      'date_of_birth': 'Data urodzenia',
+      'gender': 'Płeć',
+      'company_name': 'Nazwa firmy',
+      'job_title': 'Stanowisko',
+      'work_email': 'E-mail służbowy',
+      'work_phone_number': 'Telefon służbowy',
+    };
+    function friendlyFbLabel(key) {
+      const f = FB_FIELD_LABELS[key];
+      return f ? `${f} (${key})` : key;
+    }
+
+    // Medidesk API czasem zwraca etykiety bez polskich diakrytyków
+    // (np. "Zyczenie" zamiast "Życzenie"). Fallback tabela poprawia typowe przypadki.
+    const MD_LABEL_FIXES = {
+      'Zyczenie': 'Życzenie',
+      'Imie-i-nazwisko': 'Imię i nazwisko',
+    };
+    function fixMdLabel(label) {
+      if (!label) return label;
+      return MD_LABEL_FIXES[label] || label;
+    }
+
     function setupRoleUI(role) {
       USER_ROLE = role;
       document.getElementById('sidebar-sub').textContent = role === 'admin' ? 'Panel administratora' : 'Panel placówki';
@@ -1099,13 +1142,16 @@
         : '';
       // Show facilities nav + admin password change only for admin.
       // Hide "Nowa integracja" creation button for admin (admin manages, doesn't create).
+      // Ale "Dodaj placówkę" MUSI być widoczny dla admina — bez pierwszej placówki
+      // nie działa cały onboarding (user FB po logowaniu widzi "Konto czeka na aktywację",
+      // a admin nie ma jak go zatwierdzić bez istniejącej placówki).
       const newInt = document.getElementById('nav-new-integration');
       const addFac = document.getElementById('btn-add-facility');
       if (role === 'admin') {
         document.getElementById('nav-facilities').style.display = 'flex';
         document.getElementById('btn-change-pw').style.display = 'block';
         if (newInt) newInt.style.display = 'none';
-        if (addFac) addFac.style.display = 'none';
+        if (addFac) addFac.style.display = '';
       } else {
         if (newInt) newInt.style.display = 'flex';
         if (addFac) addFac.style.display = '';
@@ -1285,8 +1331,18 @@
         stats = MOCK_STATS;
       } else {
         try {
-          const resp = await apiFetch('/api/stats');
-          stats = await resp.json();
+          // Manual refresh: pobierz też listę integracji żeby nazwy w "Ostatnie leady"
+          // były spójne (bez tego nowe integracje wyświetlają się jako hash ID).
+          if (manual) {
+            const [sResp] = await Promise.all([
+              apiFetch('/api/stats'),
+              loadIntegrations(),
+            ]);
+            stats = await sResp.json();
+          } else {
+            const resp = await apiFetch('/api/stats');
+            stats = await resp.json();
+          }
         } catch { stats = { total_leads: 0, sent: 0, failed: 0, success_rate: 0, active_integrations: 0, total_integrations: 0, recent_leads: [] }; }
       }
       const upd = document.getElementById('recent-leads-updated');
@@ -1295,7 +1351,20 @@
 
       document.getElementById('kpi-total').textContent = stats.total_leads;
       document.getElementById('kpi-sent').textContent = stats.sent;
-      document.getElementById('kpi-rate').textContent = stats.success_rate + '%';
+      // Sukces: bez leadów → "—" w neutralnym szarym (zamiast 0% w "alarmowym" pomarańczu).
+      // Dla istniejących danych dobieramy kolor semantycznie: ≥90% zielony, ≥50% żółty, <50% czerwony.
+      const rateEl = document.getElementById('kpi-rate');
+      const rateCard = rateEl.closest('.kpi-card');
+      rateCard.classList.remove('kpi-neutral','kpi-green','kpi-yellow','kpi-red');
+      if (!stats.total_leads) {
+        rateEl.textContent = '—';
+        rateCard.classList.add('kpi-neutral');
+      } else {
+        rateEl.textContent = stats.success_rate + '%';
+        if (stats.success_rate >= 90) rateCard.classList.add('kpi-green');
+        else if (stats.success_rate >= 50) rateCard.classList.add('kpi-yellow');
+        else rateCard.classList.add('kpi-red');
+      }
       document.getElementById('kpi-active').textContent = stats.active_integrations;
       document.getElementById('kpi-active-sub').textContent = `z ${stats.total_integrations} łącznie`;
 
@@ -1303,7 +1372,7 @@
       const tbody = document.getElementById('recent-leads-body');
       const leads = stats.recent_leads || [];
       if (leads.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:1.5rem;">Brak danych — leady pojawią się po pierwszym połączeniu z Facebook</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:1.5rem;">Brak danych — leady pojawią się po pierwszym połączeniu z Facebook</td></tr>';
         return;
       }
 
@@ -1363,7 +1432,7 @@
         const accKey = 'acc-' + integId.replace(/[^a-zA-Z0-9]/g, '_');
         html += `
         <tr class="lead-acc-header" style="background:var(--bg-surface-hover);cursor:pointer;" onclick="toggleLeadAccordion('${accKey}', this)">
-          <td colspan="5" style="padding:0.7rem 1rem;">
+          <td colspan="4" style="padding:0.7rem 1rem;">
             <div style="display:flex;align-items:center;gap:0.6rem;">
               <span class="acc-arrow" style="display:inline-block;transition:transform 0.15s;transform:rotate(${open ? 90 : 0}deg);color:var(--text-muted);">▶</span>
               <span style="font-weight:600;color:var(--text-primary);">${integLabel(integId)}</span>
@@ -1397,10 +1466,9 @@
           <td>${leadStatusBadge(latest.status)}</td>
           <td>${latest.mapped_fields_count || 0} ${polPole(latest.mapped_fields_count || 0)}</td>
           <td>${timeAgo(latest.timestamp)}</td>
-          <td style="font-size:0.7rem;color:var(--text-muted);">${latest.integration_id?.substring(0, 8) || '—'}…</td>
         </tr>
         <tr id="recent-detail-${leadId}" class="${accKey}" style="display:none;">
-          <td colspan="5">
+          <td colspan="4">
             <div class="lead-detail">
               ${eventCount > 1 ? `
                 <div style="margin-bottom:0.8rem;">
@@ -1539,6 +1607,16 @@
       renderIntegrationsList();
     }
 
+    // Pełny reset widoku listy integracji: filtr + pole wyszukiwania.
+    // Wywoływane z linku "pokaż wszystkie" w empty-state gdzie user oczekuje
+    // że lista wróci do pełnego zestawu, niezależnie od wcześniejszego searcha.
+    function resetIntegrationsView() {
+      integrationsFilter = 'all';
+      const s = document.getElementById('integrations-search');
+      if (s) s.value = '';
+      renderIntegrationsList();
+    }
+
     function classifyIntegration(i) {
       const s = i.stats || { total: 0, sent: 0, failed: 0, last_lead_at: '' };
       if (!i.active) return { key: 'inactive', color: '#9CA3AF', bg: 'var(--border-subtle)', label: 'Wyłączona' };
@@ -1647,7 +1725,7 @@
             <div class="empty-state">
               <div class="icon">✨</div>
               <h3>Nic do pokazania w tym widoku</h3>
-              <p>Wybierz inny filtr lub <a style="color:#3B82F6;cursor:pointer;" onclick="setIntegrationsFilter('all')">pokaż wszystkie</a>.</p>
+              <p>Wybierz inny filtr lub <a style="color:#3B82F6;cursor:pointer;" onclick="resetIntegrationsView()">pokaż wszystkie</a>.</p>
             </div>`;
         } else {
           // Admin doesn't create integrations — only diagnoses. Show different empty state.
@@ -1964,13 +2042,30 @@
         ? `${integration.fb_page_name} · ${chain}`
         : `Strona FB: ${integration.fb_page_name}`;
 
-      // KPIs
+      // KPIs — semantyczne kolory zależne od wartości:
+      //  Błędy: 0 → neutralny szary (0 błędów to sukces, nie alarm), >0 → czerwony
+      //  Sukces: brak leadów → "—" szary, ≥90% zielony, ≥50% żółty, <50% czerwony
       const failCount = stats.failed || 0;
+      const errClass = failCount > 0 ? 'kpi-red' : 'kpi-neutral';
+      let rateClass, rateText;
+      if (!stats.total) {
+        rateClass = 'kpi-neutral';
+        rateText = '—';
+      } else if (stats.success_rate >= 90) {
+        rateClass = 'kpi-green';
+        rateText = stats.success_rate + '%';
+      } else if (stats.success_rate >= 50) {
+        rateClass = 'kpi-yellow';
+        rateText = stats.success_rate + '%';
+      } else {
+        rateClass = 'kpi-red';
+        rateText = stats.success_rate + '%';
+      }
       document.getElementById('room-kpis').innerHTML = `
         <div class="kpi-card kpi-blue"><div class="label">Leady</div><div class="value">${stats.total}</div></div>
         <div class="kpi-card kpi-green"><div class="label">Wysłane</div><div class="value">${stats.sent}</div></div>
-        <div class="kpi-card kpi-red"><div class="label">Błędy</div><div class="value">${failCount}</div></div>
-        <div class="kpi-card kpi-yellow"><div class="label">Sukces</div><div class="value">${stats.success_rate}%</div></div>
+        <div class="kpi-card ${errClass}"><div class="label">Błędy</div><div class="value">${failCount}</div></div>
+        <div class="kpi-card ${rateClass}"><div class="label">Sukces</div><div class="value">${rateText}</div></div>
       `;
 
       // Mapping table — render virtuals/constants/consents with friendly labels
@@ -1996,11 +2091,12 @@
         if (VIRT_LABELS[key]) return VIRT_LABELS[key];
         const q = getQuestion(key);
         if (q && q.is_consent) {
-          return q.consent_kind === 'text' 
+          return q.consent_kind === 'text'
             ? `${q.label || key}`
             : `☑ ${q.label || key}`;
         }
-        return key;
+        // Standardowe FB pola (email, phone_number, first_name, …) — przyjazna nazwa + raw key w nawiasie
+        return friendlyFbLabel(key);
       };
       const mappings = (integration.field_mappings || []).filter(m => (m.medidesk_field || '').trim());
 
@@ -2040,11 +2136,14 @@
         if (fbLabel.length > 60) {
           fbLabel = `<span title="${fullLabel}">${fbLabel.substring(0, 57)}…</span>`;
         }
+        // Naprawiamy etykiety Medidesk (Zyczenie → Życzenie itp.) + title dla długich.
+        const mdLabel = fixMdLabel(m.medidesk_field);
+        const mdTitle = mdLabel.replace(/"/g, '&quot;');
         return `
         <tr>
           <td class="fb-col" title="${fullLabel}">${fbLabel}</td>
           <td class="arrow">→</td>
-          <td class="md-col">${m.medidesk_field}</td>
+          <td class="md-col" title="${mdTitle}">${mdLabel}</td>
         </tr>`;
       };
 
@@ -2097,7 +2196,7 @@
           // guard doesn't apply to explicit UI retries.
           const retryBtn = finalStatus === 'failed'
             ? `<button class="btn btn-sm btn-success" style="font-size:0.72rem;" onclick="event.stopPropagation();retryLead('${leadId}')" title="Spróbuj ponownie wysłać do Medidesk">🔄 Powtórz</button>`
-            : `<button class="btn btn-sm btn-outline" style="color:#15803D;border-color:#BBF7D0;font-size:0.72rem;" onclick="event.stopPropagation();retryLead('${leadId}')" title="Wyślij ten lead do Medidesk jeszcze raz">🔄 Wyślij ponownie</button>`;
+            : `<button class="btn btn-sm btn-outline" style="color:#15803D;border-color:#BBF7D0;font-size:0.72rem;" onclick="event.stopPropagation();retryLead('${leadId}', true)" title="Wyślij ten lead do Medidesk jeszcze raz">🔄 Wyślij ponownie</button>`;
           const deleteBtn = `<button class="btn btn-sm btn-outline" style="color:#B91C1C;border-color:#FECACA;font-size:0.72rem;" onclick="event.stopPropagation();deleteLead('${leadId}')" title="Usuń leada z historii">🗑 Usuń</button>`;
 
           return `
@@ -2164,7 +2263,17 @@
       if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
     }
 
-    async function retryLead(leadId) {
+    // isResend=true oznacza ponowne wysłanie już dostarczonego leada (duplikat w Medidesk).
+    // Wymagamy potwierdzenia — w przeciwieństwie do "Powtórz" na failed leadzie, gdzie
+    // retry jest oczekiwaną naprawą. Spójne z "Usuń z historii" (też confirm).
+    async function retryLead(leadId, isResend = false) {
+      if (isResend) {
+        const ok = await appConfirm(
+          'Lead ' + leadId + ' zostanie wysłany do Medidesk jeszcze raz. W Medidesk może pojawić się duplikat. Kontynuować?',
+          { title: 'Wyślij ponownie', okLabel: 'Wyślij ponownie' }
+        );
+        if (!ok) return;
+      }
       if (DEMO) { showToast('DEMO: Ponowne przesłanie leada ' + leadId, 'success'); return; }
       try {
         const resp = await apiFetch(`/api/leads/${leadId}/retry`, { method: 'POST' });
@@ -2644,6 +2753,11 @@
       // Warning banner + save-button guard for required MD fields
       renderEditMissingRequiredBanner();
 
+      // Duplicate-target warning: jeśli dwa FB pola mapują się do tego samego Medidesk,
+      // ostatnia otrzymana wartość nadpisze poprzednie. Informujemy user o tym,
+      // ale nie blokujemy zapisu — czasem to celowe (np. pierwsza kolumna jako fallback).
+      renderEditDuplicateBanner();
+
       // "Add constant value" row
       const constRow = document.createElement('div');
       constRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
@@ -2758,7 +2872,7 @@
                    : '';
         // Show MD field type inline so the user can tell why a warning fired
         // without having to guess at MD's internal type mapping.
-        const label = (mdf.name || fieldKey) + req + typeTag + allowed + hint;
+        const label = fixMdLabel(mdf.name || fieldKey) + req + typeTag + allowed + hint;
         mdOptions += `<option value="${fieldKey}"${selAttr}>${label}</option>`;
       });
 
@@ -2867,6 +2981,39 @@
       }
     }
 
+    // Pokazuje ostrzeżenie gdy >=2 FB pola mapują się do tego samego Medidesk pola.
+    // To nie jest błąd (czasem celowe), ale user powinien wiedzieć że ostatnia
+    // przychodząca wartość nadpisze poprzednie — łatwo pomyłkowo zduplikować
+    // mapowanie (np. first_name + last_name → oba do "Imię i nazwisko").
+    function renderEditDuplicateBanner() {
+      const banner = document.getElementById('edit-duplicate-banner');
+      if (!banner) return;
+      const counts = new Map();
+      (editState.mappings || []).forEach(m => {
+        const md = (m.medidesk_field || '').trim();
+        if (!md) return;
+        counts.set(md, (counts.get(md) || 0) + 1);
+      });
+      const dups = Array.from(counts.entries()).filter(([, n]) => n > 1);
+      if (dups.length === 0) {
+        banner.style.display = 'none';
+        banner.innerHTML = '';
+        return;
+      }
+      const items = dups.map(([md, n]) => {
+        const fbFields = editState.mappings.filter(m => (m.medidesk_field || '').trim() === md).map(m => m.fb_field);
+        return `<li style="margin-bottom:2px;"><strong>${fixMdLabel(md)}</strong> ← ${fbFields.join(', ')} <span style="color:var(--text-muted);">(${n}×)</span></li>`;
+      }).join('');
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:0.6rem 0.8rem;margin:0.4rem 0;color:var(--text-primary);font-size:0.8rem;">
+          <div style="color:#B45309;font-weight:600;margin-bottom:0.3rem;">⚠️ Zduplikowane mapowanie Medidesk</div>
+          <div style="color:var(--text-secondary);margin-bottom:0.3rem;">To samo pole Medidesk dostaje wartość z kilku pól FB — ostatnia wartość nadpisze poprzednie.</div>
+          <ul style="margin:0;padding-left:1.2rem;">${items}</ul>
+        </div>
+      `;
+    }
+
     // Renders both banners (required + optional) for MD fields without a mapping.
     // Parity with setup_wizard: required fields block save (red palette), optional
     // fields are informational (amber palette) so the user can still see + map them.
@@ -2908,7 +3055,7 @@
         return `
           <div id="edit-missing-row-${fid}" style="padding:0.6rem 0.7rem;background:var(--bg-surface);border:1px solid ${palette.border};border-radius:8px;margin-top:0.4rem;">
             <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-              <strong style="color:${palette.text};font-size:0.82rem;">${palette.icon} ${f.name || fid}</strong>
+              <strong style="color:${palette.text};font-size:0.82rem;">${palette.icon} ${fixMdLabel(f.name || fid)}</strong>
               <span style="color:var(--text-muted);font-size:0.72rem;">(${f.type || 'field'})</span>
               <select class="edit-missing-fb-select" data-fid="${fid}" style="flex:1;min-width:180px;padding:0.3rem 0.5rem;background:var(--bg-surface);border:1px solid var(--border-primary);border-radius:6px;font-size:0.78rem;">${rowFbOpts}</select>
               <button class="btn btn-outline btn-edit-missing-const" data-fid="${fid}" style="font-size:0.75rem;padding:0.3rem 0.7rem;">✏️ Stała</button>

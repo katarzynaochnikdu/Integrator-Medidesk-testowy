@@ -78,3 +78,37 @@ body {
   color: var(--text-primary);
   transition: background-color 0.15s, color 0.15s;
 }
+
+/* Scrollbar tematyczny — natywne scrollbary w dark mode są białe/jasne,
+   co daje jaskrawy kontrast w modalach. Stylizujemy przez CSS vars. */
+[data-theme='dark'] {
+  scrollbar-color: #3f3f46 #1a1b25; /* Firefox: thumb track */
+}
+[data-theme='dark'] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: #1a1b25;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 6px;
+  border: 2px solid #1a1b25;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Wzmocnienie widoczności przycisków .btn-outline (głównie "Anuluj" w modalach).
+   Domyślna inline definicja używa --border-primary który w dark mode jest zbyt subtelny.
+   Override używa mocniejszego koloru — działa w light i dark. */
+.btn-outline {
+  border-color: var(--border-color-hover) !important;
+  color: var(--text-primary) !important;
+}
+.btn-outline:hover {
+  border-color: var(--accent-blue) !important;
+  color: var(--accent-blue) !important;
+  background: rgba(59, 130, 246, 0.08) !important;
+}
