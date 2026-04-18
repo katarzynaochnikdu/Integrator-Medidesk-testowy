@@ -226,21 +226,23 @@
     /* ─── Selectable list ─── */
     .select-list {
       display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
       max-height: 300px;
       overflow-y: auto;
     }
     .select-item {
       display: flex;
       align-items: center;
-      gap: 0.8rem;
-      padding: 0.7rem 1rem;
+      gap: 0.6rem;
+      padding: 0.55rem 0.85rem;
       border: 1px solid #E5E7EB;
       border-radius: 8px;
       background: #FFFFFF;
       cursor: pointer;
       transition: all 0.15s;
+      flex: 1 1 calc(33.333% - 0.5rem);
+      min-width: 200px;
     }
     .select-item:hover { border-color: #3b82f6; background: rgba(59,130,246,0.05); }
     .select-item.selected { border-color: #3b82f6; background: rgba(59,130,246,0.1); }

@@ -535,15 +535,6 @@
     </div>
   </div>
 
-  <!-- Topbar -->
-  <header style="position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #E5E7EB;display:flex;justify-content:space-between;align-items:center;padding:0 24px;height:56px;">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <img src="/static/icon.jpg" alt="" style="width:28px;height:28px;border-radius:6px;object-fit:cover;" />
-      <span style="font-weight:600;font-size:15px;color:#111827;">Medidesk Integrator</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;" id="topbar-user"></div>
-  </header>
-
   <!-- Token expiry alert -->
   <div id="token-expiry-alert" style="display:none;background:#FEF3C7;border-bottom:1px solid #F59E0B;padding:10px 24px;align-items:center;gap:12px;font-size:14px;color:#92400E;">
     🟡 Twój dostęp do Facebook wygasa za <strong id="token-days-left" style="margin:0 4px;"></strong> dni. Połączenia przestaną działać.
@@ -668,17 +659,12 @@
 
       <!-- Section: Integration Room -->
       <div class="section" id="sec-room">
-        <nav id="detail-breadcrumb" style="font-size:14px;color:#6B7280;margin-bottom:16px;">
-          <a href="#" onclick="showSection('integrations');return false;" style="color:#3B82F6;text-decoration:none;">Moje połączenia</a>
-          <span style="margin:0 6px;">›</span>
-          <span id="detail-breadcrumb-name"></span>
-        </nav>
-        <div class="room-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div style="display:flex;align-items:center;gap:12px;">
+        <div class="room-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;">
             <button class="back" onclick="showSection('integrations')">← Wróć</button>
-            <div>
-              <h3 id="room-title" style="font-size:1rem;font-weight:700;"></h3>
-              <div id="room-subtitle" style="font-size:0.75rem;color:#6B7280;"></div>
+            <div style="min-width:0;">
+              <h3 id="room-title" style="font-size:1.05rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></h3>
+              <div id="room-subtitle" style="font-size:0.75rem;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
             </div>
           </div>
           <button class="btn btn-sm btn-primary" onclick="openTestFlowModal()" title="Przetestuj end-to-end: wyślij testowy lead z FB i sprawdź czy dotarł do Medidesk">
@@ -956,7 +942,7 @@
     }
 
     // ─── Section nav ────────────────────────────────────
-    const titles = { overview: 'Przegląd', integrations: 'Integracje', room: 'Połączenie', facilities: 'Placówki' };
+    const titles = { overview: 'Przegląd', integrations: 'Integracje', room: '', facilities: 'Placówki' };
 
     function showSection(name) {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -964,7 +950,11 @@
       document.querySelectorAll('.nav-item[data-section]').forEach(n => {
         n.classList.toggle('active', n.dataset.section === name);
       });
-      document.getElementById('section-title').textContent = titles[name] || name;
+      const title = titles[name] || name;
+      const titleEl = document.getElementById('section-title');
+      const headerEl = titleEl && titleEl.closest('.main-header');
+      if (headerEl) headerEl.style.display = title ? '' : 'none';
+      titleEl.textContent = title;
       if (name === 'facilities') loadFacilities();
     }
 
@@ -1527,7 +1517,8 @@
 
         return `
         <div class="int-tile" data-id="${i.id}" data-status="${cls.key}"
-             style="background:#FFFFFF;border:1px solid #E5E7EB;border-left:4px solid ${cls.color};border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;transition:box-shadow 0.15s;"
+             style="background:#FFFFFF;border:1px solid #E5E7EB;border-left:4px solid ${cls.color};border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;transition:box-shadow 0.15s;cursor:pointer;"
+             onclick="if(!event.target.closest('button')&&!event.target.closest('a'))openRoom('${i.id}')"
              onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseout="this.style.boxShadow=''">
 
           <div style="flex:1;min-width:0;">
@@ -1685,13 +1676,15 @@
         }
       }
 
-      // Set titles
-      const roomTitle = (integration.name && integration.name.trim()) || integration.fb_page_name || 'Integracja';
+      // Set titles. Subtitle shows the FB→Medidesk chain so the title can be the user-given name.
+      const hasCustomName = !!(integration.name && integration.name.trim());
+      const chain = `${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
+      const roomTitle = hasCustomName ? integration.name.trim() : chain;
       _currentRoomIntegration = integration;
       document.getElementById('room-title').textContent = roomTitle;
-      document.getElementById('room-subtitle').textContent = `${integration.fb_page_name} · ${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
-      const bcName = document.getElementById('detail-breadcrumb-name');
-      if (bcName) bcName.textContent = integration.name || integration.fb_form_name || '';
+      document.getElementById('room-subtitle').textContent = hasCustomName
+        ? `${integration.fb_page_name} · ${chain}`
+        : `Strona FB: ${integration.fb_page_name}`;
 
       // KPIs
       const failCount = stats.failed || 0;
