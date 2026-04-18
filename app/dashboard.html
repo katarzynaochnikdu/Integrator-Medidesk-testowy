@@ -1553,7 +1553,7 @@
       // Set titles
       const roomTitle = (integration.name && integration.name.trim()) || integration.fb_page_name || 'Integracja';
       document.getElementById('room-title').textContent = roomTitle;
-      document.getElementById('room-subtitle').textContent = `📘 ${integration.fb_page_name} · ${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
+      document.getElementById('room-subtitle').textContent = `${integration.fb_page_name} · ${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
       const bcName = document.getElementById('detail-breadcrumb-name');
       if (bcName) bcName.textContent = integration.name || integration.fb_form_name || '';
 

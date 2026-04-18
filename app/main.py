@@ -1280,7 +1280,7 @@ async def invite_page(token: str):
     fac_name = fac.name if fac else "placówki"
     role = row["role"]
     body = f"""
-        <div class="icon">📘</div>
+        <div class="icon"><img src="/static/icon.jpg" alt="Medidesk Integrator"/></div>
         <h2>Dołącz do {fac_name}</h2>
         <p>Zostałeś zaproszony jako <strong>{role}</strong>. Zaloguj się przez Facebook,
            aby dokończyć dołączenie.</p>
@@ -1304,7 +1304,10 @@ def _invite_html(body: str) -> str:
          display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }}
   .box {{ background: #13141b; border: 1px solid #1e2030; border-radius: 16px;
          padding: 2.5rem; max-width: 420px; text-align: center; }}
-  .icon {{ font-size: 2.5rem; margin-bottom: 0.5rem; }}
+  .icon {{ width: 56px; height: 56px; margin: 0 auto 0.8rem; border-radius: 14px;
+           overflow: hidden; display: flex; align-items: center; justify-content: center;
+           background: #0f1117; border: 1px solid #1e2030; }}
+  .icon img {{ width: 100%; height: 100%; object-fit: cover; }}
   h2 {{ font-size: 1.2rem; margin: 0 0 0.6rem; }}
   p {{ font-size: 0.88rem; color: #a1a1aa; line-height: 1.5; }}
   p.sub {{ font-size: 0.72rem; color: #52525b; margin-top: 1rem; }}
