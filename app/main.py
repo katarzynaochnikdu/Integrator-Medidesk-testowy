@@ -169,6 +169,23 @@ async def startup_db():
 
     asyncio.create_task(_token_check_loop())
 
+    # Hard-delete soft-deleted lead history after the 72h grace window.
+    # Runs hourly so the purge is quick and continuous rather than piling up
+    # thousands of rows for a single daily sweep.
+    async def _orphan_purge_loop():
+        from app.integrations_store import purge_orphan_lead_events
+        await asyncio.sleep(120)  # let startup settle before first sweep
+        while True:
+            try:
+                removed = purge_orphan_lead_events(grace_hours=72)
+                if removed:
+                    logger.info("Purged %d orphan lead events (past 72h grace)", removed)
+            except Exception:
+                logger.error("Orphan lead purge failed", exc_info=True)
+            await asyncio.sleep(3600)  # 1 hour
+
+    asyncio.create_task(_orphan_purge_loop())
+
 
 # ─── Existing endpoints ───────────────────────────────────────────────
 
@@ -610,15 +627,20 @@ async def remove_integration(integration_id: str, request: Request, _session=Dep
 
 @app.get("/api/stats")
 async def global_stats(_session=Depends(require_auth)):
-    """Global lead processing stats."""
+    """Global lead processing stats.
+
+    Non-admins never see leads from soft-deleted integrations; admins retain
+    visibility for the 72h grace window (so an accidental delete is reversible).
+    """
     from app.lead_tracker import get_global_stats, get_recent_leads
     from app.integrations_store import get_all_integrations
 
-    stats = get_global_stats()
+    include_orphans = _session.get("role") == "admin"
+    stats = get_global_stats(include_orphans=include_orphans)
     integrations = get_all_integrations()
     stats["active_integrations"] = sum(1 for i in integrations if i.active)
     stats["total_integrations"] = len(integrations)
-    stats["recent_leads"] = get_recent_leads(limit=10)
+    stats["recent_leads"] = get_recent_leads(limit=10, include_orphans=include_orphans)
     return stats
 
 
@@ -853,7 +875,12 @@ async def integration_stats(integration_id: str, _session=Depends(require_auth))
     if not _check_integration_access(integration, _session):
         return JSONResponse(status_code=403, content={"error": "Brak dostępu do tej integracji"})
 
-    stats = get_stats(integration_id)
+    # Note: reaching this point means the integration still exists (we looked
+    # it up above). Orphan filtering here mainly guards the `recent_leads` and
+    # stats numbers from being inconsistent across endpoints — in practice a
+    # live integration never has rows marked `integration_deleted_at`.
+    include_orphans = _session.get("role") == "admin"
+    stats = get_stats(integration_id, include_orphans=include_orphans)
     return {
         "integration_id": integration_id,
         "total": stats.total,
@@ -861,7 +888,7 @@ async def integration_stats(integration_id: str, _session=Depends(require_auth))
         "failed": stats.failed,
         "success_rate": stats.success_rate,
         "last_lead_at": stats.last_lead_at,
-        "recent_leads": get_recent_leads(integration_id, limit=20),
+        "recent_leads": get_recent_leads(integration_id, limit=20, include_orphans=include_orphans),
     }
 
 
@@ -869,14 +896,16 @@ async def integration_stats(integration_id: str, _session=Depends(require_auth))
 async def list_failed_leads(_session=Depends(require_auth)):
     """Get all failed leads (not yet successfully retried)."""
     from app.lead_tracker import get_failed_leads
-    return {"failed_leads": get_failed_leads()}
+    include_orphans = _session.get("role") == "admin"
+    return {"failed_leads": get_failed_leads(include_orphans=include_orphans)}
 
 
 @app.get("/api/leads/{lead_id}")
 async def get_lead_detail(lead_id: str, _session=Depends(require_auth)):
     """Get full details of a lead event (including raw data)."""
     from app.lead_tracker import get_lead_event
-    event = get_lead_event(lead_id)
+    include_orphans = _session.get("role") == "admin"
+    event = get_lead_event(lead_id, include_orphans=include_orphans)
     if not event:
         return JSONResponse(status_code=404, content={"error": "Lead not found"})
     return event

@@ -267,10 +267,50 @@ def update_integration(integration_id: str, **updates: Any) -> Integration | Non
 
 
 def delete_integration(integration_id: str) -> bool:
+    """Delete an integration and soft-mark its lead history.
+
+    The integration row is removed immediately so new webhooks can't match
+    it. Its lead_events rows are KEPT but stamped with `integration_deleted_at`
+    — non-admins stop seeing them right away, admins keep visibility for 72h
+    (background purge hard-deletes after that). Rationale: an accidental
+    integration-delete shouldn't instantly destroy lead history that might be
+    needed to restore or audit.
+    """
     conn = get_connection()
+    now_iso = datetime.now(timezone.utc).isoformat()
+    # Soft-mark FIRST so the grace window starts even if the DELETE below
+    # fails. Only stamps rows that aren't already stamped, so a re-delete
+    # (shouldn't happen, but defensively) doesn't reset the 72h countdown.
+    conn.execute(
+        """UPDATE lead_events
+           SET integration_deleted_at = ?
+           WHERE integration_id = ?
+             AND (integration_deleted_at IS NULL OR integration_deleted_at = '')""",
+        (now_iso, integration_id),
+    )
     cursor = conn.execute("DELETE FROM integrations WHERE id = ?", (integration_id,))
     conn.commit()
     return cursor.rowcount > 0
+
+
+def purge_orphan_lead_events(grace_hours: int = 72) -> int:
+    """Hard-delete lead events whose integration was removed >grace_hours ago.
+
+    Meant to be run on a schedule. Returns the number of rows deleted.
+    """
+    from datetime import timedelta
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=grace_hours)).isoformat()
+    conn = get_connection()
+    cursor = conn.execute(
+        """DELETE FROM lead_events
+           WHERE integration_deleted_at IS NOT NULL
+             AND integration_deleted_at != ''
+             AND integration_deleted_at < ?""",
+        (cutoff,),
+    )
+    conn.commit()
+    return cursor.rowcount or 0
 
 
 def get_integrations_by_facility(facility_id: str) -> list[Integration]:

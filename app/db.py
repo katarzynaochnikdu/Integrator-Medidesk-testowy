@@ -210,6 +210,20 @@ def _init_tables(conn: sqlite3.Connection) -> None:
     _safe_add_column(conn, "sessions", "facility_name", "TEXT DEFAULT ''")
     _safe_add_column(conn, "sessions", "last_activity_at", "REAL")
     _safe_add_column(conn, "sessions", "fb_user_id", "TEXT DEFAULT ''")
+    # Soft-delete marker for lead events whose integration was removed.
+    # NULL/empty = integration still exists; ISO timestamp = when it was deleted.
+    # Non-admins filter these out immediately; admins keep seeing them for 72h
+    # so an accidental integration-delete can be rolled back. Background purge
+    # hard-deletes rows after the grace window.
+    _safe_add_column(conn, "lead_events", "integration_deleted_at", "TEXT DEFAULT ''")
+    try:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_lead_events_integration_deleted_at "
+            "ON lead_events(integration_deleted_at)"
+        )
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
 
     # Create indexes on migrated columns (safe — column now exists)
     try:

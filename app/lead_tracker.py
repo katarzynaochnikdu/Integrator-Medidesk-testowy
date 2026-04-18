@@ -48,6 +48,19 @@ def _row_to_dict(row) -> dict[str, Any]:
     return d
 
 
+# SQL fragment that hides events belonging to deleted integrations (orphans).
+# Non-admin callers pass `include_orphans=False` to keep a clean history view
+# — admins pass True so they retain the 72h restore window.
+_ORPHAN_HIDE_CLAUSE = (
+    "(integration_deleted_at IS NULL OR integration_deleted_at = '')"
+)
+
+
+def _orphan_clause(include_orphans: bool, prefix: str = "AND") -> str:
+    """Produce `AND <hide>` (or `WHERE <hide>`) when orphans must be hidden."""
+    return "" if include_orphans else f" {prefix} {_ORPHAN_HIDE_CLAUSE}"
+
+
 def log_lead_event(
     integration_id: str,
     lead_id: str,
@@ -91,32 +104,49 @@ def log_lead_event(
     return event
 
 
-def get_lead_event(lead_id: str, status: str | None = None) -> dict[str, Any] | None:
-    """Find a specific lead event (latest matching). If status given, filter by it."""
+def get_lead_event(
+    lead_id: str,
+    status: str | None = None,
+    include_orphans: bool = True,
+) -> dict[str, Any] | None:
+    """Find a specific lead event (latest matching). If status given, filter by it.
+
+    `include_orphans=False` hides events whose integration was soft-deleted.
+    The retry path passes True because it needs to resolve event data even
+    for deleted integrations (so admins can still retry within the 72h window).
+    """
     conn = get_connection()
+    orphan_sql = _orphan_clause(include_orphans)
     if status:
         row = conn.execute(
-            "SELECT * FROM lead_events WHERE lead_id = ? AND status = ? ORDER BY id DESC LIMIT 1",
+            f"SELECT * FROM lead_events WHERE lead_id = ? AND status = ?{orphan_sql} ORDER BY id DESC LIMIT 1",
             (lead_id, status),
         ).fetchone()
     else:
         row = conn.execute(
-            "SELECT * FROM lead_events WHERE lead_id = ? ORDER BY id DESC LIMIT 1",
+            f"SELECT * FROM lead_events WHERE lead_id = ?{orphan_sql} ORDER BY id DESC LIMIT 1",
             (lead_id,),
         ).fetchone()
     return _row_to_dict(row) if row else None
 
 
-def get_failed_leads(integration_id: str | None = None) -> list[dict[str, Any]]:
-    """Get all failed leads (not yet successfully retried)."""
+def get_failed_leads(
+    integration_id: str | None = None,
+    include_orphans: bool = True,
+) -> list[dict[str, Any]]:
+    """Get all failed leads (not yet successfully retried).
+
+    `include_orphans=False` hides leads from soft-deleted integrations.
+    """
     conn = get_connection()
+    orphan_sql = _orphan_clause(include_orphans)
     if integration_id:
         rows = conn.execute(
-            """SELECT le.* FROM lead_events le
+            f"""SELECT le.* FROM lead_events le
                INNER JOIN (
                    SELECT lead_id, MAX(id) as max_id
                    FROM lead_events
-                   WHERE status = 'failed' AND integration_id = ?
+                   WHERE status = 'failed' AND integration_id = ?{orphan_sql}
                    GROUP BY lead_id
                ) latest ON le.id = latest.max_id
                WHERE le.lead_id NOT IN (
@@ -127,11 +157,11 @@ def get_failed_leads(integration_id: str | None = None) -> list[dict[str, Any]]:
         ).fetchall()
     else:
         rows = conn.execute(
-            """SELECT le.* FROM lead_events le
+            f"""SELECT le.* FROM lead_events le
                INNER JOIN (
                    SELECT lead_id, MAX(id) as max_id
                    FROM lead_events
-                   WHERE status = 'failed'
+                   WHERE status = 'failed'{orphan_sql}
                    GROUP BY lead_id
                ) latest ON le.id = latest.max_id
                WHERE le.lead_id NOT IN (
@@ -157,16 +187,19 @@ def mark_retried(lead_id: str) -> None:
     conn.commit()
 
 
-def get_stats(integration_id: str) -> IntegrationStats:
+def get_stats(integration_id: str, include_orphans: bool = True) -> IntegrationStats:
     """Get stats for a specific integration.
 
     Counts *unique* leads, not every attempt. A lead counts as 'sent' if it was
     ever successfully sent (even after retries); 'failed' only if it has at least
-    one failed attempt and was never sent.
+    one failed attempt and was never sent. `include_orphans=False` hides events
+    from soft-deleted integrations (typically: the integration itself is still
+    live, so the flag rarely changes output here — but kept for consistency).
     """
     conn = get_connection()
+    orphan_sql = _orphan_clause(include_orphans)
     row = conn.execute(
-        """SELECT
+        f"""SELECT
                COUNT(DISTINCT lead_id) as total,
                COUNT(DISTINCT CASE WHEN status = 'sent' THEN lead_id END) as sent,
                COUNT(DISTINCT CASE
@@ -177,7 +210,7 @@ def get_stats(integration_id: str) -> IntegrationStats:
                END) as failed,
                MAX(timestamp) as last_lead_at
            FROM lead_events
-           WHERE integration_id = ?""",
+           WHERE integration_id = ?{orphan_sql}""",
         (integration_id, integration_id),
     ).fetchone()
     total = row["total"] or 0
@@ -193,11 +226,16 @@ def get_stats(integration_id: str) -> IntegrationStats:
     )
 
 
-def get_global_stats() -> dict[str, Any]:
-    """Aggregate stats across all integrations. Counts unique leads — see get_stats."""
+def get_global_stats(include_orphans: bool = True) -> dict[str, Any]:
+    """Aggregate stats across all integrations. Counts unique leads — see get_stats.
+
+    `include_orphans=False` excludes events whose integration was soft-deleted,
+    so non-admins see KPI counters that match their filtered "Ostatnie leady".
+    """
     conn = get_connection()
+    orphan_sql = _orphan_clause(include_orphans, prefix="WHERE")
     row = conn.execute(
-        """SELECT
+        f"""SELECT
                COUNT(DISTINCT lead_id) as total,
                COUNT(DISTINCT CASE WHEN status = 'sent' THEN lead_id END) as sent,
                COUNT(DISTINCT CASE
@@ -206,7 +244,7 @@ def get_global_stats() -> dict[str, Any]:
                    ) THEN lead_id
                END) as failed,
                MAX(timestamp) as last_lead_at
-           FROM lead_events""",
+           FROM lead_events{orphan_sql}""",
     ).fetchone()
     total = row["total"] or 0
     sent = row["sent"] or 0
@@ -220,17 +258,26 @@ def get_global_stats() -> dict[str, Any]:
     }
 
 
-def get_recent_leads(integration_id: str | None = None, limit: int = 20) -> list[dict[str, Any]]:
-    """Get most recent lead events, optionally filtered by integration."""
+def get_recent_leads(
+    integration_id: str | None = None,
+    limit: int = 20,
+    include_orphans: bool = True,
+) -> list[dict[str, Any]]:
+    """Get most recent lead events, optionally filtered by integration.
+
+    `include_orphans=False` hides events whose integration was soft-deleted.
+    """
     conn = get_connection()
     if integration_id:
+        orphan_sql = _orphan_clause(include_orphans)
         rows = conn.execute(
-            "SELECT * FROM lead_events WHERE integration_id = ? ORDER BY id DESC LIMIT ?",
+            f"SELECT * FROM lead_events WHERE integration_id = ?{orphan_sql} ORDER BY id DESC LIMIT ?",
             (integration_id, limit),
         ).fetchall()
     else:
+        orphan_sql = _orphan_clause(include_orphans, prefix="WHERE")
         rows = conn.execute(
-            "SELECT * FROM lead_events ORDER BY id DESC LIMIT ?",
+            f"SELECT * FROM lead_events{orphan_sql} ORDER BY id DESC LIMIT ?",
             (limit,),
         ).fetchall()
     return [_row_to_dict(r) for r in rows]
