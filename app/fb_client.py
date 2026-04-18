@@ -109,12 +109,32 @@ def _extract_consent_questions(form: dict[str, Any]) -> list[dict[str, Any]]:
             key = _safe_str(cb.get("key") or cb.get("name"))
             if not key:
                 continue
+            label = _safe_str(cb.get("label") or cb.get("text")) or key
+            required = bool(cb.get("is_required") or cb.get("required"))
+            # Pair 1 of 2: the checkbox value (true/false) — same key the lead's
+            # field_data carries so this maps cleanly to MD checkbox/consent fields.
             out.append({
                 "key": key,
-                "label": _safe_str(cb.get("label") or cb.get("text")) or key,
+                "label": label,
                 "type": "CHECKBOX",
                 "is_consent": True,
-                "is_required": bool(cb.get("is_required") or cb.get("required")),
+                "consent_kind": "checkbox",
+                "is_required": required,
+                "consent_body": full_text,
+            })
+            # Pair 2 of 2: the consent TEXT — virtual field whose value resolves
+            # to the consent label (only when the checkbox was actually checked).
+            # Lets the user route the readable consent text into a Medidesk
+            # long-text/notes field for compliance records.
+            out.append({
+                "key": f"__consent_text:{key}",
+                "label": label,
+                "type": "TEXT",
+                "is_consent": True,
+                "consent_kind": "text",
+                "is_required": False,
+                "consent_source_key": key,
+                "consent_label": label,
                 "consent_body": full_text,
             })
 
@@ -132,13 +152,28 @@ def _extract_consent_questions(form: dict[str, Any]) -> list[dict[str, Any]]:
             key = _safe_str(c.get("key") or c.get("name"))
             if not key:
                 continue
+            label = _safe_str(c.get("label") or c.get("text")) or key
+            body = _safe_str(c.get("body") or c.get("description"))
+            required = bool(c.get("is_required") or c.get("required"))
             out.append({
                 "key": key,
-                "label": _safe_str(c.get("label") or c.get("text")) or key,
+                "label": label,
                 "type": "CHECKBOX",
                 "is_consent": True,
-                "is_required": bool(c.get("is_required") or c.get("required")),
-                "consent_body": _safe_str(c.get("body") or c.get("description")),
+                "consent_kind": "checkbox",
+                "is_required": required,
+                "consent_body": body,
+            })
+            out.append({
+                "key": f"__consent_text:{key}",
+                "label": label,
+                "type": "TEXT",
+                "is_consent": True,
+                "consent_kind": "text",
+                "is_required": False,
+                "consent_source_key": key,
+                "consent_label": label,
+                "consent_body": body,
             })
     except Exception as exc:
         # Don't take down the whole forms list because of a malformed disclaimer.

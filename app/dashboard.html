@@ -328,6 +328,15 @@
       background: rgba(139, 92, 246, 0.06);
     }
     .field-chip.fb.is-consent:hover { background: rgba(139, 92, 246, 0.12); }
+    /* Paired "text" variant of a consent — same lock concept but indigo so
+       it's visually distinct from the checkbox sibling at a glance. */
+    .field-chip.fb.is-consent-text {
+      border-style: dashed;
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #3730a3;
+      background: rgba(99, 102, 241, 0.06);
+    }
+    .field-chip.fb.is-consent-text:hover { background: rgba(99, 102, 241, 0.12); }
 
     .mapping-arrow {
       color: #9CA3AF;
@@ -1753,11 +1762,37 @@
         <div class="kpi-card kpi-yellow"><div class="label">Success</div><div class="value">${stats.success_rate}%</div></div>
       `;
 
-      // Mapping table
-      const mappings = integration.field_mappings || [];
+      // Mapping table — render virtuals/constants/consents with friendly labels
+      // instead of cryptic raw keys (`__consent_text:abc123` etc.). Skip-marked
+      // mappings (medidesk_field=='') are hidden — they're persisted intent but
+      // not active mappings.
+      const VIRT_LABELS = {
+        '__fb_form_name__': '📋 Nazwa formularza',
+        '__fb_lead_date__': '📅 Data leada',
+        '__fb_ad_name__': '📢 Nazwa reklamy',
+        '__fb_adset_name__': '🎯 Zestaw reklam',
+        '__fb_campaign_name__': '📊 Kampania',
+        '__fb_platform__': '🌐 Platforma',
+        '__fb_is_organic__': '🌱 Organiczny',
+        '__fb_lead_id__': '🔑 ID leada',
+      };
+      const fbQuestions = integration.fb_form_questions || [];
+      const formatFbField = (key) => {
+        if (!key) return '';
+        if (key.startsWith('__const:') && key.endsWith('__')) return '📌 ' + key.slice(8, -2);
+        if (key.startsWith('__CONST__')) return '📌 ' + key.slice(9);
+        if (VIRT_LABELS[key]) return VIRT_LABELS[key];
+        const q = fbQuestions.find(q => (q.key || q.name || q.label) === key);
+        if (q && q.is_consent) {
+          const icon = q.consent_kind === 'text' ? '📝' : '🔒';
+          return `${icon} ${q.label || key}` + (q.consent_kind === 'text' ? ' (treść)' : '');
+        }
+        return key;
+      };
+      const mappings = (integration.field_mappings || []).filter(m => (m.medidesk_field || '').trim());
       document.getElementById('room-mappings-body').innerHTML = mappings.map(m => `
         <tr>
-          <td class="fb-col">${m.fb_field}</td>
+          <td class="fb-col" title="${(m.fb_field || '').replace(/"/g,'&quot;')}">${formatFbField(m.fb_field)}</td>
           <td class="arrow">→</td>
           <td class="md-col">${m.medidesk_field}</td>
         </tr>
@@ -2235,11 +2270,22 @@
         fbDisplay = (VIRTUAL_FIELDS.find(f => f.key === fbKey) || {}).label || fbKey;
         chipExtraClass = 'is-virtual';
       } else if (isConsent) {
-        // Consent surfaced from FB legal_content / gdpr_consent. 🔒 prefix +
-        // full disclaimer body in tooltip; click-to-copy wired below.
-        fbDisplay = '🔒 ' + (consentLabel || fbKey);
-        chipExtraClass = 'is-consent';
-        const tipParts = [`Zgoda z formularza FB${fbQuestion.is_required ? ' (wymagana)' : ''}`];
+        // Consents arrive as a PAIR (checkbox + text) — show different icon
+        // and a (treść) suffix on the text variant so user can tell them apart.
+        // Both share click-to-copy on the chip itself.
+        const consentKind = (fbQuestion && fbQuestion.consent_kind) || 'checkbox';
+        const labelTxt = consentLabel || fbKey;
+        if (consentKind === 'text') {
+          fbDisplay = '📝 ' + labelTxt + ' (treść)';
+          chipExtraClass = 'is-consent-text';
+        } else {
+          fbDisplay = '🔒 ' + labelTxt;
+          chipExtraClass = 'is-consent';
+        }
+        const kindHint = consentKind === 'text'
+          ? '— wartość: tekst zgody (gdy checkbox zaznaczony), inaczej pusty'
+          : '— wartość: true / false';
+        const tipParts = [`Zgoda z FB${fbQuestion.is_required ? ' (wymagana)' : ''} ${kindHint}`];
         if (consentBody) {
           tipParts.push('', consentBody, '', '(kliknij chip aby skopiować tekst)');
         }

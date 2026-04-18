@@ -39,6 +39,23 @@ def build_medidesk_fields(
         key=lambda m: (m.medidesk_field, m.fb_field),
     )
 
+    # Pre-build a lookup of consent text labels keyed by their __consent_text:
+    # virtual key, so the inner loop can resolve them in O(1). Each consent
+    # in the form definition is paired (CHECKBOX + TEXT) by fb_client; the TEXT
+    # entry carries `consent_label` and a `consent_source_key` pointing back
+    # to the underlying checkbox (whose true/false value lives in field_data).
+    consent_text_map: dict[str, dict[str, str]] = {}
+    for q in (getattr(integration, "fb_form_questions", None) or []):
+        if not isinstance(q, dict):
+            continue
+        if q.get("consent_kind") == "text":
+            key = q.get("key") or ""
+            if key:
+                consent_text_map[key] = {
+                    "label": q.get("consent_label") or q.get("label") or "",
+                    "source_key": q.get("consent_source_key") or "",
+                }
+
     for mapping in sorted_mappings:
         # Persisted "skip" marker from the edit UI — user explicitly set this
         # FB field to "— Nie mapuj —". Keep the record (so the choice survives
@@ -50,6 +67,16 @@ def build_medidesk_fields(
             fb_value = fb_key[8:-2]
         elif fb_key.startswith("__CONST__"):
             fb_value = fb_key[9:]
+        elif fb_key.startswith("__consent_text:"):
+            # Virtual "consent text" — value is the human-readable consent
+            # label, but ONLY when the underlying checkbox was actually checked
+            # by the lead. Unchecked optional consents resolve to "" so they
+            # don't accidentally end up in the Medidesk record.
+            meta = consent_text_map.get(fb_key) or {}
+            source_key = meta.get("source_key") or fb_key[len("__consent_text:"):]
+            raw_check = str(fb_field_data.get(source_key, "")).strip().lower()
+            is_checked = raw_check in ("true", "1", "yes", "tak", "on", "y", "t", "checked")
+            fb_value = (meta.get("label") or "") if is_checked else ""
         elif fb_key.startswith("__fb_"):
             virtual_map = {
                 "__fb_form_name__": getattr(integration, "fb_form_name", "") or "",
