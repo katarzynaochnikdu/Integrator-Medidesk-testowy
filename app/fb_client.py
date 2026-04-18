@@ -49,6 +49,28 @@ def _graph_url(path: str) -> str:
     return f"{GRAPH_BASE}/{settings.fb_graph_version}/{path}"
 
 
+def _safe_str(value: Any) -> str:
+    """Coerce a value FB API might return as str/dict/None into a clean string.
+
+    FB has been known to return rich-text fields as either a plain str or a
+    dict like `{"text": "..."}` — depending on form age + region. Without this
+    coercion the previous version blew up with `AttributeError: 'dict' object
+    has no attribute 'strip'` and crashed the whole get_page_lead_forms call.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        # Try common text keys before giving up.
+        for k in ("text", "body", "value", "label"):
+            v = value.get(k)
+            if isinstance(v, str):
+                return v.strip()
+        return ""
+    return str(value).strip()
+
+
 def _extract_consent_questions(form: dict[str, Any]) -> list[dict[str, Any]]:
     """Pull consent checkboxes out of FB Lead Form `legal_content` + `gdpr_consent`.
 
@@ -58,53 +80,71 @@ def _extract_consent_questions(form: dict[str, Any]) -> list[dict[str, Any]]:
     to map them onto Medidesk fields. This helper synthesizes question entries
     so the wizard can display + map them like any other field.
 
-    Each returned entry carries:
-      - `key`           — matches the field_data name FB sends with the lead
-      - `label`         — checkbox text shown to the lead
-      - `type`          — "CHECKBOX" so type-compat treats it like a bool
-      - `is_consent`    — UI flag: render with 🔒 icon, suggest `true` constant
-      - `is_required`   — if FB says the checkbox MUST be checked
-      - `consent_body`  — full disclaimer text the lead actually saw (may be
-                          long — UI exposes it via tooltip + copy-to-clipboard
-                          so the user can paste it into a Medidesk note field
-                          for compliance records).
+    Wrapped in a top-level try/except so any unexpected FB response shape
+    degrades gracefully (no consents shown) instead of crashing the entire
+    forms-list endpoint with a 500 — the regular `questions` array stays
+    available even if consent extraction fails.
     """
     out: list[dict[str, Any]] = []
+    try:
+        if not isinstance(form, dict):
+            return out
 
-    # Path 1: legal_content.custom_disclaimer.checkboxes — most common shape.
-    legal = (form.get("legal_content") or {})
-    disclaimer = legal.get("custom_disclaimer") or form.get("custom_disclaimer") or {}
-    body = (disclaimer.get("body") or "").strip()
-    title = (disclaimer.get("title") or "").strip()
-    full_text = "\n".join(p for p in (title, body) if p)
-    for cb in (disclaimer.get("checkboxes") or []):
-        key = cb.get("key") or cb.get("name") or ""
-        if not key:
-            continue
-        out.append({
-            "key": key,
-            "label": cb.get("label") or cb.get("text") or key,
-            "type": "CHECKBOX",
-            "is_consent": True,
-            "is_required": bool(cb.get("is_required") or cb.get("required")),
-            "consent_body": full_text,
-        })
+        # Path 1: legal_content.custom_disclaimer.checkboxes — most common shape.
+        legal = form.get("legal_content")
+        if not isinstance(legal, dict):
+            legal = {}
+        disclaimer = legal.get("custom_disclaimer") or form.get("custom_disclaimer")
+        if not isinstance(disclaimer, dict):
+            disclaimer = {}
+        body = _safe_str(disclaimer.get("body"))
+        title = _safe_str(disclaimer.get("title"))
+        full_text = "\n".join(p for p in (title, body) if p)
+        checkboxes = disclaimer.get("checkboxes") or []
+        if not isinstance(checkboxes, list):
+            checkboxes = []
+        for cb in checkboxes:
+            if not isinstance(cb, dict):
+                continue
+            key = _safe_str(cb.get("key") or cb.get("name"))
+            if not key:
+                continue
+            out.append({
+                "key": key,
+                "label": _safe_str(cb.get("label") or cb.get("text")) or key,
+                "type": "CHECKBOX",
+                "is_consent": True,
+                "is_required": bool(cb.get("is_required") or cb.get("required")),
+                "consent_body": full_text,
+            })
 
-    # Path 2: gdpr_consent.custom_consent[] — newer EU-region forms put GDPR
-    # checkboxes here, each with its own body. Same fields, different source.
-    gdpr = form.get("gdpr_consent") or {}
-    for c in (gdpr.get("custom_consent") or []):
-        key = c.get("key") or c.get("name") or ""
-        if not key:
-            continue
-        out.append({
-            "key": key,
-            "label": c.get("label") or c.get("text") or key,
-            "type": "CHECKBOX",
-            "is_consent": True,
-            "is_required": bool(c.get("is_required") or c.get("required")),
-            "consent_body": (c.get("body") or c.get("description") or "").strip(),
-        })
+        # Path 2: gdpr_consent.custom_consent[] — newer EU-region forms put GDPR
+        # checkboxes here, each with its own body. Same fields, different source.
+        gdpr = form.get("gdpr_consent")
+        if not isinstance(gdpr, dict):
+            gdpr = {}
+        custom_consent = gdpr.get("custom_consent") or []
+        if not isinstance(custom_consent, list):
+            custom_consent = []
+        for c in custom_consent:
+            if not isinstance(c, dict):
+                continue
+            key = _safe_str(c.get("key") or c.get("name"))
+            if not key:
+                continue
+            out.append({
+                "key": key,
+                "label": _safe_str(c.get("label") or c.get("text")) or key,
+                "type": "CHECKBOX",
+                "is_consent": True,
+                "is_required": bool(c.get("is_required") or c.get("required")),
+                "consent_body": _safe_str(c.get("body") or c.get("description")),
+            })
+    except Exception as exc:
+        # Don't take down the whole forms list because of a malformed disclaimer.
+        # Log enough to debug later from Render logs.
+        logger.exception("Consent extraction failed for form %s: %s", form.get("id", "?"), exc)
+        return []
 
     return out
 
@@ -287,28 +327,37 @@ async def get_page_lead_forms(page_id: str, page_token: str) -> list[FBLeadForm]
 
     data = resp.json()
     for f in data.get("data", []):
-        raw_status = f.get("status", "")
-        # Merge real questions with synthesized consent-checkbox entries so the
-        # wizard sees one unified list. Consent items carry `is_consent: true`
-        # which the UI uses to render the 🔒 icon + body tooltip.
-        questions = list(f.get("questions") or [])
-        consent_questions = _extract_consent_questions(f)
-        questions.extend(consent_questions)
+        try:
+            raw_status = f.get("status", "")
+            # Merge real questions with synthesized consent-checkbox entries so the
+            # wizard sees one unified list. Consent items carry `is_consent: true`
+            # which the UI uses to render the 🔒 icon + body tooltip.
+            raw_questions = f.get("questions") or []
+            if not isinstance(raw_questions, list):
+                raw_questions = []
+            questions = list(raw_questions)
+            consent_questions = _extract_consent_questions(f)
+            questions.extend(consent_questions)
 
-        logger.info(
-            "Form id=%s name=%s status=%s leads=%s created=%s questions=%d consents=%d",
-            f["id"], f.get("name", ""), raw_status,
-            f.get("leads_count", 0), f.get("created_time", ""),
-            len(f.get("questions") or []), len(consent_questions),
-        )
-        forms.append(FBLeadForm(
-            form_id=f["id"],
-            name=f.get("name", ""),
-            status=raw_status or "UNKNOWN",
-            leads_count=f.get("leads_count", 0),
-            questions=questions,
-            created_time=f.get("created_time", ""),
-        ))
+            logger.info(
+                "Form id=%s name=%s status=%s leads=%s created=%s questions=%d consents=%d",
+                f.get("id", "?"), f.get("name", ""), raw_status,
+                f.get("leads_count", 0), f.get("created_time", ""),
+                len(raw_questions), len(consent_questions),
+            )
+            forms.append(FBLeadForm(
+                form_id=f["id"],
+                name=f.get("name", ""),
+                status=raw_status or "UNKNOWN",
+                leads_count=f.get("leads_count", 0),
+                questions=questions,
+                created_time=f.get("created_time", ""),
+            ))
+        except Exception as exc:
+            # Skip just this one form — keep returning the rest. Better partial list
+            # than a 500 that hides every form behind one bad row.
+            logger.exception("Failed to parse form %s: %s", f.get("id", "?"), exc)
+            continue
 
     # Sort newest first
     forms.sort(key=lambda f: f.created_time, reverse=True)
