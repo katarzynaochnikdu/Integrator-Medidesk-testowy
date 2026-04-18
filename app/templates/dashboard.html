@@ -2920,7 +2920,8 @@
         reqBanner.style.display = 'none';
         reqBanner.innerHTML = '';
       } else {
-        const palette = { border: '#FECACA', text: '#b91c1c', icon: '⚠️' };
+        // Dark-mode ready required palette
+        const palette = { border: 'rgba(239,68,68,0.3)', text: '#fca5a5', icon: '⚠️' };
         reqBanner.innerHTML = `
           <div style="padding:0.8rem 1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:10px;margin-bottom:0.8rem;">
             <div style="color:#f87171;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">Brakuje wymaganych pól Medidesk (${requiredMissing.length})</div>
@@ -2937,7 +2938,8 @@
         optBanner.style.display = 'none';
         optBanner.innerHTML = '';
       } else {
-        const palette = { border: '#FDE68A', text: '#B45309', icon: '💡' };
+        // Dark-mode ready optional palette
+        const palette = { border: 'rgba(245,158,11,0.3)', text: '#fbbf24', icon: '💡' };
         optBanner.innerHTML = `
           <div style="padding:0.8rem 1rem;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;margin-top:0.8rem;">
             <div style="color:#fbbf24;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">💡 Opcjonalne pola Medidesk bez mapowania (${optionalMissing.length})</div>
