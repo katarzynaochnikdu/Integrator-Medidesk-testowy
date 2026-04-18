@@ -353,7 +353,8 @@
 
     .mapping-row {
       display: grid;
-      grid-template-columns: minmax(0, 7fr) 24px minmax(0, 14fr) 90px;
+      /* 5 cols: FB-side opts | FB field | ↔ | MD field | MD-side opts (łączy, usuń) */
+      grid-template-columns: 90px minmax(0, 7fr) 24px minmax(0, 14fr) 90px;
       align-items: center;
       gap: 0.6rem;
       padding: 0.5rem 0.8rem;
@@ -364,6 +365,7 @@
     .mapping-row:hover { background: rgba(255,255,255,0.02); }
     .mapping-row:last-child { border-bottom: none; }
     .mapping-row > * { min-width: 0; }
+    .mapping-row .row-meta-left { display:flex; justify-content:flex-start; align-items:center; gap:0.4rem; }
     .mapping-row > .field-chip { flex: none; width: 100%; box-sizing: border-box; }
     .mapping-row > .md-select { flex: none; width: 100%; box-sizing: border-box; }
     .mapping-row > .fb-quickmap-select { width: 100%; box-sizing: border-box; }
@@ -1701,6 +1703,7 @@
       const canRemove = isVirtual || isConst;
 
       row.innerHTML = `
+        <div class="row-meta-left"></div>
         <span class="field-chip fb" style="${chipStyle}">${displayName}</span>
         <span class="mapping-arrow" style="text-align:center;">↔</span>
         <select class="md-select" data-fb="${fbField}">${options.join('')}</select>
