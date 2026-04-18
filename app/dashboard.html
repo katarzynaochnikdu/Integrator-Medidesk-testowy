@@ -763,6 +763,7 @@
       </div>
       <div style="font-size:0.85rem; color:#6B7280; margin-bottom:0.5rem;">Wprowadź zmiany w przepisaniu wartości z Facebooka na odpowiednie pola formularza w Medidesk. Zapobiegaj mapowaniu tych samych pól FB wielokrotnie.</div>
       
+      <div id="edit-missing-required-banner" style="display:none;"></div>
       <div id="edit-mapping-rows"></div>
 
       <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem; padding-top:1rem; border-top:1px solid #E5E7EB;">
@@ -1556,6 +1557,9 @@
         });
       }
       
+      // Warning banner + save-button guard for required MD fields
+      renderEditMissingRequiredBanner();
+
       // "Add constant value" row
       const constRow = document.createElement('div');
       constRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
@@ -1571,7 +1575,7 @@
       constBtn.addEventListener('click', () => {
         const val = constInput.value.trim();
         if(!val) return;
-        const key = '__CONST__' + val;
+        const key = `__const:${val}__`;
         editState.mappings.push({ fb_field: key, medidesk_field: '', confidence: 0 });
         renderEditMappings();
       });
@@ -1584,7 +1588,8 @@
       
       let fbDisplay = fbKey;
       if (isVirtual) {
-        if (fbKey.startsWith('__CONST__')) fbDisplay = '✏️ ' + fbKey.replace('__CONST__', '');
+        if (fbKey.startsWith('__const:') && fbKey.endsWith('__')) fbDisplay = '✏️ ' + fbKey.slice(8, -2);
+        else if (fbKey.startsWith('__CONST__')) fbDisplay = '✏️ ' + fbKey.replace('__CONST__', '');
         else fbDisplay = (VIRTUAL_FIELDS.find(f => f.key === fbKey)?.label) || fbKey;
       } else {
         const idx = (editState.integration.fb_form_questions||[]).findIndex(q => (q.key||q.name) === fbKey);
@@ -1596,7 +1601,9 @@
       mdFieldsArr.forEach(mdf => {
         const fieldKey = mdf.fieldId || mdf.id || mdf.name;
         const sel = fieldKey === mdFieldId ? 'selected' : '';
-        mdOptions += `<option value="${fieldKey}" ${sel}>${mdf.name || fieldKey} ${mdf.type ? '(' + mdf.type + ')' : ''}</option>`;
+        const req = mdf.required ? ' *' : '';
+        const opts = (mdf.options && mdf.options.length) ? ` [${mdf.options.slice(0,3).join('/')}${mdf.options.length>3?'…':''}]` : '';
+        mdOptions += `<option value="${fieldKey}" ${sel}>${mdf.name || fieldKey}${req} ${mdf.type ? '(' + mdf.type + ')' : ''}${opts}</option>`;
       });
       
       let removeBtnHTML = '';
@@ -1635,9 +1642,174 @@
       renderEditMappings();
     };
 
+    function getMdFieldMeta(fieldId) {
+      return (editState.integration.medidesk_fields || []).find(
+        f => (f.fieldId || f.id || f.name) === fieldId
+      ) || {};
+    }
+
+    function guessConstantDefault(fieldId) {
+      const meta = getMdFieldMeta(fieldId);
+      const mtype = (meta.type || '').toLowerCase();
+      const id = (fieldId || '').toLowerCase();
+      if (mtype === 'checkbox' || mtype === 'boolean' || mtype === 'bool' || mtype === 'consent'
+          || /zgod|consent|rodo|gdpr|regulamin|marketingow/.test(id))
+        return { value: 'true', hint: 'Checkbox — użyj "true" (lead wyraził zgodę klikając FB formularz)' };
+      if ((mtype === 'select' || mtype === 'lista' || mtype === 'dropdown' || mtype === 'radio') && meta.options && meta.options.length)
+        return { value: meta.options[0], hint: `Lista — dozwolone: ${meta.options.join(', ')}` };
+      if (/^source$|^zrodlo$|kanal|channel/.test(id))
+        return { value: 'Facebook Lead Ads', hint: 'Pole źródła leada' };
+      if (/utm_source/.test(id)) return { value: 'fb', hint: 'UTM source' };
+      if (/utm_medium/.test(id)) return { value: 'paid_social', hint: 'UTM medium' };
+      if (/utm_campaign/.test(id)) return { value: 'facebook_leads', hint: 'UTM campaign' };
+      return null;
+    }
+
+    function updateEditSaveButtonState(missingCount) {
+      const btn = document.getElementById('btn-save-mappings');
+      if (!btn) return;
+      if (missingCount > 0) {
+        btn.disabled = true;
+        btn.style.opacity = '0.55';
+        btn.style.cursor = 'not-allowed';
+        btn.title = `Uzupełnij ${missingCount} wymagane pole${missingCount > 1 ? 'a' : ''} przed zapisem`;
+      } else {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+        btn.title = '';
+      }
+    }
+
+    function renderEditMissingRequiredBanner() {
+      const banner = document.getElementById('edit-missing-required-banner');
+      if (!banner) return;
+      const mdFields = editState.integration.medidesk_fields || [];
+      const mappedMd = new Set(
+        editState.mappings
+          .filter(m => m.medidesk_field && String(m.medidesk_field).trim())
+          .map(m => m.medidesk_field)
+      );
+      const missing = mdFields.filter(f => f.required && !mappedMd.has(f.fieldId || f.id || f.name));
+      updateEditSaveButtonState(missing.length);
+      if (missing.length === 0) {
+        banner.style.display = 'none';
+        banner.innerHTML = '';
+        return;
+      }
+      const fbOpts = ['<option value="">— wybierz FB pole —</option>']
+        .concat(((editState.integration.fb_form_questions) || []).map(q => {
+          const key = q.key || q.name || q.id;
+          const lbl = q.label || key;
+          return `<option value="${key}">${lbl}${lbl !== key ? ' ('+key+')' : ''}</option>`;
+        })).join('');
+      const rows = missing.map(f => {
+        const fid = f.fieldId || f.id || f.name;
+        const suggest = guessConstantDefault(fid);
+        const hint = suggest ? `💡 ${suggest.hint}` : '';
+        return `
+          <div id="edit-missing-row-${fid}" style="padding:0.6rem 0.7rem;background:#FFFFFF;border:1px solid #FECACA;border-radius:8px;margin-top:0.4rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+              <strong style="color:#b91c1c;font-size:0.82rem;">⚠️ ${f.name || fid}</strong>
+              <span style="color:#6B7280;font-size:0.72rem;">(${f.type || 'field'})</span>
+              <select class="edit-missing-fb-select" data-fid="${fid}" style="flex:1;min-width:180px;padding:0.3rem 0.5rem;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:6px;font-size:0.78rem;">${fbOpts}</select>
+              <button class="btn btn-outline btn-edit-missing-const" data-fid="${fid}" style="font-size:0.75rem;padding:0.3rem 0.7rem;">✏️ Stała</button>
+            </div>
+            ${hint ? `<div style="margin-top:0.3rem;font-size:0.7rem;color:#6B7280;">${hint}</div>` : ''}
+            <div class="edit-const-editor" style="display:none;"></div>
+          </div>
+        `;
+      }).join('');
+      banner.innerHTML = `
+        <div style="padding:0.8rem 1rem;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;margin-bottom:0.8rem;">
+          <div style="color:#b91c1c;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">Brakuje wymaganych pól Medidesk (${missing.length})</div>
+          <div style="color:#7f1d1d;font-size:0.75rem;margin-bottom:0.5rem;">Bez nich Medidesk odrzuci leady (HTTP 400). Zmapuj każde wymagane pole — z FB lub jako stała wartość.</div>
+          ${rows}
+        </div>
+      `;
+      banner.style.display = 'block';
+      banner.querySelectorAll('.edit-missing-fb-select').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const fid = sel.dataset.fid;
+          const val = sel.value;
+          if (!val) return;
+          editState.mappings = editState.mappings.filter(m => m.medidesk_field !== fid);
+          editState.mappings.push({ fb_field: val, medidesk_field: fid, confidence: 1.0 });
+          renderEditMappings();
+        });
+      });
+      banner.querySelectorAll('.btn-edit-missing-const').forEach(btn => {
+        btn.addEventListener('click', () => openEditConstantEditor(btn.dataset.fid));
+      });
+    }
+
+    function openEditConstantEditor(fieldId) {
+      const row = document.getElementById(`edit-missing-row-${fieldId}`);
+      if (!row) return;
+      const editor = row.querySelector('.edit-const-editor');
+      const meta = getMdFieldMeta(fieldId);
+      const mtype = (meta.type || '').toLowerCase();
+      const suggest = guessConstantDefault(fieldId);
+      const defaultVal = suggest ? suggest.value : '';
+
+      let inputHTML;
+      if (mtype === 'checkbox' || mtype === 'boolean' || mtype === 'bool' || mtype === 'consent') {
+        inputHTML = `
+          <select class="const-input" style="flex:1;padding:0.35rem 0.5rem;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:6px;font-size:0.8rem;">
+            <option value="true" selected>true (zgoda wyrażona)</option>
+            <option value="false">false (brak zgody)</option>
+          </select>`;
+      } else if ((mtype === 'select' || mtype === 'lista' || mtype === 'dropdown' || mtype === 'radio') && meta.options && meta.options.length) {
+        const opts = meta.options.map(o => `<option value="${String(o).replace(/"/g,'&quot;')}">${o}</option>`).join('');
+        inputHTML = `
+          <select class="const-input" style="flex:1;padding:0.35rem 0.5rem;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:6px;font-size:0.8rem;">${opts}</select>`;
+      } else {
+        inputHTML = `<input type="text" class="const-input" value="${defaultVal.replace(/"/g,'&quot;')}" placeholder="np. true" style="flex:1;padding:0.35rem 0.5rem;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:6px;font-size:0.8rem;" />`;
+      }
+
+      editor.innerHTML = `
+        <div style="margin-top:0.5rem;padding:0.5rem;background:#F3F4F6;border-radius:6px;display:flex;gap:0.4rem;align-items:center;">
+          ${inputHTML}
+          <button class="btn btn-success btn-apply-const" style="padding:0.3rem 0.7rem;font-size:0.75rem;">✓ Dodaj</button>
+          <button class="btn btn-outline btn-cancel-const" style="padding:0.3rem 0.7rem;font-size:0.75rem;">Anuluj</button>
+        </div>
+      `;
+      editor.style.display = 'block';
+      const input = editor.querySelector('.const-input');
+      if (input.tagName === 'INPUT') { input.focus(); input.select(); }
+      else input.focus();
+      editor.querySelector('.btn-apply-const').addEventListener('click', () => applyEditConstantToField(fieldId, input.value));
+      editor.querySelector('.btn-cancel-const').addEventListener('click', () => { editor.style.display = 'none'; editor.innerHTML = ''; });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') applyEditConstantToField(fieldId, input.value);
+        if (e.key === 'Escape') { editor.style.display = 'none'; editor.innerHTML = ''; }
+      });
+    }
+
+    function applyEditConstantToField(fieldId, rawValue) {
+      const val = (rawValue || '').trim();
+      if (!val) { showToast('Podaj wartość stałej', 'error'); return; }
+      editState.mappings = editState.mappings.filter(m => m.medidesk_field !== fieldId);
+      editState.mappings.push({ fb_field: `__const:${val}__`, medidesk_field: fieldId, confidence: 1.0 });
+      renderEditMappings();
+      showToast(`Dodano stałą dla: ${fieldId}`, 'success');
+    }
+
     async function saveMappings() {
       if (editState.mappings.length === 0) {
         showToast('Mapowanie musi zawierać co najmniej jedno pole.', 'error');
+        return;
+      }
+      // Guard: block save if any required MD field is still unmapped
+      const mdFields = editState.integration.medidesk_fields || [];
+      const mappedMd = new Set(
+        editState.mappings
+          .filter(m => m.medidesk_field && String(m.medidesk_field).trim())
+          .map(m => m.medidesk_field)
+      );
+      const missing = mdFields.filter(f => f.required && !mappedMd.has(f.fieldId || f.id || f.name));
+      if (missing.length > 0) {
+        showToast(`Brakuje wymaganych pól: ${missing.map(f => f.name || f.fieldId).join(', ')}`, 'error');
         return;
       }
       const btn = document.getElementById('btn-save-mappings');

@@ -187,6 +187,9 @@ async def handle_webhook(request: Request):
                 # Constant value: extract static text
                 if fb_key.startswith("__const:") and fb_key.endswith("__"):
                     fb_value = fb_key[8:-2]  # strip __const: and __
+                elif fb_key.startswith("__CONST__"):
+                    # Legacy format from older dashboard mappings
+                    fb_value = fb_key[9:]
 
                 # Virtual fields: inject computed values from lead metadata
                 elif fb_key.startswith("__fb_"):
@@ -211,6 +214,27 @@ async def handle_webhook(request: Request):
                         fields_values[mapping.medidesk_field] += " " + fb_value
                     else:
                         fields_values[mapping.medidesk_field] = fb_value
+
+            # Type-aware normalization based on Medidesk field types
+            md_field_by_id: dict[str, dict[str, Any]] = {
+                (f.get("fieldId") or f.get("id") or f.get("name")): f
+                for f in (integration.medidesk_fields or [])
+            }
+            for md_id, val in list(fields_values.items()):
+                md_meta = md_field_by_id.get(md_id) or {}
+                mtype = (md_meta.get("type") or "").lower()
+                sval = str(val).strip()
+                if mtype in ("checkbox", "boolean", "bool", "consent"):
+                    if sval.lower() in ("true", "1", "yes", "tak", "on", "y", "t"):
+                        fields_values[md_id] = "true"
+                    elif sval.lower() in ("false", "0", "no", "nie", "off", "n", "f", ""):
+                        fields_values[md_id] = "false"
+                elif mtype in ("select", "lista", "dropdown", "radio"):
+                    options = md_meta.get("options") or []
+                    if options and sval not in options:
+                        match = next((o for o in options if str(o).lower() == sval.lower()), None)
+                        if match is not None:
+                            fields_values[md_id] = str(match)
 
             if not fields_values:
                 logger.warning("No mapped fields with values for lead %s", lead_id)
