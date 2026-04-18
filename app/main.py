@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from starlette.middleware.cors import CORSMiddleware
 
 from app.config import settings
@@ -153,6 +153,13 @@ async def root(request: Request):
     qs = request.scope.get("query_string", b"").decode("utf-8")
     url = f"/login?{qs}" if qs else "/login"
     return RedirectResponse(url=url)
+
+
+@app.get("/static/icon.jpg")
+async def static_icon():
+    """Serve the application icon image."""
+    icon_path = Path(__file__).parent / "MD_Integrator_V1.jpg"
+    return FileResponse(icon_path, media_type="image/jpeg")
 
 
 @app.get("/login")
