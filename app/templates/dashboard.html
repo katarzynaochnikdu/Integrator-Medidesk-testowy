@@ -966,7 +966,7 @@
   </div>
 
   <div id="edit-mappings-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
-    <div class="card" style="width:100%; max-width:700px; max-height:90vh; overflow-y:auto; background:var(--bg-surface); border:1px solid var(--border-primary); padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+    <div class="card" style="width:100%; max-width:980px; max-height:90vh; overflow-y:auto; background:var(--bg-surface); border:1px solid var(--border-primary); padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2 style="font-size:1.1rem; font-weight:700;">Edycja Mapowania</h2>
         <button onclick="document.getElementById('edit-mappings-modal').style.display='none'" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">✕</button>
@@ -1430,15 +1430,27 @@
         const newestTs = leadGroups[0][1][0].timestamp;
         const open = accIdx === 0; // newest accordion expanded by default
         const accKey = 'acc-' + integId.replace(/[^a-zA-Z0-9]/g, '_');
+        // Orphan = integracja została usunięta ale leady w historii zostały.
+        // Grupa pokazuje się jako hash ID bez opcji otwarcia — dodajemy bulk cleanup.
+        const isOrphan = integId !== '__unknown__' && !integLookup.get(integId);
+        const leadIdsJson = JSON.stringify(leadGroups.map(([lid]) => lid)).replace(/"/g, '&quot;');
+        const cleanupBtn = isOrphan
+          ? `<button class="btn btn-sm btn-outline" style="color:#B91C1C;border-color:#FECACA;font-size:0.68rem;padding:2px 8px;" onclick="event.stopPropagation();cleanupOrphanAccordion('${integId}', ${leadIdsJson.replace(/&quot;/g, '\\"')})" title="Integracja została usunięta — wyczyść pozostałe wpisy historii">🗑 Wyczyść historię (${total})</button>`
+          : '';
+        const orphanBadge = isOrphan
+          ? `<span style="font-size:0.68rem;color:#B45309;background:rgba(245,158,11,0.15);padding:2px 8px;border-radius:10px;" title="Integracja już nie istnieje — leady pozostały w historii">🧹 osierocone</span>`
+          : '';
         html += `
         <tr class="lead-acc-header" style="background:var(--bg-surface-hover);cursor:pointer;" onclick="toggleLeadAccordion('${accKey}', this)">
           <td colspan="4" style="padding:0.7rem 1rem;">
             <div style="display:flex;align-items:center;gap:0.6rem;">
               <span class="acc-arrow" style="display:inline-block;transition:transform 0.15s;transform:rotate(${open ? 90 : 0}deg);color:var(--text-muted);">▶</span>
               <span style="font-weight:600;color:var(--text-primary);">${integLabel(integId)}</span>
+              ${orphanBadge}
               <span style="font-size:0.7rem;color:var(--text-muted);background:var(--bg-surface);border:1px solid var(--border-primary);padding:2px 8px;border-radius:10px;">${total} ${total === 1 ? 'lead' : 'leadów'}</span>
               ${sentUnique ? `<span style="font-size:0.7rem;color:#22c55e;background:rgba(22,163,74,0.15);padding:2px 8px;border-radius:10px;">✓ ${sentUnique}</span>` : ''}
               ${failedUnique ? `<span style="font-size:0.7rem;color:#f87171;background:rgba(220,38,38,0.15);padding:2px 8px;border-radius:10px;">✗ ${failedUnique}</span>` : ''}
+              ${cleanupBtn}
               <span style="margin-left:auto;font-size:0.7rem;color:var(--text-muted);">najnowszy: ${timeAgo(newestTs)}</span>
             </div>
           </td>
@@ -1540,6 +1552,25 @@
         // Also refresh room view if we're in it
         if (typeof currentRoomId !== 'undefined' && currentRoomId) loadRoomLeads(currentRoomId);
       } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // Bulk cleanup osieroconych leadów: integracja została usunięta, ale leady zostały
+    // w historii. Jedno kliknięcie + jedno potwierdzenie usuwa wszystkie naraz.
+    async function cleanupOrphanAccordion(integId, leadIds) {
+      const n = leadIds.length;
+      const msg = `Integracja została usunięta, ale ${n} ${n === 1 ? 'lead pozostał' : 'leady pozostały'} w historii.\nUsunąć ${n === 1 ? 'go' : 'je'} wszystkie? Tej operacji nie da się cofnąć.`;
+      if (!await appConfirm(msg, { title: 'Wyczyść osieroconą historię', danger: true, okLabel: n === 1 ? 'Usuń' : `Usuń ${n}` })) return;
+      if (DEMO) { showToast('DEMO: wyczyszczono (symulacja)', 'success'); return; }
+      let ok = 0, fail = 0;
+      for (const lid of leadIds) {
+        try {
+          const resp = await apiFetch('/api/leads/' + encodeURIComponent(lid), { method: 'DELETE' });
+          if (resp.ok) ok++; else fail++;
+        } catch { fail++; }
+      }
+      if (fail === 0) showToast(`Wyczyszczono ${ok} ${ok === 1 ? 'lead' : 'leadów'}`, 'success');
+      else showToast(`Wyczyszczono ${ok}, błędy: ${fail}`, 'error');
+      loadStats();
     }
 
     async function toggleRecentLeadDetail(leadId) {
@@ -3034,34 +3065,46 @@
 
       const fbQuestions = (editState.integration.fb_form_questions) || [];
 
-      // Build a single missing-MD row. Palette switches between required (red)
-      // and optional (amber) so the visual urgency matches the user's risk.
+      // Build a single missing-MD row. Layout identyczny z setup_wizard:
+      // [📌 stała] [FB select] ↔ [MD chip z paletą]. Palette = required (czerwony)
+      // lub optional (bursztyn) — semantyka urgency.
       const buildRow = (f, palette) => {
         const fid = f.fieldId || f.id || f.name;
+        const isAttachment = /^attach/i.test(f.type || '');
         const suggest = guessConstantDefault(fid);
-        const hint = suggest ? `💡 ${suggest.hint}` : '';
+        const hintText = suggest ? `💡 ${suggest.hint}` : '';
         const rowFbOpts = ['<option value="">— wybierz FB pole —</option>']
           .concat(fbQuestions.map(q => {
             const key = q.key || q.name || q.id;
-            const originalLbl = q.label || key;
+            const originalLbl = q.label || friendlyFbLabel(key);
             let lbl = originalLbl;
             if (q.is_consent) {
               lbl = q.consent_kind === 'text' ? `${lbl} (tekst)` : `☑ ${lbl}`;
             }
             const c = checkTypeCompat(q.type, f.type);
             const tip = c.level === 'block' ? '  🚫' : c.level === 'warn' ? '  ⚠️' : '';
-            return `<option value="${key}">${lbl}${originalLbl !== key ? ' ('+key+')' : ''}${tip}</option>`;
+            return `<option value="${key}">${lbl}${originalLbl !== key && !originalLbl.includes('('+key+')') ? ' ('+key+')' : ''}${tip}</option>`;
           })).join('');
+        // Allowed-options hint dla MD fields typu SELECT — jak w setup_wizard.
+        const allowedHint = (f.options && f.options.length)
+          ? `<div style="margin-top:0.3rem;font-size:0.7rem;color:var(--text-muted);padding-left:0.4rem;">💡 Lista — dozwolone: ${f.options.slice(0, 6).join(', ')}${f.options.length > 6 ? '…' : ''}</div>`
+          : '';
+        const constBtn = isAttachment
+          ? `<span style="font-size:0.7rem;color:var(--text-muted);white-space:nowrap;padding:0.3rem 0.5rem;" title="Załączniki muszą przyjść z FB — nie da się ustawić stałej wartości">tylko z FB</span>`
+          : `<button class="btn-edit-missing-const" data-fid="${fid}" title="Ustaw stałą wartość"
+                     style="background:none;border:1px solid rgba(139,92,246,0.4);color:#a78bfa;font-size:0.72rem;padding:0.3rem 0.6rem;border-radius:6px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">📌 stała</button>`;
+        const chipFieldType = f.type ? `<span style="color:var(--text-muted);font-weight:500;font-size:0.7rem;margin-left:0.4rem;">(${f.type})</span>` : '';
         return `
-          <div id="edit-missing-row-${fid}" style="padding:0.6rem 0.7rem;background:var(--bg-surface);border:1px solid ${palette.border};border-radius:8px;margin-top:0.4rem;">
-            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-              <strong style="color:${palette.text};font-size:0.82rem;">${palette.icon} ${fixMdLabel(f.name || fid)}</strong>
-              <span style="color:var(--text-muted);font-size:0.72rem;">(${f.type || 'field'})</span>
-              <select class="edit-missing-fb-select" data-fid="${fid}" style="flex:1;min-width:180px;padding:0.3rem 0.5rem;background:var(--bg-surface);border:1px solid var(--border-primary);border-radius:6px;font-size:0.78rem;">${rowFbOpts}</select>
-              <button class="btn btn-outline btn-edit-missing-const" data-fid="${fid}" style="font-size:0.75rem;padding:0.3rem 0.7rem;">✏️ Stała</button>
+          <div id="edit-missing-row-${fid}" style="display:grid;grid-template-columns:auto minmax(0,0.5fr) 32px minmax(0,1fr);align-items:center;gap:0.7rem;padding:0.55rem 0.7rem;background:var(--bg-surface);border:1px solid ${palette.border};border-radius:8px;margin-top:0.4rem;">
+            <div>${constBtn}</div>
+            <select class="edit-missing-fb-select" data-fid="${fid}" style="width:100%;padding:0.35rem 0.55rem;background:rgba(161,161,170,0.05);border:1px dashed var(--border-color-hover);border-radius:6px;color:var(--text-secondary);font-size:0.78rem;cursor:pointer;">${rowFbOpts}</select>
+            <span style="text-align:center;color:var(--text-muted);font-size:0.95rem;">↔</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;background:${palette.chipBg};border:1px solid ${palette.chipBorder};color:${palette.chipText};font-weight:600;padding:0.35rem 0.6rem;border-radius:8px;font-size:0.8rem;min-height:32px;box-sizing:border-box;">
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(fid || '').replace(/"/g,'&quot;')}">${fixMdLabel(f.name || fid)}${chipFieldType}</span>
+              <span style="padding:2px 7px;border-radius:10px;background:${palette.tagBg};color:${palette.chipText};font-size:0.64rem;font-weight:500;flex-shrink:0;">${palette.tagText}</span>
             </div>
-            ${hint ? `<div style="margin-top:0.3rem;font-size:0.7rem;color:var(--text-muted);">${hint}</div>` : ''}
-            <div class="edit-const-editor" style="display:none;"></div>
+            ${hintText || allowedHint ? `<div style="grid-column:1 / -1;font-size:0.7rem;color:var(--text-muted);padding-left:0.4rem;">${hintText}${hintText && allowedHint ? ' · ' : ''}${allowedHint.replace(/^<div[^>]*>|<\/div>$/g, '')}</div>` : ''}
+            <div class="edit-const-editor" style="grid-column:1 / -1;display:none;"></div>
           </div>
         `;
       };
@@ -3071,11 +3114,15 @@
         reqBanner.style.display = 'none';
         reqBanner.innerHTML = '';
       } else {
-        // Dark-mode ready required palette
-        const palette = { border: 'rgba(239,68,68,0.3)', text: '#fca5a5', icon: '⚠️' };
+        // Dark-mode ready required palette — spójne z setup_wizard
+        const palette = {
+          border: 'rgba(239,68,68,0.3)', text: '#fca5a5', icon: '⚠️',
+          chipBg: 'rgba(239,68,68,0.1)', chipBorder: 'rgba(239,68,68,0.35)', chipText: '#f87171',
+          tagBg: 'rgba(239,68,68,0.18)', tagText: 'wymagane',
+        };
         reqBanner.innerHTML = `
           <div style="padding:0.8rem 1rem;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:10px;margin-bottom:0.8rem;">
-            <div style="color:#f87171;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">Brakuje wymaganych pól Medidesk (${requiredMissing.length})</div>
+            <div style="color:#f87171;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">⛔ Brakuje wymaganych pól Medidesk (${requiredMissing.length})</div>
             <div style="color:var(--text-muted);font-size:0.75rem;margin-bottom:0.5rem;">Bez nich Medidesk odrzuci leady (HTTP 400). Zmapuj każde wymagane pole — z FB lub jako stała wartość.</div>
             ${requiredMissing.map(f => buildRow(f, palette)).join('')}
           </div>
@@ -3089,11 +3136,15 @@
         optBanner.style.display = 'none';
         optBanner.innerHTML = '';
       } else {
-        // Dark-mode ready optional palette
-        const palette = { border: 'rgba(245,158,11,0.3)', text: '#fbbf24', icon: '💡' };
+        // Dark-mode ready optional palette — spójne z setup_wizard
+        const palette = {
+          border: 'rgba(245,158,11,0.3)', text: '#fbbf24', icon: '💡',
+          chipBg: 'rgba(245,158,11,0.1)', chipBorder: 'rgba(245,158,11,0.3)', chipText: '#fbbf24',
+          tagBg: 'rgba(245,158,11,0.18)', tagText: 'opcjonalne',
+        };
         optBanner.innerHTML = `
           <div style="padding:0.8rem 1rem;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;margin-top:0.8rem;">
-            <div style="color:#fbbf24;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">💡 Opcjonalne pola Medidesk bez mapowania (${optionalMissing.length})</div>
+            <div style="color:#fbbf24;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;">💡 Opcjonalne pola Medidesk bez źródła (${optionalMissing.length}) — można zostawić puste</div>
             <div style="color:var(--text-muted);font-size:0.75rem;margin-bottom:0.5rem;">Lead przejdzie bez nich, ale jeśli chcesz — zmapuj je z FB lub ustaw stałą wartość.</div>
             ${optionalMissing.map(f => buildRow(f, palette)).join('')}
           </div>
