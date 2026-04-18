@@ -26,7 +26,7 @@
       width: 240px;
       background: #FFFFFF;
       border-right: 1px solid #E5E7EB;
-      display: none;
+      display: flex;
       flex-direction: column;
       position: fixed;
       top: 0;
@@ -44,9 +44,9 @@
     .sidebar-brand-icon {
       width: 36px; height: 36px; border-radius: 9px;
       overflow: hidden; flex-shrink: 0;
-    }
-    .sidebar-brand-icon img {
-      width: 100%; height: 100%; object-fit: cover;
+      background: linear-gradient(135deg, #3b82f6, #a855f7);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.5px;
     }
     .sidebar-brand h1 {
       font-size: 0.95rem;
@@ -102,7 +102,7 @@
 
     /* ─── Main ─── */
     .main {
-      margin-left: 0;
+      margin-left: 240px;
       flex: 1;
       min-height: 100vh;
     }
@@ -459,6 +459,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 768px) {
+      .sidebar { display: none; }
       .main { margin-left: 0; }
       .main-content { padding: 1rem; }
       .kpi-grid { grid-template-columns: 1fr 1fr; }
@@ -554,7 +555,7 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <div class="sidebar-brand-icon"><img src="/static/icon.jpg" alt="Medidesk Integrator" /></div>
+      <div class="sidebar-brand-icon" aria-label="Medidesk Integrator">MI</div>
       <div>
         <h1>Medidesk Integrator</h1>
         <div class="sub" id="sidebar-sub">Panel</div>
@@ -994,14 +995,54 @@
       }
 
       tbody.innerHTML = leads.map(l => `
-        <tr>
+        <tr class="lead-row" onclick="toggleRecentLeadDetail('${l.lead_id}')">
           <td style="font-family:monospace;font-size:0.72rem;">${l.lead_id.substring(0, 18)}</td>
           <td>${leadStatusBadge(l.status)}</td>
-          <td>${l.mapped_fields_count} ${polPole(l.mapped_fields_count)}</td>
+          <td>${l.mapped_fields_count || 0} ${polPole(l.mapped_fields_count || 0)}</td>
           <td>${timeAgo(l.timestamp)}</td>
           <td style="font-size:0.7rem;color:#6B7280;">${l.integration_id?.substring(0, 8) || '—'}…</td>
         </tr>
+        <tr id="recent-detail-${l.lead_id}" style="display:none;">
+          <td colspan="5">
+            <div class="lead-detail">
+              <div class="lead-detail-grid">
+                <div>
+                  <h4>📥 Dane wejściowe (Facebook)</h4>
+                  ${renderDataPairs(l.fb_raw_data || {})}
+                </div>
+                <div>
+                  <h4>📤 Dane wyjściowe (Medidesk)</h4>
+                  ${renderDataPairs(l.mapped_values || {})}
+                </div>
+              </div>
+              ${l.error ? `<div class="error-box">❌ ${l.error}</div>` : ''}
+              ${l.integration_id ? `<div style="margin-top:0.8rem;"><a href="#" onclick="openRoom('${l.integration_id}');return false;" style="font-size:0.75rem;color:#3B82F6;">Otwórz integrację →</a></div>` : ''}
+            </div>
+          </td>
+        </tr>
       `).join('');
+    }
+
+    async function toggleRecentLeadDetail(leadId) {
+      const row = document.getElementById('recent-detail-' + leadId);
+      if (!row) return;
+      if (row.style.display === 'none') {
+        if (!row.dataset.loaded && !DEMO) {
+          try {
+            const resp = await apiFetch('/api/leads/' + encodeURIComponent(leadId));
+            if (resp.ok) {
+              const ev = await resp.json();
+              const cells = row.querySelectorAll('.lead-detail-grid > div');
+              if (cells[0]) cells[0].innerHTML = '<h4>📥 Dane wejściowe (Facebook)</h4>' + renderDataPairs(ev.fb_raw_data || {});
+              if (cells[1]) cells[1].innerHTML = '<h4>📤 Dane wyjściowe (Medidesk)</h4>' + renderDataPairs(ev.mapped_values || {});
+            }
+          } catch {}
+          row.dataset.loaded = '1';
+        }
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
     }
 
     // ─── Integrations ───────────────────────────────────
