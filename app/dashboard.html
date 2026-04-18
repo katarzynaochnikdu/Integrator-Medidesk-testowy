@@ -1318,7 +1318,10 @@
               ${latest.error ? `<div class="error-box">❌ ${latest.error}</div>` : ''}
               <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.8rem;gap:0.6rem;">
                 ${latest.integration_id ? `<a href="#" onclick="event.stopPropagation();openRoom('${latest.integration_id}');return false;" style="font-size:0.75rem;color:#3B82F6;">Otwórz integrację →</a>` : '<span></span>'}
-                <button class="btn btn-sm btn-outline" style="color:#B91C1C;border-color:#FECACA;font-size:0.72rem;" onclick="event.stopPropagation();deleteLead('${leadId}')" title="Usuń z historii">🗑 Usuń z historii</button>
+                <div style="display:flex;gap:0.4rem;">
+                  ${latest.status === 'failed' ? `<button class="btn btn-sm btn-outline" style="color:#15803D;border-color:#BBF7D0;font-size:0.72rem;" onclick="event.stopPropagation();retryLeadFromList('${leadId}')" title="Spróbuj ponownie wysłać do Medidesk">🔄 Wyślij ponownie</button>` : ''}
+                  <button class="btn btn-sm btn-outline" style="color:#B91C1C;border-color:#FECACA;font-size:0.72rem;" onclick="event.stopPropagation();deleteLead('${leadId}')" title="Usuń z historii">🗑 Usuń z historii</button>
+                </div>
               </div>
             </div>
           </td>
@@ -1914,6 +1917,24 @@
           if (currentRoomId) await openRoom(currentRoomId);
         } else {
           showToast('Błąd: ' + (data.error || ''), 'error');
+        }
+      } catch (e) { showToast('Błąd: ' + e.message, 'error'); }
+    }
+
+    // Variant of retryLead used from the "Recent leads" list (overview screen):
+    // refreshes the leads list AND global stats so the success/failure status
+    // updates in place. Avoids forcing the user back into the room view.
+    async function retryLeadFromList(leadId) {
+      if (DEMO) { showToast('DEMO: Ponowne przesłanie leada ' + leadId, 'success'); return; }
+      try {
+        const resp = await apiFetch(`/api/leads/${leadId}/retry`, { method: 'POST' });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok) {
+          showToast('✓ Lead przesłany pomyślnie!', 'success');
+          // Refresh both the recent-leads section and the KPI counters.
+          await loadStats();
+        } else {
+          showToast('Błąd: ' + (data.error || `HTTP ${resp.status}`), 'error');
         }
       } catch (e) { showToast('Błąd: ' + e.message, 'error'); }
     }
