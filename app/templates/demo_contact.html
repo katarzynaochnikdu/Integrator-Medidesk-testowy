@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Test – Integracja Leadów do Medidesk v2</title>
-  <link rel="icon" type="image/jpeg" href="/static/icon.jpg" />
-  <link rel="apple-touch-icon" href="/static/icon.jpg" />
-  <style>
+{% extends "base.html" %}
+{% block title %}Test – Integracja Leadów do Medidesk v2{% endblock %}
+{% block head_styles %}
+<style>
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: #0f1117; color: #e4e4e7; min-height: 100vh; font-size: 13px; }
     .layout { display: flex; max-width: 36rem; margin: 0 auto; padding: 1.2rem 1rem; gap: 1rem; min-height: 100vh; }
@@ -72,9 +68,11 @@
       .set-btn { width: auto; }
       .row { flex-direction: column; gap: 0; }
     }
-  </style>
-</head>
-<body>
+  
+</style>
+{% endblock %}
+{% block content %}
+
   <div class="layout">
     <aside class="sidebar">
       <div class="sidebar-box">
@@ -199,5 +197,5 @@
       })
       .catch(err => { container.innerHTML = "<p class='err'>" + err + "</p>"; });
   </script>
-</body>
-</html>
+
+{% endblock %}

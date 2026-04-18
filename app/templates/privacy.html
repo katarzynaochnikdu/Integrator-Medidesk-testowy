@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Polityka Prywatności - Integracja Leadów do Medidesk{% endblock %}
+{% block head_styles %}
+<style>
+
+        body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        h1, h2, h3 { color: #1e3a8a; }
+        a { color: #2563eb; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .last-updated { color: #666; font-style: italic; margin-bottom: 2rem; }
+    
+</style>
+{% endblock %}
+{% block content %}
+
+    <h1>Polityka Prywatności</h1>
+    <div class="last-updated">Ostatnia aktualizacja: 22 marca 2026</div>
+
+    <h2>1. Administrator Danych</h2>
+    <p>Aplikacja "Integracja Leadów do Medidesk" działa jako warstwa pośrednicząca (middleware) pomiędzy formularzami kontaktowymi Facebook Lead Ads a dedykowanym systemem Medidesk. Współpracuje bezpośrednio i wyłącznie ze stronami zweryfikowanymi w jej strukturach administracyjnych.</p>
+
+    <h2>2. Jakie dane przetwarzamy</h2>
+    <p>Aplikacja służy w 100% zautomatyzowanemu przesyłowi danych pozyskiwanych za dobrowolną zgodą użytkowników za pomocą Facebook Lead Ads. W ramach tej operacji, Integrator przyjmuje i przesyła dalej do docelowego punktu formularza takie dane jak: Imię, Nazwisko, Numer Telefonu, Adres E-mail.</p>
+    
+    <h2>3. Retencja Danych (Przechowywanie)</h2>
+    <p><strong>To co kluczowe — Nasza aplikacja NIE PRZECHOWUJE na stałe żadnych PII (Osobowych Danych Identyfikujących)</strong> (numerów telefonów, adresów email) pobranych z Facebook Lead Ads. Dane po przetworzeniu i przesłaniu do systemu Medidesk są anonimizowane na naszej platformie w ciągu ułamków sekund.</p>
+    <p>Przechowujemy jedynie meta-dane formularzy (takie jak: ID leada, czas otrzymania, czy przesył się powiódł) w celu monitorowania skuteczności dostarczania.</p>
+
+    <h2>4. Udostępnianie danych</h2>
+    <p>Dane są przesyłane bezpośrednio od operatora Meta (Facebook) do operatora Medidesk z użyciem szyfrowanych połączeń protokołu TLS/HTTPS. Nie udostępniamy Twoich danych żadnym innym podmiotom trzecim, brokerom ani usługom marketingowym.</p>
+
+    <h2>5. Twoje prawa (RODO / GDPR)</h2>
+    <p>Masz pełne prawo do wglądu, modyfikacji i żądania trwałego usunięcia wszystkich danych przetwarzanych przez nasze systemy. Aby skorzystać z tych praw w obrębie całej naszej infrastruktury docelowej (Medidesk), skontaktuj się bezpośrednio z administratorem placówki, do której złożyłeś/aś zapytanie drogą formularza Lead Ads.</p>
+
+    <h2>6. Instrukcja usunięcia danych</h2>
+    <p>Zgodnie z wymogami platformy Meta, instrukcję cofnięcia zezwoleń dla aplikacji i usunięcia danych znajdziesz tutaj: <br>
+       👉 <a href="/data-deletion">Instrukcja usuwania danych z aplikacji</a>
+    </p>
+
+    <hr style="margin-top: 3rem; border:0; border-top: 1px solid #ccc;">
+    <p style="text-align:center; font-size:0.9em; color:#666;">
+        Built with Integracja Leadów do Medidesk &copy; 2026
+    </p>
+
+{% endblock %}

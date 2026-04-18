@@ -1,0 +1,2448 @@
+{% extends "base.html" %}
+{% block title %}Połącz formularze – Integracja Leadów do Medidesk{% endblock %}
+{% block head_styles %}
+<style>
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      background: #F8F9FA;
+      color: #111827;
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ─── Top bar ─── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid #E5E7EB;
+      background: #FFFFFF;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-brand {
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .topbar-brand-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .topbar-brand-icon img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .topbar h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #3b82f6, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* ─── Steps nav ─── */
+    .steps-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .step-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      border: 1px solid #E5E7EB;
+      background: #F3F4F6;
+      color: #6B7280;
+      cursor: default;
+      transition: all 0.25s;
+    }
+    .step-pill.active {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.1);
+      color: #93c5fd;
+    }
+    .step-pill.done {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.08);
+      color: #86efac;
+    }
+    .step-pill .num {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: #E5E7EB;
+      color: #6B7280;
+    }
+    .step-pill.active .num { background: #3b82f6; color: #fff; }
+    .step-pill.done .num { background: #22c55e; color: #fff; }
+    .step-connector {
+      width: 24px; height: 1px; background: #E5E7EB;
+    }
+
+    /* ─── Main content ─── */
+    .container {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .step-panel { display: none; }
+    .step-panel.active { display: block; animation: fadeIn 0.3s ease; }
+    /* Step 3 (mapping) needs more horizontal room than the other steps because it
+       renders two parallel lists with arrows between. Container.wide is toggled by
+       goToStep() so other steps stay narrow & centered. */
+    .container.wide { max-width: 64rem; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ─── Cards ─── */
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      color: #111827;
+    }
+    .card h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+    .card p {
+      font-size: 0.82rem;
+      color: #6B7280;
+      line-height: 1.5;
+      margin-bottom: 0.8rem;
+    }
+
+    /* ─── Form inputs ─── */
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.3rem;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      color: #111827;
+      font-size: 0.85rem;
+      transition: border-color 0.15s;
+      margin-bottom: 0.8rem;
+    }
+    input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      color: #fff;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-success {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+    }
+    .btn-success:hover { opacity: 0.9; }
+    .btn-fb {
+      background: #1877f2;
+      color: #fff;
+      font-size: 0.9rem;
+      padding: 0.7rem 1.5rem;
+    }
+    .btn-fb:hover { background: #1668d9; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #E5E7EB;
+      color: #374151;
+    }
+    .btn-outline:hover { border-color: #3b82f6; color: #1D4ED8; }
+    .btn-row {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 1.2rem;
+      justify-content: flex-end;
+    }
+
+    /* ─── FB login ─── */
+    .fb-login-box {
+      text-align: center;
+      padding: 2.5rem 1rem;
+    }
+    .fb-login-box .icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1rem;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f1117;
+      border: 1px solid #1e2030;
+    }
+    .fb-login-box .icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ─── Pages accordion (compact summary after selection) ───
+       When a page is picked, the full picker collapses into a single-row
+       summary with a "Zmień" affordance. This hands the vertical space back
+       to the forms list, which is usually much longer. */
+    .pages-summary {
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0.6rem 0.85rem;
+      background: rgba(59,130,246,0.06);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .pages-summary:hover,
+    .pages-summary:focus-visible {
+      background: rgba(59,130,246,0.1);
+      border-color: rgba(59,130,246,0.5);
+      outline: none;
+    }
+    .pages-summary .pages-summary-check {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #3b82f6; color: #FFFFFF;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+    }
+    .pages-summary .pages-summary-text {
+      display: flex; align-items: baseline; gap: 0.45rem;
+      flex: 1; min-width: 0; overflow: hidden;
+    }
+    .pages-summary .pages-summary-label {
+      font-size: 0.7rem; color: #6B7280; text-transform: uppercase;
+      letter-spacing: 0.04em; font-weight: 600; flex-shrink: 0;
+    }
+    .pages-summary .pages-summary-name {
+      font-size: 0.9rem; color: #111827; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .pages-summary .pages-summary-meta {
+      font-size: 0.72rem; color: #6B7280; font-weight: 400;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .pages-summary .pages-summary-action {
+      margin-left: auto; font-size: 0.75rem; color: #3b82f6;
+      font-weight: 600; flex-shrink: 0;
+    }
+    /* Small separator between the collapsed summary and the forms section below. */
+    #fb-pages-summary + #fb-forms-section { margin-top: 1rem; padding-top: 1rem; }
+
+    /* ─── Selectable list ─── */
+    .select-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .select-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.85rem;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      background: #FFFFFF;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex: 1 1 calc(33.333% - 0.5rem);
+      min-width: 200px;
+    }
+    .select-item:hover { border-color: #3b82f6; background: rgba(59,130,246,0.05); }
+    .select-item.selected { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
+    .select-item .name { font-weight: 600; font-size: 0.85rem; }
+    .select-item .meta { font-size: 0.72rem; color: #52525b; }
+    .radio-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid #D1D5DB;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .select-item.selected .radio-dot { border-color: #3b82f6; }
+    .select-item.selected .radio-dot::after {
+      content: '';
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #3b82f6;
+    }
+
+    /* ─── Forms accordion + table ─── */
+    .forms-filter {
+      width: 100%; padding: 0.5rem 0.8rem; margin-bottom: 0.8rem;
+      background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 6px;
+      color: #111827; font-size: 0.82rem;
+    }
+    .forms-filter:focus { border-color: #3b82f6; outline: none; }
+    .forms-filter::placeholder { color: #3f3f46; }
+
+    .accordion { margin-bottom: 0.6rem; }
+    .accordion-header {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.6rem 0.8rem; cursor: pointer;
+      background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px;
+      font-size: 0.82rem; font-weight: 600; user-select: none;
+      transition: background 0.15s;
+    }
+    .accordion-header:hover { background: #F3F4F6; }
+    .accordion-header .arrow { transition: transform 0.2s; font-size: 0.7rem; }
+    .accordion-header.open .arrow { transform: rotate(90deg); }
+    .accordion-header .count {
+      margin-left: auto; font-size: 0.72rem; font-weight: 400;
+      color: #6B7280; background: #F3F4F6; padding: 0.15rem 0.5rem; border-radius: 10px;
+    }
+    .accordion-body { display: none; padding-top: 0.4rem; }
+    .accordion-header.open + .accordion-body { display: block; }
+
+    .forms-table {
+      width: 100%; border-collapse: collapse; font-size: 0.78rem;
+    }
+    .forms-table th {
+      text-align: left; padding: 0.45rem 0.6rem; color: #71717a;
+      font-weight: 600; font-size: 0.68rem; text-transform: uppercase;
+      letter-spacing: 0.04em; border-bottom: 1px solid #E5E7EB;
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    .forms-table th:hover { color: #a1a1aa; }
+    .forms-table th .sort-icon { font-size: 0.6rem; margin-left: 0.25rem; }
+    .forms-table td {
+      padding: 0.55rem 0.6rem; border-bottom: 1px solid #F3F4F6;
+    }
+    .forms-table tr { cursor: pointer; transition: background 0.1s; }
+    .forms-table tbody tr:hover { background: rgba(59,130,246,0.05); }
+    .forms-table tr.selected-row { background: rgba(59,130,246,0.12); border-left: 2px solid #3b82f6; }
+    .forms-table .form-name { font-weight: 600; font-size: 0.82rem; }
+    .status-pill {
+      display: inline-block; padding: 0.1rem 0.5rem; border-radius: 10px;
+      font-size: 0.68rem; font-weight: 600;
+    }
+    .status-pill.active { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .status-pill.archived { background: rgba(113,113,122,0.15); color: #71717a; }
+    .status-pill.expired { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .status-pill.draft { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+    /* ─── Mapping UI ─── */
+    .mapping-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .mapping-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.8rem;
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      font-size: 0.78rem;
+      color: #93c5fd;
+    }
+    .mapping-info .dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; }
+
+    .form-summary {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .form-summary-box {
+      flex: 1;
+      padding: 0.8rem 1rem;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      background: #F9FAFB;
+    }
+    .form-summary-box .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #52525b; margin-bottom: 0.25rem; }
+    .form-summary-box .title { font-weight: 600; font-size: 0.9rem; }
+    .form-summary-box .sub { font-size: 0.7rem; color: #52525b; margin-top: 0.15rem; }
+
+    .mapping-row {
+      display: grid;
+      /* 5 cols: FB-side opts | FB field | ↔ | MD field | MD-side opts (łączy, usuń).
+         FB and MD columns share the same width so the two "lists" look symmetric.
+         Wider arrow column (72px) gives breathing room between the two field chips. */
+      grid-template-columns: 90px minmax(0, 1fr) 72px minmax(0, 1fr) 90px;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.5rem 0.8rem;
+      min-height: 52px;
+      border-bottom: 1px solid #E5E7EB;
+      transition: background 0.1s;
+    }
+    .mapping-row:hover { background: rgba(255,255,255,0.02); }
+    .mapping-row:last-child { border-bottom: none; }
+    /* Reset the global "input/select { margin-bottom: 0.8rem }" for every child of a
+       mapping-row so grid align-items:center can actually center cell contents. Without
+       this reset the extra bottom margin shifts selects up by ~6px relative to chips. */
+    .mapping-row > *, .mapping-row select, .mapping-row input { margin: 0; min-width: 0; }
+    .mapping-row .row-meta-left { display:flex; justify-content:flex-start; align-items:center; gap:0.4rem; }
+    .mapping-row > .field-chip { flex: none; width: 100%; box-sizing: border-box; }
+    .mapping-row > .md-select { flex: none; width: 100%; box-sizing: border-box; }
+    .mapping-row > .fb-quickmap-select { width: 100%; box-sizing: border-box; }
+    .mapping-row > .const-input-wrapper { width: 100%; box-sizing: border-box; }
+    .mapping-row .row-meta {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.4rem;
+      min-width: 0;
+    }
+
+    .field-chip {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      padding: 0 0.8rem;
+      height: 38px;
+      box-sizing: border-box;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      line-height: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .field-chip.fb {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #166534;
+      font-weight: 600;
+    }
+    .field-chip.md {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      color: #1D4ED8;
+      font-weight: 600;
+    }
+    /* Row dimmed state — when MD target is "— nie mapuj —" the whole row fades
+       so the user can scan which fields actually carry data. The md-select also
+       picks up a dashed placeholder look identical to the fb-quickmap-select empty
+       state, so the UI reads the same on both sides: "waiting for pick". */
+    .mapping-row.is-unmapped { opacity: 0.55; }
+    .mapping-row.is-unmapped:hover { opacity: 1; }
+    .mapping-row.is-unmapped .md-select {
+      border-style: dashed;
+      border-color: #D1D5DB;
+      background: rgba(161,161,170,0.05);
+      color: #6B7280;
+    }
+    /* Type compatibility — give the MD select a colored outline + tinted background
+       so the warning/block state reads at a glance even before the user notices
+       the icon in the middle column. Tooltip on the arrow has the full message. */
+    .mapping-row.has-type-warn .md-select {
+      border-color: rgba(245,158,11,0.55);
+      background: rgba(245,158,11,0.04);
+    }
+    .mapping-row.has-type-block .md-select {
+      border-color: rgba(220,38,38,0.55);
+      background: rgba(220,38,38,0.05);
+    }
+    /* Subtle pulse on the arrow icon when blocking — draws the eye to the actionable cell. */
+    .mapping-arrow.compat-block { font-weight: 700; }
+    .mapping-arrow.compat-warn  { font-weight: 700; }
+    .field-chip.empty {
+      background: rgba(161, 161, 170, 0.05);
+      border: 1px dashed #D1D5DB;
+      color: #6B7280;
+      font-style: italic;
+    }
+    .mapping-arrow {
+      color: #9CA3AF;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .confidence-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      min-width: 38px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .confidence-high { color: #86efac; }
+    .confidence-med { color: #fbbf24; }
+    .confidence-low { color: #fca5a5; }
+
+    .md-select {
+      flex: 1;
+      padding: 0 0.6rem;
+      height: 38px;
+      box-sizing: border-box;
+      background: #FFFFFF;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 6px;
+      color: #111827;
+      font-size: 0.82rem;
+      line-height: 38px;
+      cursor: pointer;
+    }
+    .md-select:focus { border-color: #3b82f6; outline: none; }
+
+    /* ─── Success screen ─── */
+    .success-box {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    .success-box .checkmark {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(34, 197, 94, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 2rem;
+    }
+    .success-box h2 { color: #86efac; font-size: 1.3rem; margin-bottom: 0.5rem; }
+
+    /* ─── Status toast ─── */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 0.7rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      z-index: 999;
+      animation: slideUp 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .toast.show { opacity: 1; pointer-events: auto; }
+    .toast.success { background: #14532d; color: #86efac; border: 1px solid #16a34a; }
+    .toast.error { background: #450a0a; color: #fca5a5; border: 1px solid #991b1b; }
+    @keyframes slideUp { from { transform: translateY(16px); } to { transform: translateY(0); } }
+
+    /* ─── Spinner ─── */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Demo banner ─── */
+    .demo-banner {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      text-align: center;
+      padding: 0.5rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .demo-banner a { color: #000; text-decoration: underline; }
+
+    /* ─── Back button ─── */
+    .topbar-back {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.35rem 0.7rem; border-radius: 6px;
+      border: 1px solid #E5E7EB; background: transparent;
+      color: #374151; font-size: 0.75rem; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .topbar-back:hover { border-color: #3b82f6; color: #1D4ED8; }
+
+    /* ─── Confirm modal ─── */
+    .confirm-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box {
+      background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px;
+      padding: 2rem; width: 380px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .confirm-box .warn-icon { font-size: 2.2rem; margin-bottom: 0.8rem; }
+    .confirm-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: #fbbf24; }
+    .confirm-box p { font-size: 0.82rem; color: #a1a1aa; line-height: 1.5; margin-bottom: 1.2rem; }
+    .confirm-box .confirm-actions { display: flex; gap: 0.6rem; justify-content: center; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 640px) {
+      .topbar { padding: 0.8rem 1rem; flex-direction: column; gap: 0.6rem; }
+      .form-summary { flex-direction: column; }
+      .container { padding: 1rem; }
+      .topbar-back span { display: none; }
+    }
+  
+</style>
+{% endblock %}
+{% block content %}
+
+
+  <!-- Demo banner (shown only in demo mode) -->
+  <div class="demo-banner" id="demo-banner" style="display:none;">
+    ⚡ TRYB DEMO — dane Facebook są symulowane. <a href="/setup">Wyjdź z demo</a>
+  </div>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-brand-icon"><img src="/static/icon.jpg" alt="Integracja Leadów do Medidesk" /></div>
+      <button class="topbar-back" onclick="confirmExit()">← <span>Dashboard</span></button>
+      <h1>Połącz formularze</h1>
+    </div>
+    <div class="steps-nav">
+      <div class="step-pill active" data-step="1"><span class="num">1</span> Facebook</div>
+      <div class="step-connector"></div>
+      <div class="step-pill" data-step="2"><span class="num">2</span> Medidesk</div>
+      <div class="step-connector"></div>
+      <div class="step-pill" data-step="3"><span class="num">3</span> Mapowanie pól</div>
+      <div class="step-connector"></div>
+      <div class="step-pill" data-step="4"><span class="num">4</span> Gotowe</div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- STEP 1: Facebook -->
+    <div class="step-panel active" id="step-1">
+      <div class="card" id="fb-login-card">
+        <!-- Session-check placeholder — shown while we decide whether user is already logged in.
+             Prevents the login button from flashing before a saved session resumes. -->
+        <div id="fb-session-check" style="display:flex;align-items:center;justify-content:center;gap:0.8rem;padding:2rem;color:#6B7280;font-size:0.9rem;">
+          <span class="spinner"></span>
+          <span>Sprawdzanie sesji Facebook…</span>
+        </div>
+        <div class="fb-login-box" id="fb-login-box" style="display:none;">
+          <div class="icon"><img src="/static/icon.jpg" alt="Integracja Leadów do Medidesk"/></div>
+          <h2>Połącz się z Facebookiem</h2>
+          <p>Zaloguj się, aby zobaczyć swoje strony i formularze Lead Ads.</p>
+          <button class="btn btn-fb" id="btn-fb-login">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            Zaloguj przez Facebook
+          </button>
+        </div>
+      </div>
+
+      <!-- After login: single card containing both choices (pages → forms) -->
+      <div class="card" id="fb-pages-card" style="display:none;">
+        <!-- Compact summary — visible only after a page is picked, lets user reclaim
+             vertical space for the (typically much longer) forms list. -->
+        <div class="pages-summary" id="fb-pages-summary" style="display:none;" role="button" tabindex="0" title="Kliknij aby zmienić stronę Facebook">
+          <div class="pages-summary-check">✓</div>
+          <div class="pages-summary-text">
+            <span class="pages-summary-label">Strona Facebook</span>
+            <span class="pages-summary-name" id="fb-summary-name"></span>
+            <span class="pages-summary-meta" id="fb-summary-meta"></span>
+          </div>
+          <div class="pages-summary-action">Zmień ▾</div>
+        </div>
+
+        <!-- Full picker — shown by default; collapsed once a page is selected. -->
+        <div id="fb-pages-content">
+          <h2>Wybierz stronę Facebook</h2>
+          <p>Strona, na której prowadzisz reklamy Lead Ads.</p>
+          <div class="select-list" id="pages-list"></div>
+        </div>
+
+        <div id="fb-forms-section" style="display:none;margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid #F3F4F6;">
+          <h2>Wybierz formularz Lead Ads</h2>
+          <p>Formularz, z którego leady trafią do Medidesk.</p>
+          <input type="text" class="forms-filter" id="forms-filter" placeholder="Filtruj po nazwie…" />
+          <div id="forms-list"></div>
+        </div>
+      </div>
+
+      <div class="btn-row" id="step1-nav" style="display:none;">
+        <button class="btn btn-primary" id="btn-step1-next" disabled>Dalej →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Medidesk -->
+    <div class="step-panel" id="step-2">
+      <div class="card">
+        <h2>Formularz Medidesk</h2>
+        <p id="md-form-intro">Podaj ID formularza z panelu Medidesk, do którego mają trafiać leady.</p>
+        <label for="md-form-id">ID formularza Medidesk</label>
+        <div style="display:flex;gap:0.6rem;">
+          <input type="text" id="md-form-id" placeholder="np. d908ee01-0b7d-44a0-a494-a707ab5a55ef" style="flex:1;margin-bottom:0;" />
+          <button class="btn btn-primary" id="btn-fetch-md">Pobierz pola</button>
+        </div>
+        <div class="field-guidance" id="md-form-guidance" style="margin-top:8px;background:#F0F9FF;border-left:3px solid #3B82F6;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#374151;">
+          <strong>Gdzie znajdziesz numer formularza?</strong>
+          <ol style="margin:6px 0 0 16px;padding:0;">
+            <li>Otwórz Medidesk i zaloguj się</li>
+            <li>Przejdź do: <em>Formularze &rarr; Lista formularzy</em></li>
+            <li>Kliknij właściwy formularz — skopiuj numer z nagłówka lub adresu strony</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card" id="md-fields-card" style="display:none;">
+        <h2 id="md-form-title">Pola formularza</h2>
+        <div id="md-fields-list"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="goToStep(1)">← Wstecz</button>
+        <button class="btn btn-primary" id="btn-step2-next" disabled>Dalej →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Mapping -->
+    <div class="step-panel" id="step-3">
+      <div class="card">
+        <!-- Form summary moved to shared sticky banner at top of page. -->
+
+        <div style="margin-bottom:1.2rem;">
+          <label for="integration-name-input">Nazwa integracji <span style="color:#9CA3AF;font-weight:400;">(opcjonalne)</span></label>
+          <input type="text" id="integration-name-input"
+                 placeholder="np. Warszawa — formularz wakacje" />
+        </div>
+
+        <div class="mapping-header">
+          <h2>Mapowanie pól</h2>
+          <div class="mapping-info" id="mapping-info">
+            <span class="dot"></span>
+            <span id="mapping-info-text">Ładowanie...</span>
+          </div>
+        </div>
+
+        <div id="missing-required-banner" style="display:none;"></div>
+        <div id="mapping-rows"></div>
+        <div id="missing-optional-banner" style="display:none;"></div>
+        <div id="mapping-extras"></div>
+      </div>
+
+      <div id="save-status" style="display:none;margin-top:0.8rem;"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="goToStep(2)">← Wstecz</button>
+        <button class="btn btn-success" id="btn-step3-next">Zapisz i aktywuj ✓</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Done -->
+    <div class="step-panel" id="step-4">
+      <div class="card">
+        <div class="success-box">
+          <div class="checkmark">✅</div>
+          <h2>Integracja aktywna!</h2>
+          <p>Leady z Twojej reklamy na Facebooku będą automatycznie przesyłane do Medidesk.</p>
+          <div style="margin-top:1.5rem;" id="summary-details"></div>
+        </div>
+      </div>
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn btn-outline" onclick="location.href='/setup'">Dodaj kolejną integrację</button>
+        <button class="btn btn-outline" onclick="location.href='/'">Strona główna</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm exit modal -->
+  <div class="confirm-overlay" id="confirm-exit-modal">
+    <div class="confirm-box">
+      <div class="warn-icon">⚠️</div>
+      <h3>Na pewno chcesz wyjść?</h3>
+      <p>Wszystkie wprowadzone dane w kreatorze integracji zostaną utracone.</p>
+      <div class="confirm-actions">
+        <button class="btn btn-outline" onclick="closeConfirmExit()">Zostań</button>
+        <button class="btn btn-primary" onclick="location.href='/dashboard'">📊 Przejdź do Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+
+
+    // ─── Confirm exit ────────────────────────────────────
+    function confirmExit() {
+      document.getElementById('confirm-exit-modal').classList.add('open');
+    }
+    function closeConfirmExit() {
+      document.getElementById('confirm-exit-modal').classList.remove('open');
+    }
+
+    // ─── State ──────────────────────────────────────────
+    let state = {
+      sessionId: null,
+      user: null,
+      pages: [],
+      selectedPage: null,
+      forms: [],
+      selectedForm: null,
+      mdFormId: null,
+      mdFormName: null,
+      mdFields: [],
+      mappings: [],
+      integrationName: '',
+      // Set of `${fb_page_id}:${fb_form_id}` for forms already connected in an integration
+      // (so we can mark them visually on the forms list in step 1).
+      existingFormKeys: new Set(),
+    };
+
+    // ─── Demo mode detection ────────────────────────────
+    const params = new URLSearchParams(location.search);
+    const DEMO_MODE = params.get('demo') === 'true';
+
+    const MOCK_DATA = {
+      user: { id: '10229876543210', name: 'Katarzyna Ochnik', email: 'k.ochnik@klinika-dental.pl' },
+      pages: [
+        { page_id: '277804452739878', name: 'Klinika Dental Premium', access_token: 'DEMO_TOKEN_PAGE_1' },
+        { page_id: '388915563840989', name: 'Centrum Medyczne Zdrowie', access_token: 'DEMO_TOKEN_PAGE_2' },
+        { page_id: '499026674951090', name: 'Fizjo-Med Rehabilitacja', access_token: 'DEMO_TOKEN_PAGE_3' },
+      ],
+      forms: {
+        '277804452739878': [
+          {
+            form_id: '1234567890123456', name: 'Umów wizytę u ortopedy', status: 'ACTIVE', leads_count: 142,
+            questions: [
+              { key: 'full_name', label: 'Imię i nazwisko', type: 'FULL_NAME' },
+              { key: 'phone_number', label: 'Numer telefonu', type: 'PHONE' },
+              { key: 'email', label: 'Adres e-mail', type: 'EMAIL' },
+              { key: 'w_czym_mozemy_pomoc', label: 'W czym możemy pomóc?', type: 'CUSTOM' },
+              { key: 'dodatkowa_informacja', label: 'Dodatkowa informacja', type: 'CUSTOM' },
+            ]
+          },
+          {
+            form_id: '9876543210987654', name: 'Bezpłatna konsultacja stomatologiczna', status: 'ACTIVE', leads_count: 89,
+            questions: [
+              { key: 'full_name', label: 'Imię i nazwisko', type: 'FULL_NAME' },
+              { key: 'phone_number', label: 'Numer telefonu', type: 'PHONE' },
+              { key: 'email', label: 'Adres e-mail', type: 'EMAIL' },
+              { key: 'preferred_date', label: 'Preferowany termin', type: 'CUSTOM' },
+            ]
+          },
+        ],
+        '388915563840989': [
+          {
+            form_id: '5555666677778888', name: 'Zapisz się na USG', status: 'ACTIVE', leads_count: 67,
+            questions: [
+              { key: 'full_name', label: 'Imię i nazwisko', type: 'FULL_NAME' },
+              { key: 'phone_number', label: 'Numer telefonu', type: 'PHONE' },
+              { key: 'email', label: 'Adres e-mail', type: 'EMAIL' },
+              { key: 'rodzaj_badania', label: 'Rodzaj badania', type: 'CUSTOM' },
+              { key: 'uwagi', label: 'Uwagi', type: 'CUSTOM' },
+            ]
+          },
+        ],
+        '499026674951090': [
+          {
+            form_id: '1111222233334444', name: 'Rehabilitacja powypadkowa', status: 'ACTIVE', leads_count: 34,
+            questions: [
+              { key: 'full_name', label: 'Imię i nazwisko', type: 'FULL_NAME' },
+              { key: 'phone_number', label: 'Numer telefonu', type: 'PHONE' },
+              { key: 'opis_problemu', label: 'Opisz swój problem', type: 'CUSTOM' },
+            ]
+          },
+        ],
+      },
+    };
+
+    function demoDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    if (DEMO_MODE) {
+      document.getElementById('demo-banner').style.display = 'block';
+    }
+
+    // ─── Step navigation ────────────────────────────────
+    let currentStep = 1;
+
+    function goToStep(n) {
+      currentStep = n;
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('step-' + n).classList.add('active');
+      // Step 3 (mapping) needs extra horizontal room for the two parallel lists.
+      const containerEl = document.querySelector('.container');
+      if (containerEl) containerEl.classList.toggle('wide', n === 3);
+      document.querySelectorAll('.step-pill').forEach(p => {
+        const s = parseInt(p.dataset.step);
+        p.classList.remove('active', 'done');
+        if (s === n) p.classList.add('active');
+        else if (s < n) p.classList.add('done');
+      });
+    }
+
+    // Show the login button (called when we determine the user needs to sign in).
+    function showLoginButton() {
+      const check = document.getElementById('fb-session-check');
+      const box = document.getElementById('fb-login-box');
+      if (check) check.style.display = 'none';
+      if (box) box.style.display = '';
+    }
+
+    // Map raw FB/Medidesk field types to unified Polish labels. Used on both sides
+    // of the mapping UI so the user sees one consistent vocabulary instead of icons
+    // on one side and English tokens on the other.
+    function polishFieldType(rawType) {
+      if (!rawType) return '—';
+      const t = String(rawType).toLowerCase();
+      if (t.includes('email')) return 'email';
+      if (t.includes('phone') || t === 'tel') return 'telefon';
+      if (t.includes('attach') || t === 'file') return 'załącznik';
+      if (t.includes('checkbox') || t === 'boolean' || t === 'bool' || t === 'consent') return 'checkbox';
+      if (t.includes('select') || t.includes('list') || t === 'dropdown' || t === 'radio') return 'lista';
+      if (t.includes('area') || t === 'long_text' || t === 'textarea') return 'tekst długi';
+      if (t.includes('text') || t === 'string' || t === 'short_answer') return 'tekst krótki';
+      if (t.includes('number') || t === 'int' || t === 'integer' || t === 'float') return 'liczba';
+      if (t.includes('date')) return 'data';
+      return t;
+    }
+
+    // ─── Type compatibility (FB ↔ MD) ─────────────────────────────────
+    // Map raw FB question type to a logical bucket. CUSTOM = free-text (FB does not validate).
+    function fbLogicalType(rawType) {
+      const t = String(rawType || '').toUpperCase();
+      if (t === 'EMAIL' || t === 'WORK_EMAIL') return 'email';
+      if (t === 'PHONE' || t === 'WORK_PHONE_NUMBER') return 'phone';
+      if (t === 'DOB' || t === 'BIRTHDAY') return 'date';
+      // Consent checkboxes synthesized from FB legal_content arrive as type
+      // "CHECKBOX". Without this branch they fell into the default "text"
+      // bucket which made every MD boolean/checkbox field show as 🚫 blocked
+      // (checkTypeCompat's `md==='checkbox' && fb!=='checkbox'` rule fired)
+      // — user couldn't map a single consent to an MD checkbox.
+      if (t === 'CHECKBOX' || t === 'BOOLEAN' || t === 'CONSENT' || t === 'BOOL') return 'checkbox';
+      if (t === 'CUSTOM' || t === '') return 'custom';
+      // FULL_NAME, FIRST_NAME, LAST_NAME, CITY, STATE, ZIP, STREET_ADDRESS, etc.
+      return 'text';
+    }
+
+    // Map raw MD field type to the same bucket vocabulary as FB so we can compare.
+    function mdLogicalType(rawType) {
+      const t = String(rawType || '').toLowerCase();
+      if (t.includes('email') || t === 'mail') return 'email';
+      if (t.includes('phone') || t === 'tel' || t === 'telefon') return 'phone';
+      if (t.includes('attach') || t === 'file' || t === 'plik' || t.includes('załącz')) return 'attach';
+      // Polish/MD-specific consent/boolean type names also map to checkbox —
+      // otherwise MD forms where user named fields "zgoda" or "statement"
+      // fall into the default text bucket and every CHECKBOX FB consent
+      // shows ⚠️ against them (false positive).
+      if (t.includes('checkbox') || t === 'boolean' || t === 'bool'
+          || t === 'consent' || t === 'zgoda' || t === 'statement'
+          || t === 'acceptance') return 'checkbox';
+      if (t.includes('select') || t.includes('list') || t === 'dropdown'
+          || t === 'radio' || t === 'lista' || t === 'wybor'
+          || t === 'wybór') return 'select';
+      if (t.includes('area') || t === 'long_text' || t === 'textarea'
+          || t === 'tekst_długi' || t === 'tekst długi') return 'text_long';
+      if (t.includes('number') || t === 'int' || t === 'integer'
+          || t === 'float' || t === 'liczba') return 'number';
+      if (t.includes('date') || t === 'data') return 'date';
+      // Default: short text
+      return 'text';
+    }
+
+    // Compatibility verdict: { level, message }.
+    //   ok     — types match, no UI signal needed
+    //   warn   — technically works but data quality may suffer (e.g. CUSTOM → email)
+    //   block  — meaningless / will fail at Medidesk (e.g. text → date, anything → attach)
+    function checkTypeCompat(fbRaw, mdRaw) {
+      if (!mdRaw) return { level: 'ok' };  // no MD chosen yet → no signal
+      const fb = fbLogicalType(fbRaw);
+      const md = mdLogicalType(mdRaw);
+
+      // Identical buckets always OK.
+      if (fb === md) return { level: 'ok' };
+
+      // Text ↔ text_long is the same data, just length hint.
+      if ((fb === 'text' && md === 'text_long') || (fb === 'text_long' && md === 'text')) {
+        return { level: 'ok' };
+      }
+
+      // Attachments are hard — must come from a real FB file upload.
+      if (md === 'attach') return { level: 'block', message: 'Pole załącznika MD wymaga pliku z FB. Tekst nie zadziała.' };
+      if (fb === 'attach') return { level: 'block', message: 'Plik z FB można zapisać tylko w polu typu załącznik.' };
+
+      // CUSTOM (free FB text) is universally allowed but warned where format matters.
+      if (fb === 'custom') {
+        if (md === 'email')    return { level: 'warn', message: 'CUSTOM = wolny tekst — FB nie waliduje formatu email. Może przyjść coś niepoprawnego.' };
+        if (md === 'phone')    return { level: 'warn', message: 'CUSTOM = wolny tekst — FB nie waliduje numeru telefonu.' };
+        if (md === 'date')     return { level: 'warn', message: 'CUSTOM = wolny tekst — FB nie waliduje formatu daty.' };
+        if (md === 'number')   return { level: 'warn', message: 'CUSTOM = wolny tekst — FB nie waliduje liczby.' };
+        if (md === 'checkbox') return { level: 'warn', message: 'CUSTOM = wolny tekst — wartość zostanie wymuszona na true/false.' };
+        return { level: 'ok' };  // custom → text/text_long/select
+      }
+
+      // MD wymaga konkretnego formatu — tekst go nie zapewni.
+      if (md === 'date'     && fb !== 'date')     return { level: 'block', message: 'Pole daty MD wymaga daty z FB.' };
+      if (md === 'number'   && fb !== 'number')   return { level: 'block', message: 'Pole liczbowe MD wymaga liczby.' };
+      if (md === 'checkbox' && fb !== 'checkbox') return { level: 'block', message: 'Pole checkbox MD przyjmuje tylko true/false.' };
+      if (md === 'email'    && fb !== 'email')    return { level: 'block', message: 'Pole email MD wymaga zwalidowanego adresu email z FB.' };
+      if (md === 'phone'    && fb !== 'phone')    return { level: 'block', message: 'Pole telefon MD wymaga zwalidowanego numeru telefonu z FB.' };
+
+      // FB szerszy niż MD (np. EMAIL → tekst) — OK, dane się zmieszczą.
+      if ((fb === 'email' || fb === 'phone' || fb === 'date' || fb === 'number') && (md === 'text' || md === 'text_long')) {
+        return { level: 'ok' };
+      }
+
+      // Checkbox (true/false) → text/text_long/select — OK. User może mieć
+      // MD pole "Zgoda" jako text-type (przechowuje "true"/"false" jako string)
+      // albo jako lista "tak/nie" — to legitny wzorzec, nie zaskakuje, więc
+      // nie krzyczymy. Ważne zwłaszcza dla par consent (🔒 FB → MD text zgoda).
+      if (fb === 'checkbox' && (md === 'text' || md === 'text_long' || md === 'select')) {
+        return { level: 'ok' };
+      }
+
+      // Reszta — łagodne ostrzeżenie (nieznany przypadek)
+      return { level: 'warn', message: `Typy FB "${polishFieldType(fbRaw)}" → MD "${polishFieldType(mdRaw)}" mogą się nie zgadzać.` };
+    }
+
+    // Cosmetics for the middle column (the arrow ↔ slot).
+    function compatVisuals(level) {
+      if (level === 'block') return { icon: '🚫', color: '#DC2626' };
+      if (level === 'warn')  return { icon: '⚠️', color: '#D97706' };
+      return { icon: '↔',   color: '#9CA3AF' };
+    }
+
+    // Validate a user-typed constant value against the target MD field type.
+    // Returns { ok, message }. Used by the inline constant editor so the user
+    // gets immediate feedback and can't accept a value that will fail at MD.
+    function validateConstValue(rawValue, mdRawType) {
+      const md = mdLogicalType(mdRawType);
+      const v = String(rawValue || '').trim();
+      if (!v) return { ok: false, message: 'Wartość nie może być pusta' };
+
+      if (md === 'email') {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)
+          ? { ok: true }
+          : { ok: false, message: 'Niepoprawny email (oczekiwane: nazwa@domena.pl)' };
+      }
+      if (md === 'phone') {
+        // At least 6 digits, optional +/-/spaces/parens.
+        const digits = v.replace(/[\s+\-()]/g, '');
+        return /^\d+$/.test(digits) && digits.length >= 6
+          ? { ok: true }
+          : { ok: false, message: 'Numer telefonu — same cyfry, min. 6 (opcjonalnie +, -, spacje, ())' };
+      }
+      if (md === 'number') {
+        return /^-?\d+([.,]\d+)?$/.test(v)
+          ? { ok: true }
+          : { ok: false, message: 'Wymagana liczba (np. 42 albo 3.14)' };
+      }
+      if (md === 'date') {
+        // Accept ISO YYYY-MM-DD or common PL formats.
+        if (/^\d{4}-\d{2}-\d{2}$/.test(v))            return { ok: true };
+        if (/^\d{2}[.\-/]\d{2}[.\-/]\d{4}$/.test(v))  return { ok: true };
+        return { ok: false, message: 'Format daty: YYYY-MM-DD albo DD.MM.YYYY' };
+      }
+      if (md === 'checkbox') {
+        const truthy = ['true','false','1','0','yes','no','tak','nie','on','off'];
+        return truthy.includes(v.toLowerCase())
+          ? { ok: true }
+          : { ok: false, message: 'Wartość boolean: true / false' };
+      }
+      // text, text_long, select, attach — no format constraint from UI side.
+      return { ok: true };
+    }
+
+    // Populate the shared sticky banner from current state. Each slot is hidden until
+    // its value is known so the banner grows progressively as the user advances.
+    function updateStickyBanner() {
+      const banner = document.getElementById('fb-sticky-banner');
+      if (!banner) return;
+      const slots = [
+        {
+          id: 'sticky-user',
+          html: state.user ? `<span style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);display:inline-flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#FFFFFF;">${(state.user.name||'?')[0]}</span><span style="font-weight:600;">${state.user.name || 'FB'}</span>` : '',
+        },
+        {
+          id: 'sticky-page',
+          html: state.selectedPage ? `<span style="font-weight:600;">${state.selectedPage.name}</span>` : '',
+        },
+        {
+          id: 'sticky-fbform',
+          html: state.selectedForm ? `<span style="font-weight:600;">${state.selectedForm.name}</span>` : '',
+        },
+        {
+          id: 'sticky-mdform',
+          html: state.mdFormId ? `<span style="font-weight:600;">${state.mdFormName || state.mdFormId}</span>` : '',
+        },
+      ];
+      let anyShown = false;
+      slots.forEach(s => {
+        const el = document.getElementById(s.id);
+        if (!el) return;
+        if (s.html) { el.innerHTML = s.html; el.style.display = 'flex'; anyShown = true; }
+        else { el.innerHTML = ''; el.style.display = 'none'; }
+      });
+      // Show separators only between visible populated slots.
+      const children = Array.from(banner.querySelectorAll('.sticky-sep'));
+      const visibleIds = slots.filter(s => s.html).map(s => s.id);
+      const orderedIds = ['sticky-user','sticky-page','sticky-fbform','sticky-mdform'];
+      let sepIdx = 0;
+      for (let i = 0; i < orderedIds.length - 1; i++) {
+        const leftShown = visibleIds.includes(orderedIds[i]);
+        const rightShown = visibleIds.slice().some(id => orderedIds.indexOf(id) > i);
+        if (children[sepIdx]) children[sepIdx].style.display = (leftShown && rightShown) ? 'inline' : 'none';
+        sepIdx++;
+      }
+      banner.style.display = anyShown ? 'block' : 'none';
+    }
+
+    // "Zmień" — clear everything after user login and return to step 1 for a fresh pick.
+    // Login itself survives (user doesn't need to re-auth with FB).
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('sticky-change');
+      if (btn) btn.addEventListener('click', () => {
+        state.selectedPage = null;
+        state.selectedForm = null;
+        state.forms = [];
+        state.mdFormId = null;
+        state.mdFormName = null;
+        state.mdFields = [];
+        state.mappings = [];
+        state.integrationName = '';
+        const fbSection = document.getElementById('fb-forms-section');
+        if (fbSection) fbSection.style.display = 'none';
+        document.querySelectorAll('#pages-list .select-item').forEach(el => el.classList.remove('selected'));
+        // Re-open the pages picker since nothing is selected anymore.
+        if (typeof expandPagesPicker === 'function') expandPagesPicker();
+        const nextBtn = document.getElementById('btn-step1-next');
+        if (nextBtn) nextBtn.disabled = true;
+        updateStickyBanner();
+        goToStep(1);
+      });
+
+      // Accordion: clicking (or hitting Enter on) the compact summary re-opens the
+      // full page picker so the user can switch without re-logging-in.
+      const summary = document.getElementById('fb-pages-summary');
+      if (summary) {
+        summary.addEventListener('click', expandPagesPicker);
+        summary.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); expandPagesPicker(); }
+        });
+      }
+    });
+
+    // Check if returning from FB OAuth or resuming saved session
+    const fbSession = params.get('fb_session');
+    if (fbSession) {
+      state.sessionId = fbSession;
+      localStorage.setItem('md_fb_session', fbSession);
+      // Security: clean session ID from URL
+      const cleanUrl = new URL(window.location);
+      cleanUrl.searchParams.delete('fb_session');
+      window.history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search);
+      loadSession();
+    } else if (!DEMO_MODE) {
+      // Prefer cookie-based session (/me) — survives across pages without localStorage.
+      // Fall back to localStorage only if cookie auth is gone.
+      (async () => {
+        try {
+          const resp = await fetch('/auth/facebook/me', { credentials: 'include' });
+          if (resp.ok) {
+            const me = await resp.json();
+            if (me && me.session_id) {
+              state.sessionId = me.session_id;
+              localStorage.setItem('md_fb_session', me.session_id);
+              loadSession();
+              return;
+            }
+          }
+        } catch {}
+        const saved = localStorage.getItem('md_fb_session');
+        if (saved) {
+          state.sessionId = saved;
+          loadSession();
+        } else {
+          showLoginButton();
+        }
+      })();
+    } else {
+      showLoginButton();
+    }
+
+    // ─── Step 1: Facebook ───────────────────────────────
+    document.getElementById('btn-fb-login').addEventListener('click', async () => {
+      if (DEMO_MODE) {
+        // Simulate FB login with delay
+        const btn = document.getElementById('btn-fb-login');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Łączenie z Facebook...';
+        await demoDelay(1200);
+
+        state.user = MOCK_DATA.user;
+        state.pages = MOCK_DATA.pages;
+        state.sessionId = 'demo';
+
+        showLoggedInUI();
+        showToast('Zalogowano jako ' + state.user.name, 'success');
+        return;
+      }
+      window.location.href = '/auth/facebook?redirect=/setup';
+    });
+
+    async function loadSession() {
+      try {
+        const resp = await fetch('/auth/facebook/session/' + state.sessionId);
+        if (!resp.ok) throw new Error('Session expired');
+        const data = await resp.json();
+        state.user = data.user;
+        state.pages = data.pages;
+
+        // Save valid session for next visit
+        localStorage.setItem('md_fb_session', state.sessionId);
+
+        showLoggedInUI();
+        showToast('Zalogowano jako ' + state.user.name, 'success');
+
+        // Fire-and-forget: load existing integrations to mark already-connected forms.
+        loadExistingIntegrations();
+      } catch (e) {
+        // Session expired — clear saved state, surface login button.
+        localStorage.removeItem('md_fb_session');
+        state.sessionId = null;
+        showLoginButton();
+        showToast('Sesja wygasła — zaloguj się ponownie', 'error');
+      }
+    }
+
+    // Fetch current-facility integrations once and store a Set of "pageId:formId" so that
+    // the forms table (step 1) can show a "Podpięty" badge and dim rows that already have
+    // an integration. Users can still click them (they might want a second integration on
+    // the same form with different mapping) — this is only a visual warning.
+    async function loadExistingIntegrations() {
+      if (DEMO_MODE) return;
+      try {
+        const resp = await fetch('/api/integrations', {
+          headers: { 'X-Session-Id': state.sessionId || '' },
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const list = data.integrations || [];
+        state.existingFormKeys = new Set(list.map(i => `${i.fb_page_id}:${i.fb_form_id}`));
+      } catch (e) {
+        // Non-fatal — badge simply won't appear.
+        console.warn('Could not load existing integrations:', e);
+      }
+    }
+
+    // ─── Pages picker collapse/expand ─────────────────────────────
+    // After a page is chosen we collapse the (possibly large) pages grid into
+    // a single-line summary bar so the forms list below gets all available
+    // vertical space. Clicking/pressing Enter on the summary expands back to
+    // the full picker without losing the current selection.
+    function collapsePagesPicker(page) {
+      const summary = document.getElementById('fb-pages-summary');
+      const content = document.getElementById('fb-pages-content');
+      const nameEl = document.getElementById('fb-summary-name');
+      const metaEl = document.getElementById('fb-summary-meta');
+      if (!summary || !content || !page) return;
+      if (nameEl) nameEl.textContent = page.name || '';
+      if (metaEl) metaEl.textContent = page.page_id ? `ID: ${page.page_id}` : '';
+      content.style.display = 'none';
+      summary.style.display = 'flex';
+    }
+    function expandPagesPicker() {
+      const summary = document.getElementById('fb-pages-summary');
+      const content = document.getElementById('fb-pages-content');
+      if (!summary || !content) return;
+      summary.style.display = 'none';
+      content.style.display = 'block';
+    }
+
+    function showLoggedInUI() {
+      updateStickyBanner();
+      // The sticky banner already shows "connected as …" — no need for a duplicate card.
+      // Hide the whole login card so the page list appears right below the sticky banner.
+      document.getElementById('fb-login-card').style.display = 'none';
+
+      // Show pages
+      document.getElementById('fb-pages-card').style.display = 'block';
+      document.getElementById('step1-nav').style.display = 'flex';
+      // Make sure the picker is expanded on fresh login (no page selected yet).
+      expandPagesPicker();
+      const pagesList = document.getElementById('pages-list');
+      pagesList.innerHTML = '';
+      state.pages.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'select-item';
+        item.dataset.id = p.page_id;
+        item.innerHTML = `<div class="radio-dot"></div><div><div class="name">${p.name}</div><div class="meta">ID: ${p.page_id}</div></div>`;
+        item.addEventListener('click', () => selectPage(p));
+        pagesList.appendChild(item);
+      });
+    }
+
+    async function selectPage(page) {
+      state.selectedPage = page;
+      state.selectedForm = null;
+      updateStickyBanner();
+      document.querySelectorAll('#pages-list .select-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.id === page.page_id);
+      });
+
+      // Collapse the page picker into a compact summary so the (usually longer)
+      // forms list below gets the vertical real estate. User can still expand
+      // the picker by clicking the summary (wired up on DOMContentLoaded below).
+      collapsePagesPicker(page);
+
+      // Show loading state
+      const formsCard = document.getElementById('fb-forms-section');
+      formsCard.style.display = 'block';
+      const formsList = document.getElementById('forms-list');
+      formsList.innerHTML = '<div style="padding:1.5rem; text-align:center; color:#a1a1aa;"><span class="spinner" style="display:inline-block; margin-right:0.5rem; border-color:#3b82f6 transparent #3b82f6 transparent; border-width:2px; width:16px; height:16px;"></span> Szukam powiązanych formularzy na stronie...</div>';
+
+      // Load forms
+      try {
+        if (DEMO_MODE) {
+          await demoDelay(600);
+          state.forms = MOCK_DATA.forms[page.page_id] || [];
+        } else {
+          const resp = await fetch(`/auth/facebook/pages/${state.sessionId}/${page.page_id}/forms`);
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            const msg = data.error || data.detail || `HTTP ${resp.status}`;
+            formsList.innerHTML = `<div style="padding:1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-size:0.85rem;">⚠️ Nie udało się pobrać formularzy: ${msg}<br/><span style="color:#71717a;font-size:0.75rem;">Sprawdź czy masz uprawnienia admina na tej Stronie FB.</span></div>`;
+            showToast('Błąd pobierania formularzy: ' + msg, 'error');
+            return;
+          }
+          state.forms = data.forms || [];
+        }
+
+        formsList.innerHTML = '';
+
+        if (state.forms.length === 0) {
+          formsList.innerHTML = '<div style="padding:1rem;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;color:#fbbf24;font-size:0.85rem;">ℹ️ Brak formularzy Lead Ads na tej stronie.<br/><span style="color:#71717a;font-size:0.75rem;">Utwórz formularz w Meta Business Suite → Reklamy Lead, a następnie wróć tu.</span></div>';
+          return;
+        }
+
+        // ─── Render forms as accordion + sortable table ───
+        let formsSortCol = 'created_time';
+        let formsSortAsc = false; // newest first by default
+
+        function renderFormsTable(filterText) {
+          formsList.innerHTML = '';
+          const q = (filterText || '').toLowerCase();
+
+          // Filter
+          const filtered = state.forms.filter(f => !q || (f.name || '').toLowerCase().includes(q));
+
+          // Group by status: ACTIVE first, then rest
+          const groups = {};
+          const statusOrder = ['ACTIVE', 'ARCHIVED', 'EXPIRED', 'DRAFT', 'UNKNOWN'];
+          filtered.forEach(f => {
+            const s = f.status || 'UNKNOWN';
+            if (!groups[s]) groups[s] = [];
+            groups[s].push(f);
+          });
+
+          // Sort within each group
+          const sortFn = (a, b) => {
+            let va, vb;
+            if (formsSortCol === 'name') { va = (a.name||'').toLowerCase(); vb = (b.name||'').toLowerCase(); }
+            else if (formsSortCol === 'leads_count') { va = a.leads_count||0; vb = b.leads_count||0; }
+            else if (formsSortCol === 'fields') { va = (a.questions||[]).length; vb = (b.questions||[]).length; }
+            else { va = a.created_time||''; vb = b.created_time||''; }
+            if (va < vb) return formsSortAsc ? -1 : 1;
+            if (va > vb) return formsSortAsc ? 1 : -1;
+            return 0;
+          };
+          Object.values(groups).forEach(g => g.sort(sortFn));
+
+          // Render each group as accordion
+          statusOrder.forEach(status => {
+            const items = groups[status];
+            if (!items || items.length === 0) return;
+
+            const acc = document.createElement('div');
+            acc.className = 'accordion';
+
+            const statusCls = status.toLowerCase();
+            const isActive = status === 'ACTIVE';
+
+            acc.innerHTML = `
+              <div class="accordion-header${isActive ? ' open' : ''}">
+                <span class="arrow">▶</span>
+                <span class="status-pill ${statusCls}">${status === 'ACTIVE' ? 'Działa' : status === 'ARCHIVED' ? 'Wyłączone' : status}</span>
+                <span>${status === 'ACTIVE' ? 'Aktywne formularze' : status === 'ARCHIVED' ? 'Zarchiwizowane' : status}</span>
+                <span class="count">${items.length}</span>
+              </div>
+              <div class="accordion-body">
+                <table class="forms-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th data-col="name">Nazwa ${sortIcon('name')}</th>
+                      <th data-col="leads_count">Leady ${sortIcon('leads_count')}</th>
+                      <th data-col="fields">Pola ${sortIcon('fields')}</th>
+                      <th data-col="created_time">Utworzony ${sortIcon('created_time')}</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            `;
+
+            // Toggle accordion
+            const header = acc.querySelector('.accordion-header');
+            header.addEventListener('click', () => header.classList.toggle('open'));
+
+            // Sort headers
+            acc.querySelectorAll('th[data-col]').forEach(th => {
+              th.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const col = th.dataset.col;
+                if (formsSortCol === col) formsSortAsc = !formsSortAsc;
+                else { formsSortCol = col; formsSortAsc = true; }
+                renderFormsTable(document.getElementById('forms-filter').value);
+              });
+            });
+
+            // Rows
+            const tbody = acc.querySelector('tbody');
+            items.forEach(f => {
+              const tr = document.createElement('tr');
+              tr.dataset.id = f.form_id;
+              if (state.selectedForm && state.selectedForm.form_id === f.form_id) tr.className = 'selected-row';
+
+              let dateStr = '';
+              if (f.created_time) {
+                const d = new Date(f.created_time);
+                dateStr = d.toLocaleDateString('pl-PL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+              }
+
+              // Mark forms already connected in an existing integration for this facility.
+              const alreadyConnected = state.existingFormKeys &&
+                state.existingFormKeys.has(`${state.selectedPage.page_id}:${f.form_id}`);
+              const connectedBadge = alreadyConnected
+                ? '<span title="Ten formularz ma już integrację — kolejna jest możliwa, ale rozważ edycję istniejącej." style="display:inline-block;margin-left:0.4rem;font-size:0.62rem;font-weight:700;padding:0.1rem 0.4rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);border-radius:4px;color:#93c5fd;">✓ Podpięty</span>'
+                : '';
+              if (alreadyConnected) tr.style.opacity = '0.55';
+              tr.innerHTML = `
+                <td><div class="radio-dot" style="width:14px;height:14px;"></div></td>
+                <td class="form-name">${f.name || '—'}${connectedBadge}</td>
+                <td>${f.leads_count || 0}</td>
+                <td>${(f.questions||[]).length}</td>
+                <td style="color:#71717a;">${dateStr || '—'}</td>
+              `;
+              tr.addEventListener('click', () => selectForm(f));
+              tbody.appendChild(tr);
+            });
+
+            formsList.appendChild(acc);
+          });
+        }
+
+        function sortIcon(col) {
+          if (formsSortCol !== col) return '<span class="sort-icon">⇅</span>';
+          return formsSortAsc ? '<span class="sort-icon">▲</span>' : '<span class="sort-icon">▼</span>';
+        }
+
+        renderFormsTable('');
+
+        // Filter input
+        document.getElementById('forms-filter').addEventListener('input', function() {
+          renderFormsTable(this.value);
+        });
+      } catch (e) {
+        formsList.innerHTML = `<div style="padding:1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-size:0.85rem;">⚠️ Błąd pobierania formularzy: ${e.message}</div>`;
+        showToast('Błąd pobierania formularzy: ' + e.message, 'error');
+      }
+    }
+
+    function selectForm(form) {
+      state.selectedForm = form;
+      updateStickyBanner();
+      document.querySelectorAll('#forms-list tr').forEach(el => {
+        el.classList.toggle('selected-row', el.dataset.id === form.form_id);
+      });
+      // Update radio dots
+      document.querySelectorAll('#forms-list .radio-dot').forEach(dot => {
+        const row = dot.closest('tr');
+        if (row && row.dataset.id === form.form_id) {
+          dot.style.borderColor = '#3b82f6';
+          dot.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;"></div>';
+        } else {
+          dot.style.borderColor = '#D1D5DB';
+          dot.innerHTML = '';
+        }
+      });
+      document.getElementById('btn-step1-next').disabled = false;
+    }
+
+    document.getElementById('btn-step1-next').addEventListener('click', () => {
+      if (!state.selectedForm) return;
+      goToStep(2);
+    });
+
+    // ─── Step 2: Medidesk ───────────────────────────────
+    // In demo mode, pre-fill the Medidesk form ID
+    if (DEMO_MODE) {
+      document.getElementById('md-form-id').value = 'd908ee01-0b7d-44a0-a494-a707ab5a55ef';
+    }
+
+    document.getElementById('btn-fetch-md').addEventListener('click', async () => {
+      const formId = document.getElementById('md-form-id').value.trim();
+      if (!formId) { showToast('Podaj ID formularza', 'error'); return; }
+
+      const btn = document.getElementById('btn-fetch-md');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+
+      try {
+        const resp = await fetch('/api/forms/' + formId + '/fields');
+        const data = await resp.json();
+
+        if (data.error) { showToast(data.error, 'error'); return; }
+
+        state.mdFormId = formId;
+        state.mdFormName = data.form_name || formId;
+        state.mdFields = data.fields || [];
+
+        document.getElementById('md-form-title').textContent = state.mdFormName;
+        const fieldsList = document.getElementById('md-fields-list');
+        fieldsList.innerHTML = '';
+
+        state.mdFields.forEach(f => {
+          const el = document.createElement('div');
+          el.style.cssText = 'display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;border-bottom:1px solid #E5E7EB;';
+
+          const reqBadge = f.required
+            ? '<span style="font-size:0.65rem;color:#f59e0b;background:rgba(245,158,11,0.12);padding:0.2rem 0.4rem;border-radius:4px;font-weight:600;line-height:1;">wymagane</span>'
+            : '';
+
+          el.innerHTML = `
+            <div style="display:flex; align-items:center; flex:1; gap:0.6rem; min-width:0;">
+              <span class="field-chip md" style="flex:1; width:100%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis;">${f.fieldId}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.8rem; flex-shrink:0;">
+              <span style="font-size:0.72rem;color:#52525b;font-weight:600;line-height:1;width:90px;text-align:left;display:inline-block;">${polishFieldType(f.type)}</span>
+              <span style="width:80px;display:inline-block;text-align:left;">${reqBadge}</span>
+            </div>
+          `;
+          fieldsList.appendChild(el);
+        });
+
+        document.getElementById('md-fields-card').style.display = 'block';
+        document.getElementById('btn-step2-next').disabled = false;
+        // Fields loaded — the "where to find the form number" hint is no longer needed,
+        // collapse both the intro paragraph and the guidance box for more room.
+        const intro = document.getElementById('md-form-intro');
+        const guidance = document.getElementById('md-form-guidance');
+        if (intro) intro.style.display = 'none';
+        if (guidance) guidance.style.display = 'none';
+        updateStickyBanner();
+        showToast('Pobrano ' + state.mdFields.length + ' pól', 'success');
+      } catch (e) {
+        showToast('Błąd: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Pobierz pola';
+      }
+    });
+
+    document.getElementById('btn-step2-next').addEventListener('click', () => {
+      if (!state.mdFormId) return;
+      buildMappingStep();
+      goToStep(3);
+    });
+
+    // ─── Step 3: Mapping ────────────────────────────────
+    async function buildMappingStep() {
+      updateStickyBanner();
+
+      // Integration name — autofill with sensible default but allow override.
+      const nameInput = document.getElementById('integration-name-input');
+      if (nameInput) {
+        const defaultName = `${state.selectedForm.name || 'Formularz FB'} → ${state.mdFormName || 'Medidesk'}`;
+        if (!state.integrationName) state.integrationName = defaultName;
+        nameInput.value = state.integrationName;
+        nameInput.oninput = () => { state.integrationName = nameInput.value; };
+      }
+
+      // Call AI mapping suggest
+      try {
+        const resp = await fetch('/api/mapping/suggest', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Session-Id': state.sessionId || '',
+          },
+          body: JSON.stringify({
+            fb_questions: state.selectedForm.questions,
+            medidesk_fields: state.mdFields,
+          }),
+        });
+        const data = await resp.json();
+        state.mappings = data.suggestions || [];
+
+        // Count coverage against REQUIRED Medidesk fields only — optional ones shouldn't
+        // drag the ratio down. Also note that one MD field can receive multiple FB fields
+        // (e.g. first_name + last_name → Imię-i-nazwisko); we count unique covered MD fields.
+        const suggestions = data.suggestions || [];
+        const coveredMd = new Set(
+          suggestions.filter(s => s.medidesk_field).map(s => s.medidesk_field)
+        );
+        const requiredMd = (state.mdFields || []).filter(f => f.required);
+        const optionalMd = (state.mdFields || []).filter(f => !f.required);
+        const requiredCovered = requiredMd.filter(f => coveredMd.has(f.fieldId || f.id || f.name)).length;
+        const optionalCovered = optionalMd.filter(f => coveredMd.has(f.fieldId || f.id || f.name)).length;
+        const requiredMissing = requiredMd.filter(f => !coveredMd.has(f.fieldId || f.id || f.name));
+
+        const allRequiredDone = requiredMissing.length === 0;
+        let msg = `✓ Pokryto ${requiredCovered}/${requiredMd.length} wymaganych pól Medidesk`;
+        if (optionalMd.length > 0) msg += ` (+ ${optionalCovered}/${optionalMd.length} opcjonalnych)`;
+        msg += '.';
+        if (allRequiredDone) {
+          msg += ' Gotowe do zapisu — opcjonalne pola możesz dodać później.';
+        } else {
+          msg += ` ⚠ Brakuje wymaganych: ${requiredMissing.map(f => f.name || f.fieldId).join(', ')}.`;
+        }
+        const infoEl = document.getElementById('mapping-info-text');
+        infoEl.textContent = msg;
+        infoEl.style.color = allRequiredDone ? '#047857' : '#B45309';
+
+        renderMappings();
+      } catch (e) {
+        showToast('Błąd mapowania: ' + e.message, 'error');
+      }
+    }
+
+    // All available virtual/meta fields from FB lead
+    const VIRTUAL_FIELDS = [
+      { key: '__fb_form_name__',    label: '📋 Nazwa formularza' },
+      { key: '__fb_lead_date__',    label: '📅 Data wpłynięcia' },
+      { key: '__fb_ad_name__',      label: '📢 Nazwa reklamy' },
+      { key: '__fb_adset_name__',   label: '🎯 Nazwa zestawu reklam' },
+      { key: '__fb_campaign_name__',label: '📊 Nazwa kampanii' },
+      { key: '__fb_platform__',     label: '🌐 Platforma (fb/ig)' },
+      { key: '__fb_is_organic__',   label: '🌱 Czy organiczny' },
+      { key: '__fb_lead_id__',      label: '🔑 ID leada' },
+    ];
+
+    function renderMappings() {
+      const container = document.getElementById('mapping-rows');
+      container.innerHTML = '';
+
+      const fbQuestions = state.selectedForm.questions || [];
+      const mappedFb = new Set(state.mappings.map(m => m.fb_field));
+
+      // Section 1 — real FB form fields in form order (mapped or not).
+      fbQuestions.forEach(q => {
+        const key = q.key || q.name || q.label || '';
+        const m = state.mappings.find(mp => mp.fb_field === key);
+        container.appendChild(createMappingRow(key, (m && m.medidesk_field) || '', (m && m.confidence) || 0, false));
+      });
+
+      // Section 2 — virtual meta fields (user-added, in insertion order, after real FB fields).
+      state.mappings.forEach(m => {
+        if (m.fb_field.startsWith('__fb_')) {
+          container.appendChild(createMappingRow(m.fb_field, m.medidesk_field, m.confidence, true));
+        }
+      });
+
+      // Section 3 — constants (user-added, always last before the "add" controls).
+      state.mappings.forEach(m => {
+        if (m.fb_field.startsWith('__const:')) {
+          container.appendChild(createMappingRow(m.fb_field, m.medidesk_field, m.confidence, false));
+        }
+      });
+
+      // Add-extras live in their own container so we can render optional-missing rows
+      // BETWEEN the mapped rows and the add-controls (user's preferred visual flow).
+      const extras = document.getElementById('mapping-extras');
+      if (extras) extras.innerHTML = '';
+      const extrasHost = extras || container;
+
+      // "Add field" dropdown — only show unused virtual fields. Rendered as a .mapping-row
+      // so the input column spans cols 1–4 and the Dodaj button sits in col 5 (row-meta),
+      // keeping the entire section column-aligned with the mapped rows above.
+      const unusedVirtuals = VIRTUAL_FIELDS.filter(vf => !mappedFb.has(vf.key));
+      if (unusedVirtuals.length > 0) {
+        const addRow = document.createElement('div');
+        addRow.className = 'mapping-row mapping-row--add';
+        addRow.style.cssText = 'margin-top:0.8rem;border:1px dashed #D1D5DB;border-radius:10px;';
+        const opts = unusedVirtuals.map(vf =>
+          `<option value="${vf.key}">${vf.label}</option>`
+        ).join('');
+        addRow.innerHTML = `
+          <select id="add-virtual-select" style="grid-column:1 / 5;background:#FFFFFF;border:1px solid #E5E7EB;color:#374151;padding:0 0.6rem;height:38px;border-radius:6px;font-size:0.78rem;">
+            <option value="">➕ Dodaj pole meta-danych...</option>
+            ${opts}
+          </select>
+          <button id="btn-add-virtual" class="btn" style="grid-column:5 / 6;background:#F3F4F6;color:#374151;font-size:0.75rem;padding:0 0.8rem;height:38px;" disabled>Dodaj</button>
+        `;
+        extrasHost.appendChild(addRow);
+
+        const sel = addRow.querySelector('#add-virtual-select');
+        const btn = addRow.querySelector('#btn-add-virtual');
+        sel.addEventListener('change', () => { btn.disabled = !sel.value; });
+        btn.addEventListener('click', () => {
+          if (!sel.value) return;
+          state.mappings.push({ fb_field: sel.value, medidesk_field: '', confidence: 0 });
+          renderMappings();
+        });
+      }
+
+      // "Add constant value" row — same column-span trick as above.
+      const constRow = document.createElement('div');
+      constRow.className = 'mapping-row mapping-row--add';
+      constRow.style.cssText = 'margin-top:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
+      constRow.innerHTML = `
+        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="grid-column:1 / 5;background:#FFFFFF;border:1px solid #E5E7EB;color:#111827;padding:0 0.6rem;height:38px;border-radius:6px;font-size:0.78rem;" />
+        <button id="btn-add-const" class="btn" style="grid-column:5 / 6;background:#F3F4F6;color:#374151;font-size:0.75rem;padding:0 0.8rem;height:38px;" disabled>Dodaj</button>
+      `;
+      extrasHost.appendChild(constRow);
+
+      const constInput = constRow.querySelector('#const-value-input');
+      const constBtn = constRow.querySelector('#btn-add-const');
+      constInput.addEventListener('input', () => { constBtn.disabled = !constInput.value.trim(); });
+      constBtn.addEventListener('click', () => {
+        const val = constInput.value.trim();
+        if (!val) return;
+        state.mappings.push({ fb_field: `__const:${val}__`, medidesk_field: '', confidence: 0 });
+        renderMappings();
+      });
+
+      // Warning banner: required Medidesk fields without any mapping
+      renderMissingRequiredBanner();
+    }
+
+    // Pattern-based smart defaults for common required fields.
+    // Returns { value, hint } or null if no suggestion.
+    function guessConstantDefault(fieldId) {
+      const id = (fieldId || '').toLowerCase();
+      if (/zgod|consent|rodo|gdpr|regulamin|marketingow/.test(id))
+        return { value: 'true', hint: 'Pole zgody — zwykle "true" (user wyraził zgodę klikając FB formularz)' };
+      if (/^source$|^zrodlo$|kanal|channel/.test(id))
+        return { value: 'Facebook Lead Ads', hint: 'Pole źródła leada' };
+      if (/utm_source/.test(id)) return { value: 'fb', hint: 'UTM source' };
+      if (/utm_medium/.test(id)) return { value: 'paid_social', hint: 'UTM medium' };
+      if (/utm_campaign/.test(id)) return { value: 'facebook_leads', hint: 'UTM campaign' };
+      return null;
+    }
+
+    // Count how many existing mappings have an incompatible type pairing (🚫 in UI).
+    function countTypeBlocks() {
+      const fbQuestions = (state.selectedForm && state.selectedForm.questions) || [];
+      const fbTypeFor = (key) => {
+        if (!key) return undefined;
+        if (key.startsWith('__const:') || key.startsWith('__fb_')) return 'CUSTOM';
+        const q = fbQuestions.find(q => (q.key || q.name || q.label) === key);
+        return q && q.type;
+      };
+      const mdTypeFor = (id) => {
+        const f = (state.mdFields || []).find(f => f.fieldId === id);
+        return f && f.type;
+      };
+      let n = 0;
+      (state.mappings || []).forEach(m => {
+        if (!m.medidesk_field) return;
+        if (checkTypeCompat(fbTypeFor(m.fb_field), mdTypeFor(m.medidesk_field)).level === 'block') n++;
+      });
+      return n;
+    }
+
+    // Toggle save button availability — blocked by either missing required fields
+    // OR any type-incompatible mapping (e.g. "tekst" → "email"). Type blocks are
+    // resolved by the user picking a different MD target, the same way required
+    // fields are resolved by mapping them.
+    function updateSaveButtonState(missingCount) {
+      const btn = document.getElementById('btn-step3-next');
+      if (!btn) return;
+      const blockCount = countTypeBlocks();
+      if (missingCount > 0 || blockCount > 0) {
+        btn.disabled = true;
+        btn.style.opacity = '0.55';
+        btn.style.cursor = 'not-allowed';
+        const parts = [];
+        if (missingCount > 0) parts.push(`${missingCount} wymagane pole${missingCount > 1 ? 'a' : ''} bez mapowania`);
+        if (blockCount > 0)   parts.push(`${blockCount} ${blockCount > 1 ? 'mapowania' : 'mapowanie'} z niezgodnym typem (🚫)`);
+        btn.title = `Popraw przed zapisem: ${parts.join(' + ')}`;
+      } else {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+        btn.title = '';
+      }
+    }
+
+    // Open inline constant editor — replaces the FB-select in place (left column of the row)
+    // so the constant input sits in the exact same slot the FB mapping would occupy.
+    function openConstantEditor(fieldId) {
+      const row = document.getElementById(`missing-row-${fieldId}`);
+      if (!row) return;
+      const fbSelect = row.querySelector('.fb-quickmap-select');
+      const meta = row.querySelector('.row-meta-left');
+      if (!fbSelect || !meta) return;
+
+      const suggest = guessConstantDefault(fieldId);
+      const defaultVal = suggest ? suggest.value : '';
+      const mdField = (state.mdFields || []).find(f => (f.fieldId || f.id || f.name) === fieldId) || {};
+      const mtype = (mdField.type || '').toLowerCase();
+      const options = Array.isArray(mdField.options) ? mdField.options : [];
+
+      const sharedStyle = 'flex:1;width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:#FFFFFF;border:1px solid rgba(139,92,246,0.5);border-radius:6px;color:#111827;font-size:0.85rem;';
+      let inputHtml;
+      if (['checkbox', 'boolean', 'bool', 'consent'].includes(mtype)) {
+        const checked = ['true', '1', 'yes', 'tak', 'on'].includes(String(defaultVal).toLowerCase()) ? 'checked' : '';
+        inputHtml = `<label class="const-toggle" style="${sharedStyle}display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+            <input type="checkbox" class="const-input" ${checked} style="width:18px;height:18px;accent-color:#8b5cf6;cursor:pointer;" />
+            <span class="const-toggle-label">${checked ? 'Zaznaczone (true)' : 'Niezaznaczone (false)'}</span>
+          </label>`;
+      } else if (['select', 'lista', 'dropdown', 'radio'].includes(mtype) && options.length > 0) {
+        const opts = ['<option value="">— wybierz —</option>']
+          .concat(options.map(o => {
+            const sel = String(o).toLowerCase() === String(defaultVal).toLowerCase() ? ' selected' : '';
+            return `<option value="${String(o).replace(/"/g,'&quot;')}"${sel}>${o}</option>`;
+          }))
+          .join('');
+        inputHtml = `<select class="const-input" style="${sharedStyle}">${opts}</select>`;
+      } else {
+        inputHtml = `<input type="text" class="const-input" value="${String(defaultVal).replace(/"/g,'&quot;')}" placeholder="📌 Wpisz stałą wartość..." style="${sharedStyle}" />`;
+      }
+
+      // Save originals so Anuluj can restore.
+      const origFbHtml = fbSelect.outerHTML;
+      const origMetaHtml = meta.innerHTML;
+
+      // SWAP:
+      //   - center column (FB-select) → const value input (same height/width)
+      //   - left-meta column (📌 stała btn) → the FB-select itself, so user can still
+      //     switch back to FB mapping without leaving the row. Plus Apply/Cancel buttons.
+      //
+      // Wrapper is flex-column so the inline validation error (when the typed value
+      // doesn't match the MD field type — e.g. "foo" typed for an email field) can
+      // sit directly below the input without breaking the surrounding grid layout.
+      const wrapper = document.createElement('div');
+      wrapper.className = 'const-input-wrapper';
+      wrapper.style.cssText = 'width:100%;display:flex;flex-direction:column;gap:2px;';
+      wrapper.innerHTML = inputHtml
+        + '<span class="const-error" style="display:none;font-size:0.7rem;color:#DC2626;line-height:1.2;padding-left:2px;"></span>';
+      fbSelect.replaceWith(wrapper);
+
+      // Rebuild left meta: shrunken FB-select (so user can still pick a FB field)
+      // plus compact Apply/Cancel icon buttons.
+      meta.innerHTML = '';
+      const relocatedSelect = document.createElement('select');
+      relocatedSelect.className = 'fb-quickmap-select';
+      relocatedSelect.dataset.md = fieldId;
+      relocatedSelect.style.cssText = 'width:100%;padding:0 0.4rem;height:32px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:#6B7280;font-size:0.72rem;cursor:pointer;';
+      relocatedSelect.innerHTML = fbOpts;
+      meta.appendChild(relocatedSelect);
+      relocatedSelect.addEventListener('change', function() {
+        const fb = this.value;
+        if (!fb) return;
+        // User chose a FB field instead of constant — apply it, which re-renders row.
+        quickMapField(fieldId, fb);
+      });
+
+      // Apply/Cancel buttons go into the right-side meta column for clean separation.
+      const rightMeta = row.querySelector('.row-meta');
+      const origRightMetaHtml = rightMeta ? rightMeta.innerHTML : '';
+      if (rightMeta) {
+        rightMeta.innerHTML = `
+          <button class="btn-apply-const" title="Zapisz stałą" style="background:#8b5cf6;border:1px solid #8b5cf6;color:#fff;font-size:0.75rem;padding:4px 8px;border-radius:6px;cursor:pointer;">✓</button>
+          <button class="btn-cancel-const" title="Anuluj" style="background:none;border:1px solid #D1D5DB;color:#6B7280;font-size:0.75rem;padding:4px 8px;border-radius:6px;cursor:pointer;margin-left:4px;">✕</button>
+        `;
+      }
+
+      const input = wrapper.querySelector('.const-input');
+      const errorEl = wrapper.querySelector('.const-error');
+      const readValue = () => {
+        if (input.type === 'checkbox') return input.checked ? 'true' : 'false';
+        return (input.value || '').trim();
+      };
+
+      // Live type validation — text inputs for email/phone/number/date targets
+      // get immediate feedback so the user can't hit Apply with bogus data.
+      // Checkbox and <select> inputs are bounded by the control itself, so they
+      // always pass — no need to run the validator for them.
+      const isBoundedInput = input.type === 'checkbox' || input.tagName === 'SELECT';
+      const updateValidation = () => {
+        if (isBoundedInput) return true;
+        const result = validateConstValue(readValue(), mdField.type);
+        if (result.ok) {
+          errorEl.style.display = 'none';
+          errorEl.textContent = '';
+          input.style.borderColor = 'rgba(139,92,246,0.5)';
+          input.style.background = '#FFFFFF';
+          return true;
+        }
+        errorEl.textContent = `⚠️ ${result.message}`;
+        errorEl.style.display = 'block';
+        input.style.borderColor = '#DC2626';
+        input.style.background = 'rgba(220,38,38,0.04)';
+        return false;
+      };
+
+      if (input.type === 'checkbox') {
+        const lbl = wrapper.querySelector('.const-toggle-label');
+        input.addEventListener('change', () => {
+          if (lbl) lbl.textContent = input.checked ? 'Zaznaczone (true)' : 'Niezaznaczone (false)';
+        });
+      } else {
+        input.focus();
+        if (input.select) input.select();
+        // Validate on every keystroke (and once on open so a bad suggested default flags itself).
+        input.addEventListener('input', updateValidation);
+        if (input.value) updateValidation();
+      }
+
+      const restore = () => {
+        wrapper.outerHTML = origFbHtml;
+        meta.innerHTML = origMetaHtml;
+        if (rightMeta) rightMeta.innerHTML = origRightMetaHtml;
+        // Re-bind handlers on the freshly restored nodes.
+        const newSelect = row.querySelector('.fb-quickmap-select');
+        if (newSelect) {
+          newSelect.addEventListener('change', function() {
+            const md = this.dataset.md;
+            const fb = this.value;
+            if (!fb) return;
+            quickMapField(md, fb);
+          });
+        }
+        const newBtn = row.querySelector('.btn-open-const');
+        if (newBtn) newBtn.addEventListener('click', () => openConstantEditor(fieldId));
+      };
+
+      // Gate Apply/Enter on validation — never let a malformed value slip through
+      // into state.mappings, because that means guaranteed failure at Medidesk.
+      const tryApply = () => {
+        if (!updateValidation()) {
+          showToast('Wartość nie pasuje do typu pola — popraw lub anuluj', 'error');
+          if (input.focus) input.focus();
+          return;
+        }
+        applyConstantToField(fieldId, readValue());
+      };
+
+      if (rightMeta) {
+        rightMeta.querySelector('.btn-apply-const').addEventListener('click', tryApply);
+        rightMeta.querySelector('.btn-cancel-const').addEventListener('click', restore);
+      }
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); tryApply(); }
+        if (e.key === 'Escape') restore();
+      });
+    }
+
+    // Apply a constant value to a required MD field (creates mapping row).
+    function applyConstantToField(fieldId, rawValue) {
+      const val = (rawValue || '').trim();
+      if (!val) { showToast('Podaj wartość stałej', 'error'); return; }
+      // Remove any prior mapping for this MD field (if user changes mind)
+      state.mappings = state.mappings.filter(m => m.medidesk_field !== fieldId);
+      state.mappings.push({
+        fb_field: `__const:${val}__`,
+        medidesk_field: fieldId,
+        confidence: 1.0,
+      });
+      renderMappings();
+      showToast(`Dodano stałą wartość dla: ${fieldId}`, 'success');
+    }
+
+    function renderMissingRequiredBanner() {
+      const banner = document.getElementById('missing-required-banner');
+      const optBanner = document.getElementById('missing-optional-banner');
+      if (!banner) return;
+      const mappedMd = new Set(
+        state.mappings
+          .filter(m => m.medidesk_field && m.medidesk_field.trim())
+          .map(m => m.medidesk_field)
+      );
+      const requiredMissing = (state.mdFields || []).filter(f => f.required && !mappedMd.has(f.fieldId));
+      const optionalMissing = (state.mdFields || []).filter(f => !f.required && !mappedMd.has(f.fieldId));
+      updateSaveButtonState(requiredMissing.length);
+      if (requiredMissing.length === 0 && optionalMissing.length === 0) {
+        banner.style.display = 'none';
+        banner.innerHTML = '';
+        if (optBanner) { optBanner.style.display = 'none'; optBanner.innerHTML = ''; }
+        return;
+      }
+      // FB-field options list (for inline "map from FB" select), shared across rows.
+      const fbOpts = ['<option value="">— wybierz FB pole —</option>']
+        .concat((state.selectedForm && state.selectedForm.questions || []).map(q => {
+          const key = q.key || q.name || q.id;
+          const lbl = q.label || key;
+          return `<option value="${key}">${lbl}${lbl !== key ? ' ('+key+')' : ''}</option>`;
+        }))
+        .join('');
+
+      // Row renderer — uses the same .mapping-row grid as real mappings so left/middle/right
+      // columns line up pole-w-pole with completed mappings above. The "stała" action lives
+      // in the far-right meta column so column 1 (FB select) stays flush with mapped FB chips.
+      const buildRow = (f, tone) => {
+        const palette = tone === 'required'
+          ? { chipBg:'rgba(239,68,68,0.1)', chipBorder:'rgba(239,68,68,0.35)', chipText:'#B91C1C', tagBg:'rgba(239,68,68,0.18)', tagText:'wymagane' }
+          : { chipBg:'rgba(245,158,11,0.1)', chipBorder:'rgba(245,158,11,0.3)', chipText:'#B45309', tagBg:'rgba(245,158,11,0.18)', tagText:'opcjonalne' };
+        // Attachment-type MD fields can only be populated by a real FB upload — a constant
+        // value makes no sense (we can't fabricate a file), so hide the "stała" shortcut.
+        const isAttachment = /^attach/i.test(f.type || '');
+        const leftMetaHtml = isAttachment
+          ? `<span style="font-size:0.68rem;color:#6B7280;white-space:nowrap;" title="Załączniki muszą przyjść z FB — nie da się ustawić stałej wartości">tylko z FB</span>`
+          : `<button class="btn-open-const" data-md="${f.fieldId}" title="Ustaw stałą wartość"
+                     style="background:none;border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;font-size:0.7rem;padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;">📌 stała</button>`;
+        // Per-row FB options: annotate with ⚠️/🚫 vs THIS MD field's type so the
+        // user can see at-a-glance which FB picks would conflict before clicking.
+        const rowFbOpts = ['<option value="">— wybierz FB pole —</option>']
+          .concat((state.selectedForm && state.selectedForm.questions || []).map(q => {
+            const key = q.key || q.name || q.id;
+            const lbl = q.label || key;
+            const c = checkTypeCompat(q.type, f.type);
+            const hint = c.level === 'block' ? '  🚫' : c.level === 'warn' ? '  ⚠️' : '';
+            return `<option value="${key}">${lbl}${lbl !== key ? ' ('+key+')' : ''}${hint}</option>`;
+          }))
+          .join('');
+        return `
+        <div id="missing-row-${f.fieldId}" class="mapping-row" style="border-bottom:1px solid #E5E7EB;">
+          <div class="row-meta-left">${leftMetaHtml}</div>
+          <select class="fb-quickmap-select" data-md="${f.fieldId}"
+                  style="width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:#6B7280;font-size:0.82rem;line-height:38px;cursor:pointer;">
+            ${rowFbOpts}
+          </select>
+          <span class="mapping-arrow" style="text-align:center;">↔</span>
+          <div class="field-chip" style="background:${palette.chipBg};border:1px solid ${palette.chipBorder};color:${palette.chipText};font-weight:600;">
+            ${f.fieldId}
+            <span style="margin-left:0.5rem;padding:2px 7px;border-radius:10px;background:${palette.tagBg};color:${palette.chipText};font-size:0.66rem;font-weight:500;">${palette.tagText}</span>
+          </div>
+          <div class="row-meta"></div>
+          <div class="const-editor" style="grid-column:1 / -1;display:none;"></div>
+        </div>`;
+      };
+
+      // Section caption sits ABOVE the container (not as a header bar inside), so the
+      // rows below visually lock onto the same column rhythm as the mapped rows.
+      const sectionCaption = (icon, title, tone) => {
+        const color = tone === 'required' ? '#B91C1C' : '#B45309';
+        return `<div style="display:flex;align-items:center;gap:0.4rem;margin:0.4rem 0.2rem 0.3rem;color:${color};font-size:0.78rem;font-weight:600;">
+          <span>${icon}</span><span>${title}</span>
+        </div>`;
+      };
+
+      const requiredHtml = requiredMissing.length > 0 ? `
+        ${sectionCaption('⛔', `Wymagane pola Medidesk bez źródła (${requiredMissing.length}) — wymagają zmapowania lub stałej wartości`, 'required')}
+        <div style="margin-bottom:0.6rem;border:1px solid rgba(239,68,68,0.3);border-radius:10px;overflow:hidden;">
+          ${requiredMissing.map(f => buildRow(f, 'required')).join('')}
+        </div>` : '';
+
+      const optionalHtml = optionalMissing.length > 0 ? `
+        ${sectionCaption('💡', `Opcjonalne pola Medidesk bez źródła (${optionalMissing.length}) — można zostawić puste`, 'optional')}
+        <div style="margin-bottom:0.6rem;border:1px solid rgba(245,158,11,0.25);border-radius:10px;overflow:hidden;">
+          ${optionalMissing.map(f => buildRow(f, 'optional')).join('')}
+        </div>` : '';
+
+      // Required — stays on top (above mapped rows). Optional — moves below mapped rows
+      // (just before the "Dodaj pole meta-danych" / const controls) so the flow reads:
+      //  red missing → mapped fields → amber missing → add-extras.
+      banner.style.display = requiredHtml ? 'block' : 'none';
+      banner.innerHTML = requiredHtml;
+      if (optBanner) {
+        optBanner.style.display = optionalHtml ? 'block' : 'none';
+        optBanner.innerHTML = optionalHtml;
+      }
+
+      // Wire up inline actions across both banners.
+      const wireBanner = (el) => {
+        if (!el) return;
+        el.querySelectorAll('.fb-quickmap-select').forEach(sel => {
+          sel.addEventListener('change', function() {
+            const md = this.dataset.md;
+            const fb = this.value;
+            if (!fb) return;
+            updateMapping(fb, md);
+          });
+        });
+        el.querySelectorAll('.btn-open-const').forEach(btn => {
+          btn.addEventListener('click', function() { openConstantEditor(this.dataset.md); });
+        });
+      };
+      wireBanner(banner);
+      wireBanner(optBanner);
+    }
+
+    function createMappingRow(fbField, mdField, confidence, isVirtual = false) {
+      const row = document.createElement('div');
+      // User-added rows (virtuals + constants) should never be auto-dimmed:
+      // the user just added them on purpose, so fading them out is misleading.
+      // Only real FB form fields get the "is-unmapped" dim treatment.
+      const isConst = fbField.startsWith('__const:');
+      const isUserAdded = isVirtual || isConst;
+      row.className = 'mapping-row' + (mdField || isUserAdded ? '' : ' is-unmapped');
+      const virtualLabels = {
+        '__fb_form_name__': '📋 Nazwa formularza',
+        '__fb_lead_date__': '📅 Data leada',
+        '__fb_ad_name__': '📢 Nazwa reklamy',
+        '__fb_adset_name__': '🎯 Zestaw reklam',
+        '__fb_campaign_name__': '📊 Kampania',
+        '__fb_platform__': '🌐 Platforma',
+        '__fb_is_organic__': '🌱 Organiczny',
+        '__fb_lead_id__': '🔑 ID leada',
+      };
+
+      // Look up the underlying FB question once — we need both the type (for
+      // compat checks) and the consent metadata (label, is_consent, consent_body).
+      const fbQuestion = (isConst || isVirtual)
+        ? null
+        : ((state.selectedForm && state.selectedForm.questions || [])
+            .find(q => (q.key || q.name || q.label) === fbField) || null);
+      const isConsent = !!(fbQuestion && fbQuestion.is_consent);
+      const consentBody = (fbQuestion && fbQuestion.consent_body) || '';
+      const consentLabel = (fbQuestion && fbQuestion.label) || '';
+
+      let displayName;
+      let chipStyle;
+      let chipTitle = '';
+      if (isConst) {
+        const constVal = fbField.replace('__const:', '').replace('__', '');
+        displayName = `📌 ${constVal}`;
+        chipStyle = 'border-style:dashed;border-color:#8b5cf6;color:#6d28d9;background:rgba(139,92,246,0.08);';
+      } else if (isVirtual) {
+        displayName = virtualLabels[fbField] || fbField;
+        chipStyle = 'border-style:dashed;opacity:0.8;';
+      } else if (isConsent) {
+        // Consent surfaced from FB legal_content / gdpr_consent. Each consent
+        // arrives as a PAIR: a CHECKBOX (true/false) and a TEXT entry (resolves
+        // to the consent label only when the checkbox was actually checked).
+        // The pair lets the user route either the bool OR the readable text
+        // into the matching Medidesk field, depending on how their MD form is
+        // structured (compliance log vs simple yes/no).
+        const consentKind = (fbQuestion && fbQuestion.consent_kind) || 'checkbox';
+        const labelTxt = consentLabel || fbField;
+        // Explicit "(checkbox)" / "(tekst)" suffix — the icon alone (🔒 vs 📝)
+        // was too subtle when the FB label is identical between the pair.
+        if (consentKind === 'text') {
+          displayName = `📝 ${labelTxt} (tekst)`;
+          chipStyle = 'border-style:dashed;border-color:rgba(99,102,241,0.5);color:#3730a3;background:rgba(99,102,241,0.06);';
+        } else {
+          displayName = `🔒 ${labelTxt} (checkbox)`;
+          chipStyle = 'border-style:dashed;border-color:rgba(139,92,246,0.5);color:#5b21b6;background:rgba(139,92,246,0.06);';
+        }
+        const kindHint = consentKind === 'text'
+          ? '— wartość: tekst zgody (gdy checkbox = true), inaczej pusty'
+          : '— wartość: true / false';
+        const tipParts = [
+          `Zgoda z FB${fbQuestion.is_required ? ' (wymagana)' : ''} ${kindHint}`,
+        ];
+        if (consentBody) tipParts.push('', consentBody);
+        chipTitle = tipParts.join('\n').replace(/"/g, '&quot;');
+      } else {
+        displayName = fbField;
+        chipStyle = '';
+      }
+
+      // Raw type — synthesized consents already arrive with type "CHECKBOX",
+      // constants/virtuals are CUSTOM (free text).
+      const fbRawType = (isConst || isVirtual)
+        ? 'CUSTOM'
+        : (fbQuestion && fbQuestion.type) || undefined;
+
+      // Build MD field <select> — annotate each option with a compat hint so user
+      // sees up-front which targets are clean / risky / blocked. Options stay
+      // selectable (per the agreed UX: visible but flagged), and the row-level
+      // arrow + Save button enforce the actual block.
+      const options = ['<option value="">— nie mapuj —</option>'];
+      state.mdFields.forEach(f => {
+        const sel = f.fieldId === mdField ? ' selected' : '';
+        const optCompat = checkTypeCompat(fbRawType, f.type);
+        const hint = optCompat.level === 'block' ? '  🚫'
+                   : optCompat.level === 'warn'  ? '  ⚠️'
+                   : '';
+        // Show MD field type inline — when compat surprises the user ("but
+        // it's a boolean!"), the [typ] suffix reveals what MD actually
+        // reports this field as (e.g. [tekst krótki] vs expected [checkbox]).
+        const typeTag = f.type ? `  [${polishFieldType(f.type)}]` : '';
+        options.push(`<option value="${f.fieldId}"${sel}>${f.fieldId}${typeTag}${hint}</option>`);
+      });
+
+      // Compat for the *currently selected* MD field — drives the middle column icon.
+      const compat = checkTypeCompat(fbRawType, mdField);
+      const cv = compatVisuals(compat.level);
+      const arrowTitle = compat.message ? compat.message.replace(/"/g, '&quot;') : '';
+
+      // Check if this MD field is used by another FB field (merge)
+      const mergeFields = state.mappings.filter(m => m.medidesk_field === mdField && m.fb_field !== fbField);
+      const isMerge = mdField && mergeFields.length > 0;
+      // Show remove button only for user-added rows (virtuals & constants); real FB fields can only be "— nie mapuj —"
+      const canRemove = isVirtual || isConst;
+
+      // Mark blocking rows so the save button can count them and CSS can flag the select.
+      if (compat.level === 'block') row.classList.add('has-type-block');
+      else if (compat.level === 'warn') row.classList.add('has-type-warn');
+
+      // Consent rows get an "ℹ️" info button in the left meta column. Clicking
+      // it expands an inline panel BELOW the row (grid-column: 1/-1) showing
+      // the full disclaimer text + a copy-to-clipboard button. Replaces the
+      // earlier copy-only button — now user can READ the text first, then
+      // decide whether to copy.
+      const leftMetaHtml = (isConsent && consentBody)
+        ? `<button class="btn-toggle-consent" title="Pokaż pełną treść zgody" style="background:none;border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;font-size:0.7rem;padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;">ℹ️ Treść</button>`
+        : '';
+
+      const consentBodyEsc = (consentBody || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+      const consentPanelHtml = (isConsent && consentBody)
+        ? `<div class="consent-detail-panel" style="grid-column:1 / -1;display:none;margin-top:0.4rem;padding:0.7rem 0.9rem;background:rgba(139,92,246,0.04);border:1px solid rgba(139,92,246,0.18);border-radius:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.4rem;">
+              <span style="font-size:0.7rem;font-weight:600;color:#5b21b6;text-transform:uppercase;letter-spacing:0.04em;">Pełna treść zgody</span>
+              <div style="display:flex;gap:0.4rem;">
+                <button class="btn-copy-consent" data-text="${consentBodyEsc}" style="background:#8b5cf6;border:1px solid #8b5cf6;color:#fff;font-size:0.7rem;padding:3px 8px;border-radius:5px;cursor:pointer;">📋 Skopiuj</button>
+                <button class="btn-close-consent" style="background:none;border:1px solid #D1D5DB;color:#6B7280;font-size:0.7rem;padding:3px 8px;border-radius:5px;cursor:pointer;">Zamknij</button>
+              </div>
+            </div>
+            <div class="consent-body-text" style="white-space:pre-wrap;font-size:0.78rem;color:#374151;line-height:1.45;max-height:240px;overflow-y:auto;padding:0.4rem 0.5rem;background:#FFFFFF;border:1px solid rgba(139,92,246,0.12);border-radius:6px;">${consentBodyEsc}</div>
+          </div>`
+        : '';
+
+      row.innerHTML = `
+        <div class="row-meta-left">${leftMetaHtml}</div>
+        <span class="field-chip fb" style="${chipStyle}"${chipTitle ? ` title="${chipTitle}"` : ''}>${displayName}</span>
+        <span class="mapping-arrow compat-${compat.level}" style="text-align:center;color:${cv.color};font-size:${compat.level === 'ok' ? '1rem' : '1.05rem'};cursor:${arrowTitle ? 'help' : 'default'};" title="${arrowTitle}">${cv.icon}</span>
+        <select class="md-select" data-fb="${fbField}">${options.join('')}</select>
+        <div class="row-meta">
+          ${isMerge ? `<button class="btn-unmerge" title="Rozłącz — użyj tego pola indywidualnie" style="font-size:0.65rem;color:#f59e0b;font-weight:600;padding:0.15rem 0.5rem;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);border-radius:6px;cursor:pointer;">łączy ✕</button>` : ''}
+          ${canRemove ? '<button class="btn-remove-row" title="Usuń" style="background:none;border:none;color:#71717a;cursor:pointer;font-size:1rem;padding:0.1rem 0.3rem;">×</button>' : ''}
+        </div>
+        ${consentPanelHtml}
+      `;
+
+      // Wire up the consent ℹ️ toggle + copy + close (panel inline, no modal).
+      const toggleBtn = row.querySelector('.btn-toggle-consent');
+      const panel = row.querySelector('.consent-detail-panel');
+      if (toggleBtn && panel) {
+        toggleBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+        });
+        const closeBtn = panel.querySelector('.btn-close-consent');
+        if (closeBtn) closeBtn.addEventListener('click', () => { panel.style.display = 'none'; });
+        const copyBtn = panel.querySelector('.btn-copy-consent');
+        if (copyBtn) copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(copyBtn.dataset.text || '');
+            showToast('Skopiowano treść zgody do schowka', 'success');
+          } catch {
+            showToast('Nie udało się skopiować', 'error');
+          }
+        });
+      }
+
+      row.querySelector('.md-select').addEventListener('change', function() {
+        // Toggle the dim state immediately for snappier feedback; full re-render happens
+        // in updateMapping → renderMappings and will re-apply the class from state.
+        // User-added rows (virtuals/constants) are never auto-dimmed.
+        row.classList.toggle('is-unmapped', !this.value && !isUserAdded);
+        updateMapping(fbField, this.value);
+      });
+      const rm = row.querySelector('.btn-remove-row');
+      if (rm) {
+        rm.addEventListener('click', () => {
+          state.mappings = state.mappings.filter(m => m.fb_field !== fbField);
+          renderMappings();
+        });
+      }
+      // Unmerge: clear this row's MD target so the FB field becomes available for
+      // individual mapping again; the other fields stay connected to the MD field.
+      const unmergeBtn = row.querySelector('.btn-unmerge');
+      if (unmergeBtn) {
+        unmergeBtn.addEventListener('click', () => {
+          updateMapping(fbField, '');
+          showToast(`Rozłączono ${fbField}`, 'success');
+        });
+      }
+
+      return row;
+    }
+
+    function updateMapping(fbField, mdField) {
+      const existing = state.mappings.findIndex(m => m.fb_field === fbField);
+      if (mdField === '') {
+        if (existing >= 0) state.mappings.splice(existing, 1);
+      } else {
+        // Allow multiple FB fields to map to the same MD field (merge)
+        if (existing >= 0) {
+          state.mappings[existing].medidesk_field = mdField;
+          state.mappings[existing].confidence = 1.0;
+        } else {
+          state.mappings.push({ fb_field: fbField, medidesk_field: mdField, confidence: 1.0 });
+        }
+      }
+      // Detect merges and update info text
+      const mergeCount = countMerges();
+      const info = document.getElementById('mapping-info-text');
+      info.textContent = `Zmapowano ${state.mappings.length} pól.`
+        + (mergeCount > 0 ? ` ${mergeCount} łączeń.` : '')
+        + ' Użyj list aby poprawić.';
+
+      // Re-render to show/update merge badges
+      renderMappings();
+    }
+
+    function countMerges() {
+      const mdCounts = {};
+      state.mappings.forEach(m => {
+        if (m.medidesk_field) mdCounts[m.medidesk_field] = (mdCounts[m.medidesk_field] || 0) + 1;
+      });
+      return Object.values(mdCounts).filter(c => c > 1).length;
+    }
+
+    // ─── Step 3 → 4: Save & Activate ────────────────────
+    function setSaveStatus(kind, msg) {
+      const el = document.getElementById('save-status');
+      if (!el) return;
+      if (!kind) { el.style.display = 'none'; el.innerHTML = ''; return; }
+      const colors = {
+        pending: { bg: 'rgba(59,130,246,0.08)', bd: 'rgba(59,130,246,0.3)', fg: '#93c5fd', icon: '<span class="spinner" style="display:inline-block;margin-right:0.5rem;border-color:#3b82f6 transparent #3b82f6 transparent;border-width:2px;width:14px;height:14px;vertical-align:middle;"></span>' },
+        success: { bg: 'rgba(34,197,94,0.08)', bd: 'rgba(34,197,94,0.3)', fg: '#86efac', icon: '✓ ' },
+        error:   { bg: 'rgba(239,68,68,0.08)', bd: 'rgba(239,68,68,0.3)', fg: '#fca5a5', icon: '⚠️ ' },
+        warn:    { bg: 'rgba(245,158,11,0.08)', bd: 'rgba(245,158,11,0.3)', fg: '#fbbf24', icon: 'ℹ️ ' },
+      }[kind] || {};
+      el.style.cssText = `display:block;padding:0.8rem 1rem;background:${colors.bg};border:1px solid ${colors.bd};border-radius:10px;color:${colors.fg};font-size:0.9rem;line-height:1.5;`;
+      el.innerHTML = (colors.icon || '') + msg;
+    }
+
+    document.getElementById('btn-step3-next').addEventListener('click', async () => {
+      const completeMappings = state.mappings.filter(m => m.medidesk_field && m.medidesk_field.trim());
+      if (completeMappings.length === 0) {
+        setSaveStatus('error', 'Zmapuj przynajmniej jedno pole FB na pole Medidesk przed zapisaniem.');
+        showToast('Zmapuj przynajmniej jedno pole!', 'error');
+        return;
+      }
+      // Soft-block: refuse save if any required MD field is still unmapped.
+      const mappedMd = new Set(completeMappings.map(m => m.medidesk_field));
+      const stillMissing = (state.mdFields || []).filter(f => f.required && !mappedMd.has(f.fieldId));
+      if (stillMissing.length > 0) {
+        const names = stillMissing.map(f => f.fieldId).join(', ');
+        setSaveStatus('error', `Brakuje mapowania wymaganych pól: ${names}. Użyj "Stała wartość" w banerze powyżej.`);
+        showToast('Uzupełnij wymagane pola', 'error');
+        return;
+      }
+      // Defense-in-depth: even if the disabled button was bypassed, refuse save
+      // when any mapping has an incompatible type (🚫 in the middle column).
+      const blockCount = countTypeBlocks();
+      if (blockCount > 0) {
+        setSaveStatus('error', `Masz ${blockCount} ${blockCount > 1 ? 'mapowania' : 'mapowanie'} z niezgodnym typem (🚫). Wybierz inne pole MD lub kliknij × żeby usunąć.`);
+        showToast('Niezgodne typy pól — popraw zanim zapiszesz', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-step3-next');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Aktywuję...';
+      setSaveStatus('pending', 'Zapisuję integrację i subskrybuję webhook FB…');
+
+      let integrationId = '';
+      try {
+        if (DEMO_MODE) {
+          // In demo mode, just simulate success
+          await demoDelay(1500);
+          setSaveStatus('success', 'DEMO: Integracja aktywna (symulacja).');
+        } else {
+          // 1. Create integration
+          const createResp = await fetch('/api/integrations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Session-Id': state.sessionId || '',
+            },
+            body: JSON.stringify({
+              fb_page_id: state.selectedPage.page_id,
+              fb_page_name: state.selectedPage.name,
+              fb_page_token: state.selectedPage.access_token,
+              fb_form_id: state.selectedForm.form_id,
+              fb_form_name: state.selectedForm.name,
+              fb_form_questions: state.selectedForm.questions,
+              medidesk_form_id: state.mdFormId,
+              medidesk_form_name: state.mdFormName,
+              medidesk_fields: state.mdFields,
+              field_mappings: state.mappings,
+              name: (state.integrationName || '').trim(),
+            }),
+          });
+          const createData = await createResp.json();
+          if (!createResp.ok) throw new Error(createData.error || 'Błąd tworzenia');
+
+          integrationId = createData.integration.id;
+
+          // 2. Activate (subscribes webhook)
+          const actResp = await fetch(`/api/integrations/${integrationId}/activate`, {
+            method: 'POST',
+            headers: { 'X-Session-Id': state.sessionId || '' },
+          });
+          const actData = await actResp.json();
+
+          if (!actResp.ok) {
+            setSaveStatus('warn', 'Integracja zapisana, ale webhook nie został ustawiony: ' + (actData.error || '') + '. Możesz spróbować ręcznie z poziomu "Moje integracje".');
+            showToast('Integracja zapisana, ale webhook nie został ustawiony: ' + (actData.error || ''), 'error');
+          } else {
+            setSaveStatus('success', 'Integracja aktywna. Webhook FB zasubskrybowany — nowe leady będą trafiać do Medidesk.');
+          }
+        }
+
+        // Skip the intermediate success screen — go straight to the new integration's
+        // detail view on the dashboard. The dashboard reads ?integration=<id> and opens
+        // that room automatically (test buttons, history etc. are right there).
+        showToast(DEMO_MODE ? 'DEMO: Integracja aktywna! (symulacja)' : 'Integracja aktywna!', 'success');
+        setTimeout(() => {
+          location.href = integrationId
+            ? `/dashboard?integration=${encodeURIComponent(integrationId)}`
+            : '/dashboard';
+        }, 700);
+        return;
+      } catch (e) {
+        setSaveStatus('error', 'Nie udało się zapisać integracji: ' + e.message);
+        showToast('Błąd: ' + e.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Zapisz i aktywuj ✓';
+      }
+    });
+
+    // ─── Utils ──────────────────────────────────────────
+    function showToast(msg, type) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = 'toast ' + type + ' show';
+      setTimeout(() => { toast.classList.remove('show'); }, 4000);
+    }
+  </script>
+
+{% endblock %}

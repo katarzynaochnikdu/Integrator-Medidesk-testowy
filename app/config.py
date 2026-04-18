@@ -2,6 +2,13 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # App metadata
+    app_name: str = "Integracja Leadów do Medidesk"
+    app_version: str = "2.0.0"
+    app_author: str = "Aga - Marketing"
+    app_admin_email: str = "adminzoho@medidesk.com"
+    app_icon_path: str = "/static/icon.jpg"
+
     medidesk_api_base: str = "https://app.medidesk.io/api/forms"
     default_site_domain: str = "twoja-domena.pl"
     default_site_url: str = "/kontakt"

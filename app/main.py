@@ -7,6 +7,8 @@ from typing import Any
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from starlette.middleware.cors import CORSMiddleware
 
 from app.config import settings
@@ -113,7 +115,22 @@ def _integration_snapshot(i) -> dict:
         "facility_id": i.facility_id,
     }
 
-app = FastAPI(title="Integracja Leadów do Medidesk", version="2.0.0")
+app = FastAPI(title=settings.app_name, version=settings.app_version)
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+
+templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+
+def render_template(request: Request, name: str, **kwargs):
+    context = {
+        "request": request,
+        "app_name": settings.app_name,
+        "app_version": settings.app_version,
+        "app_author": settings.app_author,
+        "app_admin_email": settings.app_admin_email,
+        "app_icon_path": settings.app_icon_path,
+    }
+    context.update(kwargs)
+    return templates.TemplateResponse(name, context)
 
 if settings.cors_origins_list:
     app.add_middleware(
@@ -198,18 +215,10 @@ async def root(request: Request):
     return RedirectResponse(url=url)
 
 
-@app.get("/static/icon.jpg")
-async def static_icon():
-    """Serve the application icon image."""
-    icon_path = Path(__file__).parent / "MD_Integrator_V1.jpg"
-    return FileResponse(icon_path, media_type="image/jpeg")
-
-
 @app.get("/login")
-async def login_page():
+async def login_page(request: Request):
     """Landing page — login via Facebook, then navigate to setup or dashboard."""
-    html_path = Path(__file__).parent / "landing.html"
-    return HTMLResponse(html_path.read_text(encoding="utf-8"))
+    return render_template(request, "landing.html")
 
 
 @app.get("/api/info")
@@ -1244,61 +1253,50 @@ async def dismiss_pending(fb_user_id: str, _session=Depends(require_admin)):
 # ─── Pages: Demo, Setup Wizard, Dashboard & FB Compliance ────────
 
 
-@app.get("/privacy", response_class=HTMLResponse)
-async def privacy_policy():
+@app.get("/privacy")
+async def privacy_policy(request: Request):
     """Privacy policy required for Facebook App Review."""
-    path = Path(__file__).parent / "privacy.html"
-    return path.read_text(encoding="utf-8")
+    return render_template(request, "privacy.html")
 
 
-@app.get("/tos", response_class=HTMLResponse)
-async def terms_of_service():
+@app.get("/tos")
+async def terms_of_service(request: Request):
     """Terms of Service required for Facebook App Review."""
-    path = Path(__file__).parent / "tos.html"
-    return path.read_text(encoding="utf-8")
+    return render_template(request, "tos.html")
 
 
-@app.get("/data-deletion", response_class=HTMLResponse)
-async def data_deletion():
+@app.get("/data-deletion")
+async def data_deletion(request: Request):
     """Data deletion instructions required for Facebook App Review."""
-    path = Path(__file__).parent / "data_deletion.html"
-    return path.read_text(encoding="utf-8")
+    return render_template(request, "data_deletion.html")
 
 
-@app.get("/demo/contact", response_class=HTMLResponse, include_in_schema=False)
-async def demo_contact_page():
+@app.get("/demo/contact", include_in_schema=False)
+async def demo_contact_page(request: Request):
     if not settings.demo_page_enabled:
         return HTMLResponse(
             "<p>Demo disabled. Set <code>MEDIDESK_DEMO_PAGE_ENABLED=true</code>.</p>",
             status_code=404,
         )
-    path = Path(__file__).resolve().parent / "demo_contact.html"
-    html = path.read_text(encoding="utf-8")
-    return HTMLResponse(content=html)
+    return render_template(request, "demo_contact.html")
 
 
-@app.get("/setup", response_class=HTMLResponse, include_in_schema=False)
-async def setup_wizard_page():
+@app.get("/setup", include_in_schema=False)
+async def setup_wizard_page(request: Request):
     """Serve the integration setup wizard."""
-    path = Path(__file__).resolve().parent / "setup_wizard.html"
-    html = path.read_text(encoding="utf-8")
-    return HTMLResponse(content=html)
+    return render_template(request, "setup_wizard.html")
 
 
-@app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
-async def dashboard_page():
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard_page(request: Request):
     """Serve the admin/facility dashboard."""
-    path = Path(__file__).resolve().parent / "dashboard.html"
-    html = path.read_text(encoding="utf-8")
-    return HTMLResponse(content=html)
+    return render_template(request, "dashboard.html")
 
 
-@app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
-async def admin_page():
+@app.get("/admin", include_in_schema=False)
+async def admin_page(request: Request):
     """Serve the admin login page."""
-    path = Path(__file__).resolve().parent / "admin_login.html"
-    html = path.read_text(encoding="utf-8")
-    return HTMLResponse(content=html)
+    return render_template(request, "admin_login.html")
 
 
 # ─── Facility invites (admin-generated join links) ─────────────────

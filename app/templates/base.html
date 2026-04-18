@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    
+    <!-- Metadane wstrzykiwane przez FastAPI/config.py -->
+    <meta name="author" content="{{ app_author }}" />
+    <meta name="version" content="{{ app_version }}" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="{{ app_icon_path }}" />
+    <link rel="apple-touch-icon" href="{{ app_icon_path }}" />
+    
+    <!-- Fonty (Google Fonts) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- Silnik pod Dark Mode - FOIT protection script -->
+    <script src="/static/theme.js"></script>
+    
+    <!-- Globalna deklaracja zmiennych Light/Dark Mode -->
+    <link rel="stylesheet" href="/static/theme.css" />
+
+    {% block head_styles %}{% endblock %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+    
+    {% block foot_scripts %}{% endblock %}
+</body>
+</html>

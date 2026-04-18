@@ -1,0 +1,45 @@
+/* 
+ * Globalny plik konfiguracyjny motywów (Light/Dark Mode).
+ * Zmienne będą implementowane do wszystkich widoków. 
+ */
+
+:root {
+  /* Kolory domyślne (Jasny Motyw) */
+  --bg-primary: #F8F9FA;
+  --bg-secondary: #FFFFFF;
+  --text-primary: #111827;
+  --text-secondary: #52525b;
+  --text-muted: #6B7280;
+  
+  --border-color: #E5E7EB;
+  --border-color-hover: #D1D5DB;
+
+  --accent-primary: #3b82f6;
+  --accent-primary-hover: #2563eb;
+  
+  --row-hover-bg: rgba(59, 130, 246, 0.05);
+}
+
+[data-theme='dark'] {
+  /* Kolory trybu ciemnego - baza pod refactoring */
+  --bg-primary: #0a0c10;
+  --bg-secondary: #13141b;
+  --text-primary: #e4e4e7;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+
+  --border-color: #27272a;
+  --border-color-hover: #3f3f46;
+
+  --accent-primary: #3b82f6;
+  --accent-primary-hover: #60a5fa;
+
+  --row-hover-bg: rgba(255, 255, 255, 0.02);
+}
+
+/* Wstępne ustawienie globalne czerpiące ze zmiennych CSS */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.15s, color 0.15s;
+}
