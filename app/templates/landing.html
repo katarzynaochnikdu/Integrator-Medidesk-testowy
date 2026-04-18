@@ -6,7 +6,7 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-      background: #F8F9FA; color: #111827;
+      background: var(--bg-primary); color: var(--text-primary);
       min-height: 100vh; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
     }
@@ -27,17 +27,17 @@
 
     h1 {
       font-size: 1.8rem; font-weight: 700; margin-bottom: 0.4rem;
-      color: #111827;
+      color: var(--text-primary);
     }
     .subtitle {
-      color: #71717a; font-size: 0.9rem; margin-bottom: 2.5rem; line-height: 1.5;
+      color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2.5rem; line-height: 1.5;
     }
 
     /* Login state */
     .login-card {
-      background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px;
+      background: var(--bg-surface); border: 1px solid var(--border-primary); border-radius: 16px;
       padding: 2rem; margin-bottom: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-sm);
     }
 
     .btn {
@@ -76,9 +76,9 @@
     .nav-card {
       display: flex; flex-direction: column; align-items: center;
       gap: 0.6rem; padding: 1.5rem 1rem;
-      background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 12px;
-      cursor: pointer; transition: all 0.2s; text-decoration: none; color: #111827;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      background: var(--bg-surface); border: 1px solid var(--border-primary); border-radius: 12px;
+      cursor: pointer; transition: all 0.2s; text-decoration: none; color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
     }
     .nav-card:hover {
       border-color: #3b82f6; background: rgba(59,130,246,0.05);
@@ -86,22 +86,22 @@
     }
     .nav-card .icon { font-size: 1.8rem; }
     .nav-card .label { font-weight: 600; font-size: 0.88rem; }
-    .nav-card .desc { font-size: 0.72rem; color: #6B7280; line-height: 1.4; }
+    .nav-card .desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
 
     .logout-link {
       display: inline-block; margin-top: 1rem;
-      font-size: 0.78rem; color: #52525b; cursor: pointer;
+      font-size: 0.78rem; color: var(--text-dim); cursor: pointer;
       text-decoration: underline;
     }
-    .logout-link:hover { color: #71717a; }
+    .logout-link:hover { color: var(--text-muted); }
 
     /* Footer */
     .footer {
       position: fixed; bottom: 1rem;
-      font-size: 0.68rem; color: #9CA3AF;
+      font-size: 0.68rem; color: var(--text-muted);
     }
-    .footer a { color: #6B7280; text-decoration: none; }
-    .footer a:hover { color: #374151; }
+    .footer a { color: var(--text-muted); text-decoration: none; }
+    .footer a:hover { color: var(--text-secondary); }
 
     /* Spinner */
     .spinner {
@@ -136,15 +136,15 @@
     <div class="login-card" id="login-card">
       <div id="session-check-msg" style="display:none; text-align:center; padding:2rem 0;">
         <span class="spinner" style="width:24px; height:24px; border-width:3px;"></span>
-        <div style="font-size:0.85rem; color:#6B7280; margin-top:0.8rem;">Sprawdzanie sesji…</div>
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:0.8rem;">Sprawdzanie sesji…</div>
       </div>
       <div id="login-btn-area">
         <button class="btn btn-fb" id="btn-login">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
           Zaloguj się przez Facebook
         </button>
-        <p style="font-size:13px;color:#6B7280;margin-top:8px;text-align:center;">Aplikacja potrzebuje dostępu do Twoich stron Facebook i formularzy Lead Ads. Nie publikuje nic w Twoim imieniu.</p>
-        <div style="margin-top:0.6rem; font-size:0.7rem; color:#6B7280; line-height:1.5;">
+        <p style="font-size:13px;color:var(--text-muted);margin-top:8px;text-align:center;">Aplikacja potrzebuje dostępu do Twoich stron Facebook i formularzy Lead Ads. Nie publikuje nic w Twoim imieniu.</p>
+        <div style="margin-top:0.6rem; font-size:0.7rem; color:var(--text-muted); line-height:1.5;">
           💡 Jeśli Facebook wyświetli ekran „Połącz ponownie" — to normalne. Kliknij go, a system Cię rozpozna.
         </div>
       </div>

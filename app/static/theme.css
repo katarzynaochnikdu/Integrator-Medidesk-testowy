@@ -4,37 +4,72 @@
  */
 
 :root {
-  /* Kolory domyślne (Jasny Motyw) */
-  --bg-primary: #F8F9FA;
-  --bg-secondary: #FFFFFF;
-  --text-primary: #111827;
-  --text-secondary: #52525b;
-  --text-muted: #6B7280;
-  
-  --border-color: #E5E7EB;
-  --border-color-hover: #D1D5DB;
+  /* ── Tła ── */
+  --bg-primary: #F8F9FA;       /* główne tło body */
+  --bg-secondary: #FFFFFF;     /* backward compat */
+  --bg-surface: #FFFFFF;       /* karty, sidebar, modalne */
+  --bg-surface-hover: #F9FAFB; /* flow-box, lead-detail */
+  --bg-input: #FFFFFF;         /* pola formularzy */
+  --bg-overlay: rgba(0,0,0,0.5); /* backdrop modali */
 
-  --accent-primary: #3b82f6;
-  --accent-primary-hover: #2563eb;
+  /* ── Tekst ── */
+  --text-primary: #111827;     /* tytuły, główna treść */
+  --text-secondary: #374151;   /* opisy, podtytuły */
+  --text-muted: #6B7280;       /* szare pomocnicze */
+  --text-dim: #52525b;         /* bardzo subtelne */
+
+  /* ── Obramowania ── */
+  --border-color: #E5E7EB;     /* backward compat */
+  --border-color-hover: #D1D5DB; /* backward compat */
+  --border-primary: #E5E7EB;   /* karty, sidebar, dividers */
+  --border-subtle: #F3F4F6;    /* wewnętrzne separatory */
+
+  /* ── Akcenty ── */
+  --accent-primary: #3b82f6;   /* backward compat */
+  --accent-primary-hover: #2563eb; /* backward compat */
+  --accent-blue: #3b82f6;
+  --accent-purple: #a855f7;
+  --accent-green: #22c55e;
+  --accent-red: #ef4444;
+  --accent-yellow: #f59e0b;
   
   --row-hover-bg: rgba(59, 130, 246, 0.05);
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.15);
 }
 
 [data-theme='dark'] {
-  /* Kolory trybu ciemnego - baza pod refactoring */
-  --bg-primary: #0a0c10;
-  --bg-secondary: #13141b;
+  --bg-primary: #0f1117;
+  --bg-secondary: #1a1b25;     /* backward compat */
+  --bg-surface: #1a1b25;
+  --bg-surface-hover: #22232e;
+  --bg-input: #13141b;
+  --bg-overlay: rgba(0,0,0,0.7);
+
   --text-primary: #e4e4e7;
   --text-secondary: #a1a1aa;
   --text-muted: #71717a;
+  --text-dim: #52525b;
 
-  --border-color: #27272a;
-  --border-color-hover: #3f3f46;
+  --border-color: #27272a;     /* backward compat */
+  --border-color-hover: #3f3f46; /* backward compat */
+  --border-primary: #27272a;
+  --border-subtle: #1e2030;
 
-  --accent-primary: #3b82f6;
-  --accent-primary-hover: #60a5fa;
+  --accent-primary: #3b82f6;   /* backward compat */
+  --accent-primary-hover: #60a5fa; /* backward compat */
+  --accent-blue: #3b82f6;
+  --accent-purple: #a855f7;
+  --accent-green: #22c55e;
+  --accent-red: #ef4444;
+  --accent-yellow: #f59e0b;
 
   --row-hover-bg: rgba(255, 255, 255, 0.02);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.4);
 }
 
 /* Wstępne ustawienie globalne czerpiące ze zmiennych CSS */

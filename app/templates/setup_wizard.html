@@ -7,8 +7,8 @@
 
     body {
       font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-      background: #F8F9FA;
-      color: #111827;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       min-height: 100vh;
       font-size: 14px;
     }
@@ -19,8 +19,8 @@
       align-items: center;
       justify-content: space-between;
       padding: 1rem 2rem;
-      border-bottom: 1px solid #E5E7EB;
-      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-primary);
+      background: var(--bg-surface);
       position: sticky;
       top: 0;
       z-index: 100;
@@ -57,9 +57,9 @@
       border-radius: 999px;
       font-size: 0.78rem;
       font-weight: 500;
-      border: 1px solid #E5E7EB;
-      background: #F3F4F6;
-      color: #6B7280;
+      border: 1px solid var(--border-primary);
+      background: var(--border-subtle);
+      color: var(--text-muted);
       cursor: default;
       transition: all 0.25s;
     }
@@ -81,13 +81,13 @@
       justify-content: center;
       font-size: 0.65rem;
       font-weight: 700;
-      background: #E5E7EB;
-      color: #6B7280;
+      background: var(--border-primary);
+      color: var(--text-muted);
     }
     .step-pill.active .num { background: #3b82f6; color: #fff; }
     .step-pill.done .num { background: #22c55e; color: #fff; }
     .step-connector {
-      width: 24px; height: 1px; background: #E5E7EB;
+      width: 24px; height: 1px; background: var(--border-primary);
     }
 
     /* ─── Main content ─── */
@@ -108,28 +108,28 @@
 
     /* ─── Cards ─── */
     .card {
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-primary);
       border-radius: 12px;
       padding: 1.5rem;
       margin-bottom: 1rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-sm);
     }
     .card h2 {
       font-size: 1rem;
       font-weight: 600;
       margin-bottom: 0.8rem;
-      color: #111827;
+      color: var(--text-primary);
     }
     .card h3 {
       font-size: 0.85rem;
       font-weight: 600;
-      color: #374151;
+      color: var(--text-secondary);
       margin-bottom: 0.5rem;
     }
     .card p {
       font-size: 0.82rem;
-      color: #6B7280;
+      color: var(--text-muted);
       line-height: 1.5;
       margin-bottom: 0.8rem;
     }
@@ -139,16 +139,16 @@
       display: block;
       font-size: 0.78rem;
       font-weight: 500;
-      color: #374151;
+      color: var(--text-secondary);
       margin-bottom: 0.3rem;
     }
     input[type="text"], select {
       width: 100%;
       padding: 0.55rem 0.75rem;
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-primary);
       border-radius: 8px;
-      color: #111827;
+      color: var(--text-primary);
       font-size: 0.85rem;
       transition: border-color 0.15s;
       margin-bottom: 0.8rem;
@@ -188,8 +188,8 @@
     .btn-fb:hover { background: #1668d9; }
     .btn-outline {
       background: transparent;
-      border: 1px solid #E5E7EB;
-      color: #374151;
+      border: 1px solid var(--border-primary);
+      color: var(--text-secondary);
     }
     .btn-outline:hover { border-color: #3b82f6; color: #1D4ED8; }
     .btn-row {
@@ -244,7 +244,7 @@
     }
     .pages-summary .pages-summary-check {
       width: 20px; height: 20px; border-radius: 50%;
-      background: #3b82f6; color: #FFFFFF;
+      background: #3b82f6; color: var(--bg-surface);
       display: flex; align-items: center; justify-content: center;
       font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
     }
@@ -253,15 +253,15 @@
       flex: 1; min-width: 0; overflow: hidden;
     }
     .pages-summary .pages-summary-label {
-      font-size: 0.7rem; color: #6B7280; text-transform: uppercase;
+      font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;
       letter-spacing: 0.04em; font-weight: 600; flex-shrink: 0;
     }
     .pages-summary .pages-summary-name {
-      font-size: 0.9rem; color: #111827; font-weight: 600;
+      font-size: 0.9rem; color: var(--text-primary); font-weight: 600;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .pages-summary .pages-summary-meta {
-      font-size: 0.72rem; color: #6B7280; font-weight: 400;
+      font-size: 0.72rem; color: var(--text-muted); font-weight: 400;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .pages-summary .pages-summary-action {
@@ -284,9 +284,9 @@
       align-items: center;
       gap: 0.6rem;
       padding: 0.55rem 0.85rem;
-      border: 1px solid #E5E7EB;
+      border: 1px solid var(--border-primary);
       border-radius: 8px;
-      background: #FFFFFF;
+      background: var(--bg-surface);
       cursor: pointer;
       transition: all 0.15s;
       flex: 1 1 calc(33.333% - 0.5rem);
@@ -295,7 +295,7 @@
     .select-item:hover { border-color: #3b82f6; background: rgba(59,130,246,0.05); }
     .select-item.selected { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
     .select-item .name { font-weight: 600; font-size: 0.85rem; }
-    .select-item .meta { font-size: 0.72rem; color: #52525b; }
+    .select-item .meta { font-size: 0.72rem; color: var(--text-dim); }
     .radio-dot {
       width: 16px; height: 16px; border-radius: 50%;
       border: 2px solid #D1D5DB;
@@ -312,8 +312,8 @@
     /* ─── Forms accordion + table ─── */
     .forms-filter {
       width: 100%; padding: 0.5rem 0.8rem; margin-bottom: 0.8rem;
-      background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 6px;
-      color: #111827; font-size: 0.82rem;
+      background: var(--bg-surface); border: 1px solid var(--border-primary); border-radius: 6px;
+      color: var(--text-primary); font-size: 0.82rem;
     }
     .forms-filter:focus { border-color: #3b82f6; outline: none; }
     .forms-filter::placeholder { color: #3f3f46; }
@@ -322,16 +322,16 @@
     .accordion-header {
       display: flex; align-items: center; gap: 0.6rem;
       padding: 0.6rem 0.8rem; cursor: pointer;
-      background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px;
+      background: var(--bg-surface-hover); border: 1px solid var(--border-primary); border-radius: 8px;
       font-size: 0.82rem; font-weight: 600; user-select: none;
       transition: background 0.15s;
     }
-    .accordion-header:hover { background: #F3F4F6; }
+    .accordion-header:hover { background: var(--border-subtle); }
     .accordion-header .arrow { transition: transform 0.2s; font-size: 0.7rem; }
     .accordion-header.open .arrow { transform: rotate(90deg); }
     .accordion-header .count {
       margin-left: auto; font-size: 0.72rem; font-weight: 400;
-      color: #6B7280; background: #F3F4F6; padding: 0.15rem 0.5rem; border-radius: 10px;
+      color: var(--text-muted); background: var(--border-subtle); padding: 0.15rem 0.5rem; border-radius: 10px;
     }
     .accordion-body { display: none; padding-top: 0.4rem; }
     .accordion-header.open + .accordion-body { display: block; }
@@ -340,15 +340,15 @@
       width: 100%; border-collapse: collapse; font-size: 0.78rem;
     }
     .forms-table th {
-      text-align: left; padding: 0.45rem 0.6rem; color: #71717a;
+      text-align: left; padding: 0.45rem 0.6rem; color: var(--text-muted);
       font-weight: 600; font-size: 0.68rem; text-transform: uppercase;
-      letter-spacing: 0.04em; border-bottom: 1px solid #E5E7EB;
+      letter-spacing: 0.04em; border-bottom: 1px solid var(--border-primary);
       cursor: pointer; user-select: none; white-space: nowrap;
     }
     .forms-table th:hover { color: #a1a1aa; }
     .forms-table th .sort-icon { font-size: 0.6rem; margin-left: 0.25rem; }
     .forms-table td {
-      padding: 0.55rem 0.6rem; border-bottom: 1px solid #F3F4F6;
+      padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--border-subtle);
     }
     .forms-table tr { cursor: pointer; transition: background 0.1s; }
     .forms-table tbody tr:hover { background: rgba(59,130,246,0.05); }
@@ -359,7 +359,7 @@
       font-size: 0.68rem; font-weight: 600;
     }
     .status-pill.active { background: rgba(34,197,94,0.15); color: #22c55e; }
-    .status-pill.archived { background: rgba(113,113,122,0.15); color: #71717a; }
+    .status-pill.archived { background: rgba(113,113,122,0.15); color: var(--text-muted); }
     .status-pill.expired { background: rgba(239,68,68,0.15); color: #ef4444; }
     .status-pill.draft { background: rgba(245,158,11,0.15); color: #f59e0b; }
 
@@ -391,13 +391,13 @@
     .form-summary-box {
       flex: 1;
       padding: 0.8rem 1rem;
-      border: 1px solid #E5E7EB;
+      border: 1px solid var(--border-primary);
       border-radius: 8px;
-      background: #F9FAFB;
+      background: var(--bg-surface-hover);
     }
-    .form-summary-box .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #52525b; margin-bottom: 0.25rem; }
+    .form-summary-box .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 0.25rem; }
     .form-summary-box .title { font-weight: 600; font-size: 0.9rem; }
-    .form-summary-box .sub { font-size: 0.7rem; color: #52525b; margin-top: 0.15rem; }
+    .form-summary-box .sub { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.15rem; }
 
     .mapping-row {
       display: grid;
@@ -409,7 +409,7 @@
       gap: 0.9rem;
       padding: 0.5rem 0.8rem;
       min-height: 52px;
-      border-bottom: 1px solid #E5E7EB;
+      border-bottom: 1px solid var(--border-primary);
       transition: background 0.1s;
     }
     .mapping-row:hover { background: rgba(255,255,255,0.02); }
@@ -469,7 +469,7 @@
       border-style: dashed;
       border-color: #D1D5DB;
       background: rgba(161,161,170,0.05);
-      color: #6B7280;
+      color: var(--text-muted);
     }
     /* Type compatibility — give the MD select a colored outline + tinted background
        so the warning/block state reads at a glance even before the user notices
@@ -488,7 +488,7 @@
     .field-chip.empty {
       background: rgba(161, 161, 170, 0.05);
       border: 1px dashed #D1D5DB;
-      color: #6B7280;
+      color: var(--text-muted);
       font-style: italic;
     }
     .mapping-arrow {
@@ -512,10 +512,10 @@
       padding: 0 0.6rem;
       height: 38px;
       box-sizing: border-box;
-      background: #FFFFFF;
+      background: var(--bg-surface);
       border: 1px solid rgba(59, 130, 246, 0.3);
       border-radius: 6px;
-      color: #111827;
+      color: var(--text-primary);
       font-size: 0.82rem;
       line-height: 38px;
       cursor: pointer;
@@ -586,8 +586,8 @@
     .topbar-back {
       display: inline-flex; align-items: center; gap: 0.35rem;
       padding: 0.35rem 0.7rem; border-radius: 6px;
-      border: 1px solid #E5E7EB; background: transparent;
-      color: #374151; font-size: 0.75rem; font-weight: 500;
+      border: 1px solid var(--border-primary); background: transparent;
+      color: var(--text-secondary); font-size: 0.75rem; font-weight: 500;
       cursor: pointer; transition: all 0.15s; white-space: nowrap;
     }
     .topbar-back:hover { border-color: #3b82f6; color: #1D4ED8; }
@@ -600,9 +600,9 @@
     }
     .confirm-overlay.open { display: flex; }
     .confirm-box {
-      background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px;
+      background: var(--bg-surface); border: 1px solid var(--border-primary); border-radius: 14px;
       padding: 2rem; width: 380px; text-align: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-sm);
     }
     .confirm-box .warn-icon { font-size: 2.2rem; margin-bottom: 0.8rem; }
     .confirm-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: #fbbf24; }
@@ -634,16 +634,31 @@
       <button class="topbar-back" onclick="confirmExit()">← <span>Dashboard</span></button>
       <h1>Połącz formularze</h1>
     </div>
-    <div class="steps-nav">
-      <div class="step-pill active" data-step="1"><span class="num">1</span> Facebook</div>
-      <div class="step-connector"></div>
-      <div class="step-pill" data-step="2"><span class="num">2</span> Medidesk</div>
-      <div class="step-connector"></div>
-      <div class="step-pill" data-step="3"><span class="num">3</span> Mapowanie pól</div>
-      <div class="step-connector"></div>
-      <div class="step-pill" data-step="4"><span class="num">4</span> Gotowe</div>
+    <div style="display:flex; align-items:center; gap:1.5rem;">
+      <div class="steps-nav">
+        <div class="step-pill active" data-step="1"><span class="num">1</span> Facebook</div>
+        <div class="step-connector"></div>
+        <div class="step-pill" data-step="2"><span class="num">2</span> Medidesk</div>
+        <div class="step-connector"></div>
+        <div class="step-pill" data-step="3"><span class="num">3</span> Mapowanie pól</div>
+        <div class="step-connector"></div>
+        <div class="step-pill" data-step="4"><span class="num">4</span> Gotowe</div>
+      </div>
+      
+      <select onchange="window.setAppTheme(this.value)" id="theme-selector-setup" style="margin-bottom:0; background:var(--bg-surface); border:1px solid var(--border-primary); color:var(--text-primary); padding:0.3rem 0.6rem; border-radius:6px; font-size:0.8rem; outline:none; cursor:pointer;">
+        <option value="system">Systemowy</option>
+        <option value="light">Jasny</option>
+        <option value="dark">Ciemny</option>
+      </select>
     </div>
   </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const theme = localStorage.getItem('theme') || 'system';
+      const sel = document.getElementById('theme-selector-setup');
+      if(sel) sel.value = theme;
+    });
+  </script>
 
   <div class="container">
 
@@ -652,7 +667,7 @@
       <div class="card" id="fb-login-card">
         <!-- Session-check placeholder — shown while we decide whether user is already logged in.
              Prevents the login button from flashing before a saved session resumes. -->
-        <div id="fb-session-check" style="display:flex;align-items:center;justify-content:center;gap:0.8rem;padding:2rem;color:#6B7280;font-size:0.9rem;">
+        <div id="fb-session-check" style="display:flex;align-items:center;justify-content:center;gap:0.8rem;padding:2rem;color:var(--text-muted);font-size:0.9rem;">
           <span class="spinner"></span>
           <span>Sprawdzanie sesji Facebook…</span>
         </div>
@@ -688,7 +703,7 @@
           <div class="select-list" id="pages-list"></div>
         </div>
 
-        <div id="fb-forms-section" style="display:none;margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid #F3F4F6;">
+        <div id="fb-forms-section" style="display:none;margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid var(--border-subtle);">
           <h2>Wybierz formularz Lead Ads</h2>
           <p>Formularz, z którego leady trafią do Medidesk.</p>
           <input type="text" class="forms-filter" id="forms-filter" placeholder="Filtruj po nazwie…" />
@@ -711,7 +726,7 @@
           <input type="text" id="md-form-id" placeholder="np. d908ee01-0b7d-44a0-a494-a707ab5a55ef" style="flex:1;margin-bottom:0;" />
           <button class="btn btn-primary" id="btn-fetch-md">Pobierz pola</button>
         </div>
-        <div class="field-guidance" id="md-form-guidance" style="margin-top:8px;background:#F0F9FF;border-left:3px solid #3B82F6;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#374151;">
+        <div class="field-guidance" id="md-form-guidance" style="margin-top:8px;background:#F0F9FF;border-left:3px solid #3B82F6;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:var(--text-secondary);">
           <strong>Gdzie znajdziesz numer formularza?</strong>
           <ol style="margin:6px 0 0 16px;padding:0;">
             <li>Otwórz Medidesk i zaloguj się</li>
@@ -1089,7 +1104,7 @@
       const slots = [
         {
           id: 'sticky-user',
-          html: state.user ? `<span style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);display:inline-flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#FFFFFF;">${(state.user.name||'?')[0]}</span><span style="font-weight:600;">${state.user.name || 'FB'}</span>` : '',
+          html: state.user ? `<span style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);display:inline-flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--bg-surface);">${(state.user.name||'?')[0]}</span><span style="font-weight:600;">${state.user.name || 'FB'}</span>` : '',
         },
         {
           id: 'sticky-page',
@@ -1339,7 +1354,7 @@
           const data = await resp.json().catch(() => ({}));
           if (!resp.ok) {
             const msg = data.error || data.detail || `HTTP ${resp.status}`;
-            formsList.innerHTML = `<div style="padding:1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-size:0.85rem;">⚠️ Nie udało się pobrać formularzy: ${msg}<br/><span style="color:#71717a;font-size:0.75rem;">Sprawdź czy masz uprawnienia admina na tej Stronie FB.</span></div>`;
+            formsList.innerHTML = `<div style="padding:1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-size:0.85rem;">⚠️ Nie udało się pobrać formularzy: ${msg}<br/><span style="color:var(--text-muted);font-size:0.75rem;">Sprawdź czy masz uprawnienia admina na tej Stronie FB.</span></div>`;
             showToast('Błąd pobierania formularzy: ' + msg, 'error');
             return;
           }
@@ -1349,7 +1364,7 @@
         formsList.innerHTML = '';
 
         if (state.forms.length === 0) {
-          formsList.innerHTML = '<div style="padding:1rem;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;color:#fbbf24;font-size:0.85rem;">ℹ️ Brak formularzy Lead Ads na tej stronie.<br/><span style="color:#71717a;font-size:0.75rem;">Utwórz formularz w Meta Business Suite → Reklamy Lead, a następnie wróć tu.</span></div>';
+          formsList.innerHTML = '<div style="padding:1rem;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;color:#fbbf24;font-size:0.85rem;">ℹ️ Brak formularzy Lead Ads na tej stronie.<br/><span style="color:var(--text-muted);font-size:0.75rem;">Utwórz formularz w Meta Business Suite → Reklamy Lead, a następnie wróć tu.</span></div>';
           return;
         }
 
@@ -1460,7 +1475,7 @@
                 <td class="form-name">${f.name || '—'}${connectedBadge}</td>
                 <td>${f.leads_count || 0}</td>
                 <td>${(f.questions||[]).length}</td>
-                <td style="color:#71717a;">${dateStr || '—'}</td>
+                <td style="color:var(--text-muted);">${dateStr || '—'}</td>
               `;
               tr.addEventListener('click', () => selectForm(f));
               tbody.appendChild(tr);
@@ -1542,7 +1557,7 @@
 
         state.mdFields.forEach(f => {
           const el = document.createElement('div');
-          el.style.cssText = 'display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;border-bottom:1px solid #E5E7EB;';
+          el.style.cssText = 'display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;border-bottom:1px solid var(--border-primary);';
 
           const reqBadge = f.required
             ? '<span style="font-size:0.65rem;color:#f59e0b;background:rgba(245,158,11,0.12);padding:0.2rem 0.4rem;border-radius:4px;font-weight:600;line-height:1;">wymagane</span>'
@@ -1553,7 +1568,7 @@
               <span class="field-chip md" style="flex:1; width:100%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis;">${f.fieldId}</span>
             </div>
             <div style="display:flex; align-items:center; gap:0.8rem; flex-shrink:0;">
-              <span style="font-size:0.72rem;color:#52525b;font-weight:600;line-height:1;width:90px;text-align:left;display:inline-block;">${polishFieldType(f.type)}</span>
+              <span style="font-size:0.72rem;color:var(--text-dim);font-weight:600;line-height:1;width:90px;text-align:left;display:inline-block;">${polishFieldType(f.type)}</span>
               <span style="width:80px;display:inline-block;text-align:left;">${reqBadge}</span>
             </div>
           `;
@@ -1703,11 +1718,11 @@
           `<option value="${vf.key}">${vf.label}</option>`
         ).join('');
         addRow.innerHTML = `
-          <select id="add-virtual-select" style="grid-column:1 / 5;background:#FFFFFF;border:1px solid #E5E7EB;color:#374151;padding:0 0.6rem;height:38px;border-radius:6px;font-size:0.78rem;">
+          <select id="add-virtual-select" style="grid-column:1 / 5;background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-secondary);padding:0 0.6rem;height:38px;border-radius:6px;font-size:0.78rem;">
             <option value="">➕ Dodaj pole meta-danych...</option>
             ${opts}
           </select>
-          <button id="btn-add-virtual" class="btn" style="grid-column:5 / 6;background:#F3F4F6;color:#374151;font-size:0.75rem;padding:0 0.8rem;height:38px;" disabled>Dodaj</button>
+          <button id="btn-add-virtual" class="btn" style="grid-column:5 / 6;background:var(--border-subtle);color:var(--text-secondary);font-size:0.75rem;padding:0 0.8rem;height:38px;" disabled>Dodaj</button>
         `;
         extrasHost.appendChild(addRow);
 
@@ -1726,8 +1741,8 @@
       constRow.className = 'mapping-row mapping-row--add';
       constRow.style.cssText = 'margin-top:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
       constRow.innerHTML = `
-        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="grid-column:1 / 5;background:#FFFFFF;border:1px solid #E5E7EB;color:#111827;padding:0 0.6rem;height:38px;border-radius:6px;font-size:0.78rem;" />
-        <button id="btn-add-const" class="btn" style="grid-column:5 / 6;background:#F3F4F6;color:#374151;font-size:0.75rem;padding:0 0.8rem;height:38px;" disabled>Dodaj</button>
+        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="grid-column:1 / 5;background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-primary);padding:0 0.6rem;height:38px;border-radius:6px;font-size:0.78rem;" />
+        <button id="btn-add-const" class="btn" style="grid-column:5 / 6;background:var(--border-subtle);color:var(--text-secondary);font-size:0.75rem;padding:0 0.8rem;height:38px;" disabled>Dodaj</button>
       `;
       extrasHost.appendChild(constRow);
 
@@ -1819,7 +1834,7 @@
       const mtype = (mdField.type || '').toLowerCase();
       const options = Array.isArray(mdField.options) ? mdField.options : [];
 
-      const sharedStyle = 'flex:1;width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:#FFFFFF;border:1px solid rgba(139,92,246,0.5);border-radius:6px;color:#111827;font-size:0.85rem;';
+      const sharedStyle = 'flex:1;width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:var(--bg-surface);border:1px solid rgba(139,92,246,0.5);border-radius:6px;color:var(--text-primary);font-size:0.85rem;';
       let inputHtml;
       if (['checkbox', 'boolean', 'bool', 'consent'].includes(mtype)) {
         const checked = ['true', '1', 'yes', 'tak', 'on'].includes(String(defaultVal).toLowerCase()) ? 'checked' : '';
@@ -1864,7 +1879,7 @@
       const relocatedSelect = document.createElement('select');
       relocatedSelect.className = 'fb-quickmap-select';
       relocatedSelect.dataset.md = fieldId;
-      relocatedSelect.style.cssText = 'width:100%;padding:0 0.4rem;height:32px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:#6B7280;font-size:0.72rem;cursor:pointer;';
+      relocatedSelect.style.cssText = 'width:100%;padding:0 0.4rem;height:32px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:var(--text-muted);font-size:0.72rem;cursor:pointer;';
       relocatedSelect.innerHTML = fbOpts;
       meta.appendChild(relocatedSelect);
       relocatedSelect.addEventListener('change', function() {
@@ -1880,7 +1895,7 @@
       if (rightMeta) {
         rightMeta.innerHTML = `
           <button class="btn-apply-const" title="Zapisz stałą" style="background:#8b5cf6;border:1px solid #8b5cf6;color:#fff;font-size:0.75rem;padding:4px 8px;border-radius:6px;cursor:pointer;">✓</button>
-          <button class="btn-cancel-const" title="Anuluj" style="background:none;border:1px solid #D1D5DB;color:#6B7280;font-size:0.75rem;padding:4px 8px;border-radius:6px;cursor:pointer;margin-left:4px;">✕</button>
+          <button class="btn-cancel-const" title="Anuluj" style="background:none;border:1px solid #D1D5DB;color:var(--text-muted);font-size:0.75rem;padding:4px 8px;border-radius:6px;cursor:pointer;margin-left:4px;">✕</button>
         `;
       }
 
@@ -1903,7 +1918,7 @@
           errorEl.style.display = 'none';
           errorEl.textContent = '';
           input.style.borderColor = 'rgba(139,92,246,0.5)';
-          input.style.background = '#FFFFFF';
+          input.style.background = 'var(--bg-surface)';
           return true;
         }
         errorEl.textContent = `⚠️ ${result.message}`;
@@ -2018,7 +2033,7 @@
         // value makes no sense (we can't fabricate a file), so hide the "stała" shortcut.
         const isAttachment = /^attach/i.test(f.type || '');
         const leftMetaHtml = isAttachment
-          ? `<span style="font-size:0.68rem;color:#6B7280;white-space:nowrap;" title="Załączniki muszą przyjść z FB — nie da się ustawić stałej wartości">tylko z FB</span>`
+          ? `<span style="font-size:0.68rem;color:var(--text-muted);white-space:nowrap;" title="Załączniki muszą przyjść z FB — nie da się ustawić stałej wartości">tylko z FB</span>`
           : `<button class="btn-open-const" data-md="${f.fieldId}" title="Ustaw stałą wartość"
                      style="background:none;border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;font-size:0.7rem;padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;">📌 stała</button>`;
         // Per-row FB options: annotate with ⚠️/🚫 vs THIS MD field's type so the
@@ -2033,10 +2048,10 @@
           }))
           .join('');
         return `
-        <div id="missing-row-${f.fieldId}" class="mapping-row" style="border-bottom:1px solid #E5E7EB;">
+        <div id="missing-row-${f.fieldId}" class="mapping-row" style="border-bottom:1px solid var(--border-primary);">
           <div class="row-meta-left">${leftMetaHtml}</div>
           <select class="fb-quickmap-select" data-md="${f.fieldId}"
-                  style="width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:#6B7280;font-size:0.82rem;line-height:38px;cursor:pointer;">
+                  style="width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:var(--text-muted);font-size:0.82rem;line-height:38px;cursor:pointer;">
             ${rowFbOpts}
           </select>
           <span class="mapping-arrow" style="text-align:center;">↔</span>
@@ -2226,10 +2241,10 @@
               <span style="font-size:0.7rem;font-weight:600;color:#5b21b6;text-transform:uppercase;letter-spacing:0.04em;">Pełna treść zgody</span>
               <div style="display:flex;gap:0.4rem;">
                 <button class="btn-copy-consent" data-text="${consentBodyEsc}" style="background:#8b5cf6;border:1px solid #8b5cf6;color:#fff;font-size:0.7rem;padding:3px 8px;border-radius:5px;cursor:pointer;">📋 Skopiuj</button>
-                <button class="btn-close-consent" style="background:none;border:1px solid #D1D5DB;color:#6B7280;font-size:0.7rem;padding:3px 8px;border-radius:5px;cursor:pointer;">Zamknij</button>
+                <button class="btn-close-consent" style="background:none;border:1px solid #D1D5DB;color:var(--text-muted);font-size:0.7rem;padding:3px 8px;border-radius:5px;cursor:pointer;">Zamknij</button>
               </div>
             </div>
-            <div class="consent-body-text" style="white-space:pre-wrap;font-size:0.78rem;color:#374151;line-height:1.45;max-height:240px;overflow-y:auto;padding:0.4rem 0.5rem;background:#FFFFFF;border:1px solid rgba(139,92,246,0.12);border-radius:6px;">${consentBodyEsc}</div>
+            <div class="consent-body-text" style="white-space:pre-wrap;font-size:0.78rem;color:var(--text-secondary);line-height:1.45;max-height:240px;overflow-y:auto;padding:0.4rem 0.5rem;background:var(--bg-surface);border:1px solid rgba(139,92,246,0.12);border-radius:6px;">${consentBodyEsc}</div>
           </div>`
         : '';
 
@@ -2240,7 +2255,7 @@
         <select class="md-select" data-fb="${fbField}">${options.join('')}</select>
         <div class="row-meta">
           ${isMerge ? `<button class="btn-unmerge" title="Rozłącz — użyj tego pola indywidualnie" style="font-size:0.65rem;color:#f59e0b;font-weight:600;padding:0.15rem 0.5rem;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);border-radius:6px;cursor:pointer;">łączy ✕</button>` : ''}
-          ${canRemove ? '<button class="btn-remove-row" title="Usuń" style="background:none;border:none;color:#71717a;cursor:pointer;font-size:1rem;padding:0.1rem 0.3rem;">×</button>' : ''}
+          ${canRemove ? '<button class="btn-remove-row" title="Usuń" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:0.1rem 0.3rem;">×</button>' : ''}
         </div>
         ${consentPanelHtml}
       `;

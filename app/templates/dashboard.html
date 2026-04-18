@@ -6,8 +6,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-      background: #F8F9FA;
-      color: #111827;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       min-height: 100vh;
       font-size: 14px;
       display: block;
@@ -19,8 +19,8 @@
     /* ─── Sidebar ─── */
     .sidebar {
       width: 240px;
-      background: #FFFFFF;
-      border-right: 1px solid #E5E7EB;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-primary);
       display: flex;
       flex-direction: column;
       position: fixed;
@@ -31,7 +31,7 @@
     }
     .sidebar-brand {
       padding: 1.2rem 1rem;
-      border-bottom: 1px solid #E5E7EB;
+      border-bottom: 1px solid var(--border-primary);
       display: flex;
       align-items: center;
       gap: 0.7rem;
@@ -54,7 +54,7 @@
     }
     .sidebar-brand .sub {
       font-size: 0.65rem;
-      color: #52525b;
+      color: var(--text-dim);
       margin-top: 0.2rem;
     }
 
@@ -70,19 +70,19 @@
       border-radius: 8px;
       font-size: 0.82rem;
       font-weight: 500;
-      color: #71717a;
+      color: var(--text-muted);
       cursor: pointer;
       transition: all 0.15s;
       margin-bottom: 0.2rem;
     }
-    .nav-item:hover { background: rgba(0,0,0,0.03); color: #374151; }
+    .nav-item:hover { background: rgba(0,0,0,0.03); color: var(--text-secondary); }
     .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #1D4ED8; }
     .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
-    .nav-divider { height: 1px; background: #E5E7EB; margin: 0.6rem 0.8rem; }
+    .nav-divider { height: 1px; background: var(--border-primary); margin: 0.6rem 0.8rem; }
 
     .sidebar-user {
       padding: 0.8rem 1rem;
-      border-top: 1px solid #E5E7EB;
+      border-top: 1px solid var(--border-primary);
       display: flex;
       align-items: center;
       gap: 0.6rem;
@@ -94,7 +94,7 @@
       font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
     }
     .user-name { font-size: 0.78rem; font-weight: 600; }
-    .user-email { font-size: 0.65rem; color: #52525b; }
+    .user-email { font-size: 0.65rem; color: var(--text-dim); }
 
     /* ─── Main ─── */
     .main {
@@ -117,17 +117,17 @@
       margin-bottom: 1.5rem;
     }
     .kpi-card {
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-primary);
       border-radius: 12px;
       padding: 1.2rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-sm);
     }
     .kpi-card .label {
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #52525b;
+      color: var(--text-dim);
       margin-bottom: 0.4rem;
     }
     .kpi-card .value {
@@ -137,7 +137,7 @@
     }
     .kpi-card .sub {
       font-size: 0.72rem;
-      color: #52525b;
+      color: var(--text-dim);
       margin-top: 0.3rem;
     }
     .kpi-blue .value { color: #60a5fa; }
@@ -147,12 +147,12 @@
 
     /* ─── Cards ─── */
     .card {
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-primary);
       border-radius: 12px;
       padding: 1.2rem;
       margin-bottom: 1rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-sm);
     }
     .card-header {
       display: flex;
@@ -164,13 +164,13 @@
 
     /* ─── Integration cards ─── */
     .int-card {
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-primary);
       border-radius: 12px;
       padding: 1rem 1.2rem;
       margin-bottom: 0.8rem;
       transition: border-color 0.15s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-sm);
     }
     .int-card:hover { border-color: #D1D5DB; }
     .int-card-top {
@@ -192,7 +192,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .int-card-info .meta { font-size: 0.72rem; color: #52525b; margin-top: 0.15rem; }
+    .int-card-info .meta { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.15rem; }
     .int-card-status {
       display: inline-flex;
       align-items: center;
@@ -204,10 +204,10 @@
       flex-shrink: 0;
     }
     .status-active { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
-    .status-inactive { background: rgba(161, 161, 170, 0.1); color: #71717a; }
+    .status-inactive { background: rgba(161, 161, 170, 0.1); color: var(--text-muted); }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; }
     .status-active .status-dot { background: #4ade80; }
-    .status-inactive .status-dot { background: #52525b; }
+    .status-inactive .status-dot { background: var(--text-dim); }
 
     .int-card-flow {
       display: flex;
@@ -215,7 +215,7 @@
       gap: 0.5rem;
       margin: 0.8rem 0;
       padding: 0.6rem 0.8rem;
-      background: #F9FAFB;
+      background: var(--bg-surface-hover);
       border-radius: 8px;
       font-size: 0.78rem;
     }
@@ -232,9 +232,9 @@
       display: flex;
       gap: 1.5rem;
       font-size: 0.72rem;
-      color: #52525b;
+      color: var(--text-dim);
     }
-    .int-card-stats span strong { color: #6B7280; }
+    .int-card-stats span strong { color: var(--text-muted); }
 
     .int-card-actions {
       display: flex;
@@ -263,7 +263,7 @@
     .btn-success { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
     .btn-warning { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); }
     .btn-danger { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
-    .btn-outline { background: transparent; border: 1px solid #E5E7EB; color: #374151; }
+    .btn-outline { background: transparent; border: 1px solid var(--border-primary); color: var(--text-secondary); }
     .btn-outline:hover { border-color: #3b82f6; color: #93c5fd; }
 
     /* ─── Mapping Modal Styles ──────────────────────────
@@ -276,8 +276,8 @@
       align-items: center;
       gap: 0.9rem;
       padding: 0.6rem 0.8rem;
-      background: #F9FAFB;
-      border: 1px solid #E5E7EB;
+      background: var(--bg-surface-hover);
+      border: 1px solid var(--border-primary);
       border-radius: 10px;
       margin-bottom: 0.5rem;
       min-height: 52px;
@@ -345,9 +345,9 @@
       width: 100%;
       height: 38px;
       box-sizing: border-box;
-      background: #FFFFFF;
+      background: var(--bg-surface);
       border: 1px solid rgba(59, 130, 246, 0.3);
-      color: #111827;
+      color: var(--text-primary);
       padding: 0 0.6rem;
       border-radius: 6px;
       font-size: 0.82rem;
@@ -390,13 +390,13 @@
       font-size: 0.68rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #52525b;
-      border-bottom: 1px solid #E5E7EB;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border-primary);
     }
     td {
       padding: 0.5rem 0.8rem;
-      border-bottom: 1px solid #F3F4F6;
-      color: #6B7280;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-muted);
     }
     .badge {
       display: inline-block;
@@ -411,8 +411,8 @@
 
     /* ─── Lead detail (expandable) ─── */
     .lead-detail {
-      background: #F9FAFB;
-      border: 1px solid #E5E7EB;
+      background: var(--bg-surface-hover);
+      border: 1px solid var(--border-primary);
       border-radius: 8px;
       padding: 0.8rem;
       margin: 0.3rem 0 0.6rem;
@@ -427,7 +427,7 @@
       font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #52525b;
+      color: var(--text-dim);
       margin-bottom: 0.4rem;
     }
     .data-row {
@@ -436,8 +436,8 @@
       padding: 0.25rem 0;
       border-bottom: 1px solid #1a1b25;
     }
-    .data-key { color: #71717a; }
-    .data-val { color: #111827; font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+    .data-key { color: var(--text-muted); }
+    .data-val { color: var(--text-primary); font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
     .error-box {
       background: rgba(239, 68, 68, 0.08);
       border: 1px solid rgba(239, 68, 68, 0.2);
@@ -459,8 +459,8 @@
       cursor: pointer;
       padding: 0.4rem 0.6rem;
       border-radius: 6px;
-      border: 1px solid #E5E7EB;
-      color: #374151;
+      border: 1px solid var(--border-primary);
+      color: var(--text-secondary);
       font-size: 0.8rem;
       background: transparent;
     }
@@ -484,10 +484,10 @@
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
-      color: #52525b;
+      color: var(--text-dim);
     }
     .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
-    .empty-state h3 { font-size: 1rem; color: #71717a; margin-bottom: 0.5rem; }
+    .empty-state h3 { font-size: 1rem; color: var(--text-muted); margin-bottom: 0.5rem; }
 
     /* ─── Demo banner ─── */
     .demo-banner {
@@ -520,7 +520,7 @@
     /* ─── In-app dialog (replaces native confirm/alert/prompt) ─── */
     .app-dialog-overlay {
       position: fixed; inset: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: var(--bg-overlay);
       backdrop-filter: blur(2px);
       z-index: 9999;
       display: flex; align-items: center; justify-content: center;
@@ -529,8 +529,8 @@
     }
     @keyframes app-dialog-fade-in { from { opacity: 0; } to { opacity: 1; } }
     .app-dialog {
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-primary);
       border-radius: 12px;
       padding: 1.5rem;
       width: 100%; max-width: 480px;
@@ -543,10 +543,10 @@
     }
     .app-dialog-title {
       font-size: 1rem; font-weight: 700;
-      color: #111827; margin-bottom: 0.5rem;
+      color: var(--text-primary); margin-bottom: 0.5rem;
     }
     .app-dialog-message {
-      font-size: 0.88rem; color: #374151;
+      font-size: 0.88rem; color: var(--text-secondary);
       line-height: 1.5; margin-bottom: 1rem;
       white-space: pre-wrap; word-break: break-word;
       max-height: 50vh; overflow-y: auto;
@@ -554,9 +554,9 @@
     .app-dialog-input-wrap { margin-bottom: 1rem; }
     .app-dialog-input-wrap input {
       width: 100%; padding: 0.55rem 0.7rem;
-      background: #FFFFFF; border: 1px solid #E5E7EB;
+      background: var(--bg-surface); border: 1px solid var(--border-primary);
       border-radius: 6px; font-size: 0.85rem;
-      color: #111827; outline: none;
+      color: var(--text-primary); outline: none;
       box-sizing: border-box;
     }
     .app-dialog-input-wrap input:focus { border-color: #3b82f6; }
@@ -568,7 +568,7 @@
     .app-dialog .btn-danger-confirm {
       background: #DC2626;
       border: 1px solid #DC2626;
-      color: #FFFFFF;
+      color: var(--bg-surface);
     }
     .app-dialog .btn-danger-confirm:hover { background: #B91C1C; }
 
@@ -592,23 +592,23 @@
     /* ─── Login screen ─── */
     .login-overlay {
       position: fixed; inset: 0; z-index: 200;
-      background: #F8F9FA;
+      background: var(--bg-primary);
       display: flex; align-items: center; justify-content: center;
     }
     .login-box {
-      background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px;
+      background: var(--bg-surface); border: 1px solid var(--border-primary); border-radius: 16px;
       padding: 2.5rem; width: 380px; text-align: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-sm);
     }
     .login-box h2 {
       font-size: 1.2rem; font-weight: 700; margin-bottom: 0.3rem;
       background: linear-gradient(135deg, #3b82f6, #a855f7);
       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .login-box .sub { font-size: 0.78rem; color: #52525b; margin-bottom: 1.5rem; }
+    .login-box .sub { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 1.5rem; }
     .login-input {
       width: 100%; padding: 0.6rem 0.8rem; border-radius: 8px;
-      border: 1px solid #E5E7EB; background: #FFFFFF; color: #111827;
+      border: 1px solid var(--border-primary); background: var(--bg-surface); color: var(--text-primary);
       font-size: 0.85rem; margin-bottom: 0.8rem; outline: none;
     }
     .login-input:focus { border-color: #3b82f6; }
@@ -625,10 +625,10 @@
     }
     .login-divider {
       display: flex; align-items: center; gap: 0.8rem;
-      margin: 1rem 0; color: #52525b; font-size: 0.72rem;
+      margin: 1rem 0; color: var(--text-dim); font-size: 0.72rem;
     }
     .login-divider::before, .login-divider::after {
-      content: ''; flex: 1; height: 1px; background: #E5E7EB;
+      content: ''; flex: 1; height: 1px; background: var(--border-primary);
     }
     .login-error {
       color: #f87171; font-size: 0.75rem; margin-bottom: 0.5rem;
@@ -653,9 +653,9 @@
   <div class="login-overlay" id="unregistered-overlay" style="display:none;">
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px;">
       <div style="font-size:48px;margin-bottom:16px;">⏳</div>
-      <h2 style="color:#111827;font-size:20px;font-weight:600;margin-bottom:8px;">Konto czeka na aktywację</h2>
-      <p style="color:#6B7280;max-width:400px;line-height:1.5;">Twoje konto zostało zarejestrowane. Administrator musi je zatwierdzić zanim uzyskasz dostęp.</p>
-      <p style="margin-top:12px;color:#374151;">Napisz do: <a href="mailto:adminzoho@medidesk.com" style="color:#3B82F6;">adminzoho@medidesk.com</a></p>
+      <h2 style="color:var(--text-primary);font-size:20px;font-weight:600;margin-bottom:8px;">Konto czeka na aktywację</h2>
+      <p style="color:var(--text-muted);max-width:400px;line-height:1.5;">Twoje konto zostało zarejestrowane. Administrator musi je zatwierdzić zanim uzyskasz dostęp.</p>
+      <p style="margin-top:12px;color:var(--text-secondary);">Napisz do: <a href="mailto:adminzoho@medidesk.com" style="color:#3B82F6;">adminzoho@medidesk.com</a></p>
       <div id="unregistered-error" style="display:none;"></div>
       <button class="login-btn login-btn-fb" style="margin-top:1.5rem;padding:0.6rem 1.5rem;border-radius:8px;border:none;font-size:0.85rem;font-weight:600;cursor:pointer;" onclick="location.href='/login'">Wróć do strony logowania</button>
     </div>
@@ -681,7 +681,7 @@
     <div id="facility-switcher" style="display:none;padding:0 14px 10px;">
       <label style="display:block;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.04em;color:#9CA3AF;margin-bottom:4px;">Placówka</label>
       <select id="facility-switcher-select" onchange="switchFacility(this.value)"
-              style="width:100%;padding:7px 8px;border-radius:6px;border:1px solid #E5E7EB;background:#FFFFFF;font-size:0.82rem;color:#111827;cursor:pointer;"></select>
+              style="width:100%;padding:7px 8px;border-radius:6px;border:1px solid var(--border-primary);background:var(--bg-surface);font-size:0.82rem;color:var(--text-primary);cursor:pointer;"></select>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-item active" data-section="overview" onclick="showSection('overview')">
@@ -700,6 +700,21 @@
         <span class="icon">➕</span> <span>Nowa integracja</span>
       </div>
     </nav>
+    <div style="padding:0.6rem 1rem; border-top:1px solid var(--border-primary); display:flex; align-items:center; justify-content:space-between;">
+      <span style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">Motyw</span>
+      <select onchange="window.setAppTheme(this.value)" id="theme-selector-dashboard" style="background:var(--bg-surface); border:1px solid var(--border-primary); color:var(--text-primary); padding:0.2rem 0.4rem; border-radius:5px; font-size:0.7rem; outline:none; cursor:pointer;">
+        <option value="system">Systemowy</option>
+        <option value="light">Jasny</option>
+        <option value="dark">Ciemny</option>
+      </select>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const theme = localStorage.getItem('theme') || 'system';
+        const sel = document.getElementById('theme-selector-dashboard');
+        if(sel) sel.value = theme;
+      });
+    </script>
     <div class="sidebar-user" id="sidebar-user">
       <div class="user-avatar" id="user-initials">?</div>
       <div class="user-info">
@@ -708,13 +723,13 @@
         <div id="user-role-badge"></div>
       </div>
     </div>
-    <div style="padding:0.5rem 1rem;border-top:1px solid #E5E7EB;" id="logout-area">
+    <div style="padding:0.5rem 1rem;border-top:1px solid var(--border-primary);" id="logout-area">
       <button class="btn btn-sm btn-outline" style="width:100%; margin-bottom:0.4rem;" onclick="doLogout()">Wyloguj</button>
       <button class="btn btn-sm btn-outline" style="width:100%; margin-bottom:0.4rem; font-size:0.68rem; display:none;" id="btn-change-pw" onclick="togglePasswordChange()">🔑 Zmień hasło admina</button>
       <button class="btn btn-sm btn-outline" style="width:100%; font-size:0.68rem; display:none; color:#f87171; border-color:#451a1d;" id="btn-reset-db" onclick="resetDatabase()">⚠️ Wyczyść wszystko (Testowe)</button>
       <form id="pw-change-form" style="display:none; margin-top:0.5rem;" onsubmit="event.preventDefault(); changePassword();" autocomplete="off">
-        <input type="password" id="pw-current" placeholder="Obecne hasło" autocomplete="current-password" style="width:100%; background:#FFFFFF; border:1px solid #E5E7EB; color:#111827; padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
-        <input type="password" id="pw-new" placeholder="Nowe hasło (min. 6 znaków)" autocomplete="new-password" style="width:100%; background:#FFFFFF; border:1px solid #E5E7EB; color:#111827; padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
+        <input type="password" id="pw-current" placeholder="Obecne hasło" autocomplete="current-password" style="width:100%; background:var(--bg-surface); border:1px solid var(--border-primary); color:var(--text-primary); padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
+        <input type="password" id="pw-new" placeholder="Nowe hasło (min. 6 znaków)" autocomplete="new-password" style="width:100%; background:var(--bg-surface); border:1px solid var(--border-primary); color:var(--text-primary); padding:0.4rem 0.6rem; border-radius:5px; font-size:0.75rem; margin-bottom:0.3rem;" />
         <button type="submit" class="btn btn-sm btn-success" style="width:100%; font-size:0.72rem;">Zapisz nowe hasło</button>
       </form>
     </div>
@@ -753,7 +768,7 @@
           <div class="card-header">
             <h3>Ostatnie leady</h3>
             <div style="display:flex;align-items:center;gap:0.6rem;">
-              <span id="recent-leads-updated" style="font-size:0.7rem;color:#6B7280;"></span>
+              <span id="recent-leads-updated" style="font-size:0.7rem;color:var(--text-muted);"></span>
               <button class="btn btn-sm btn-outline" id="btn-refresh-leads" onclick="loadStats(true)" title="Odśwież">🔄 Odśwież</button>
             </div>
           </div>
@@ -763,7 +778,7 @@
                 <tr><th>Lead ID</th><th>Status</th><th>Pola</th><th>Kiedy</th><th>Integracja</th></tr>
               </thead>
               <tbody id="recent-leads-body">
-                <tr><td colspan="5" style="text-align:center;color:#52525b;padding:1.5rem;">Ładowanie...</td></tr>
+                <tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:1.5rem;">Ładowanie...</td></tr>
               </tbody>
             </table>
           </div>
@@ -773,7 +788,7 @@
       <!-- Section: Integrations -->
       <div class="section" id="sec-integrations">
         <div style="margin-bottom:1rem; position:relative;">
-          <input type="text" id="integrations-search" placeholder="Szukaj..." style="width:100%; background:#FFFFFF; border:1px solid #E5E7EB; color:#111827; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:8px; font-size:0.85rem; outline:none;" oninput="renderIntegrationsList()">
+          <input type="text" id="integrations-search" placeholder="Szukaj..." style="width:100%; background:var(--bg-surface); border:1px solid var(--border-primary); color:var(--text-primary); padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:8px; font-size:0.85rem; outline:none;" oninput="renderIntegrationsList()">
           <span style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); font-size:0.9rem; opacity:0.5;">🔍</span>
         </div>
         <div id="integrations-filter-chips" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;"></div>
@@ -787,7 +802,7 @@
             <button class="back" onclick="showSection('integrations')">← Wróć</button>
             <div style="min-width:0;">
               <h3 id="room-title" style="font-size:1.05rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></h3>
-              <div id="room-subtitle" style="font-size:0.75rem;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+              <div id="room-subtitle" style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;justify-content:flex-end;">
@@ -848,11 +863,11 @@
           </div>
 
           <!-- Add facility form (hidden) -->
-          <div id="add-facility-form" style="display:none; padding:1rem; margin-bottom:1rem; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px;">
+          <div id="add-facility-form" style="display:none; padding:1rem; margin-bottom:1rem; background:var(--bg-surface-hover); border:1px solid var(--border-primary); border-radius:10px;">
             <div style="display:flex; flex-direction:column; gap:0.6rem;">
-              <input type="text" id="fac-name" placeholder="Nazwa placówki (np. Klinika Dental)" style="background:#FFFFFF; border:1px solid #E5E7EB; color:#111827; padding:0.5rem 0.7rem; border-radius:6px; font-size:0.82rem;" />
-              <input type="text" id="fac-fb-user-id" placeholder="Facebook User ID (np. 10229876543210)" style="background:#FFFFFF; border:1px solid #E5E7EB; color:#111827; padding:0.5rem 0.7rem; border-radius:6px; font-size:0.82rem;" />
-              <input type="text" id="fac-fb-user-name" placeholder="Nazwa użytkownika FB (opcjonalnie)" style="background:#FFFFFF; border:1px solid #E5E7EB; color:#111827; padding:0.5rem 0.7rem; border-radius:6px; font-size:0.82rem;" />
+              <input type="text" id="fac-name" placeholder="Nazwa placówki (np. Klinika Dental)" style="background:var(--bg-surface); border:1px solid var(--border-primary); color:var(--text-primary); padding:0.5rem 0.7rem; border-radius:6px; font-size:0.82rem;" />
+              <input type="text" id="fac-fb-user-id" placeholder="Facebook User ID (np. 10229876543210)" style="background:var(--bg-surface); border:1px solid var(--border-primary); color:var(--text-primary); padding:0.5rem 0.7rem; border-radius:6px; font-size:0.82rem;" />
+              <input type="text" id="fac-fb-user-name" placeholder="Nazwa użytkownika FB (opcjonalnie)" style="background:var(--bg-surface); border:1px solid var(--border-primary); color:var(--text-primary); padding:0.5rem 0.7rem; border-radius:6px; font-size:0.82rem;" />
               <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
                 <button class="btn btn-outline btn-sm" onclick="toggleAddFacility()">Anuluj</button>
                 <button class="btn btn-success btn-sm" onclick="saveFacility()">💾 Zapisz</button>
@@ -860,7 +875,7 @@
             </div>
           </div>
 
-          <div id="facilities-list" style="font-size:0.82rem; color:#6B7280;"><em>Ładowanie...</em></div>
+          <div id="facilities-list" style="font-size:0.82rem; color:var(--text-muted);"><em>Ładowanie...</em></div>
         </div>
 
         <!-- Users per facility -->
@@ -868,16 +883,16 @@
           <div class="card-header">
             <h3>👥 Użytkownicy placówek</h3>
             <div style="display:flex;gap:0.4rem;align-items:center;">
-              <input type="text" id="users-filter" placeholder="🔍 Filtruj..." style="background:#FFFFFF;border:1px solid #E5E7EB;color:#111827;padding:0.35rem 0.6rem;border-radius:6px;font-size:0.78rem;width:180px;" oninput="renderUsers()" />
-              <select id="users-facility-filter" onchange="renderUsers()" style="background:#FFFFFF;border:1px solid #E5E7EB;color:#111827;padding:0.35rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+              <input type="text" id="users-filter" placeholder="🔍 Filtruj..." style="background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-primary);padding:0.35rem 0.6rem;border-radius:6px;font-size:0.78rem;width:180px;" oninput="renderUsers()" />
+              <select id="users-facility-filter" onchange="renderUsers()" style="background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-primary);padding:0.35rem 0.6rem;border-radius:6px;font-size:0.78rem;">
                 <option value="">Wszystkie placówki</option>
               </select>
             </div>
           </div>
-          <div style="font-size:0.72rem; color:#52525b; margin-bottom:0.5rem;">
+          <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:0.5rem;">
             Wszyscy zalogowani przez FB. Zmień rolę, dodaj etykietę lub dezaktywuj.
           </div>
-          <div id="users-list" style="font-size:0.82rem; color:#6B7280;"><em>Ładowanie...</em></div>
+          <div id="users-list" style="font-size:0.82rem; color:var(--text-muted);"><em>Ładowanie...</em></div>
         </div>
 
         <!-- Pending registrations -->
@@ -885,10 +900,10 @@
           <div class="card-header">
             <h3>🔔 Oczekujące na zatwierdzenie</h3>
           </div>
-          <div style="font-size:0.72rem; color:#52525b; margin-bottom:0.5rem;">
+          <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:0.5rem;">
             Te konta próbowały się zalogować, ale nie mają przypisanej placówki. Zatwierdź je, podając nazwę.
           </div>
-          <div id="pending-list" style="font-size:0.82rem; color:#6B7280;"></div>
+          <div id="pending-list" style="font-size:0.82rem; color:var(--text-muted);"></div>
         </div>
       </div>
 
@@ -899,67 +914,67 @@
   <!-- Edit Mappings Modal -->
   <!-- End-to-end test modal -->
   <div id="test-flow-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
-    <div class="card" style="width:100%; max-width:680px; max-height:92vh; overflow-y:auto; background:#FFFFFF; border:1px solid #E5E7EB; padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+    <div class="card" style="width:100%; max-width:680px; max-height:92vh; overflow-y:auto; background:var(--bg-surface); border:1px solid var(--border-primary); padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2 style="font-size:1.1rem; font-weight:700;">🧪 Test połączenia end-to-end</h2>
-        <button onclick="closeTestFlowModal()" style="background:transparent; border:none; color:#71717a; cursor:pointer; font-size:1.2rem;">✕</button>
+        <button onclick="closeTestFlowModal()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">✕</button>
       </div>
-      <div style="font-size:0.82rem; color:#6B7280;">Sprawdź, czy lead z formularza Facebook dociera do Medidesk. Każdy krok otwiera się w nowej karcie.</div>
+      <div style="font-size:0.82rem; color:var(--text-muted);">Sprawdź, czy lead z formularza Facebook dociera do Medidesk. Każdy krok otwiera się w nowej karcie.</div>
 
       <!-- Step 1 -->
-      <div style="display:flex; gap:12px; padding:14px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px;">
+      <div style="display:flex; gap:12px; padding:14px; background:var(--bg-surface-hover); border:1px solid var(--border-primary); border-radius:8px;">
         <div style="flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#1877F2; color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">1</div>
         <div style="flex:1;">
-          <div style="font-weight:600; color:#111827; margin-bottom:4px;">Wyślij testowy lead z Facebooka</div>
-          <div style="font-size:0.78rem; color:#6B7280; margin-bottom:8px;">W narzędziu FB wybierz stronę <strong id="test-flow-page"></strong> i formularz <strong id="test-flow-form"></strong>, wypełnij pola i kliknij "Track test lead".</div>
+          <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">Wyślij testowy lead z Facebooka</div>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;">W narzędziu FB wybierz stronę <strong id="test-flow-page"></strong> i formularz <strong id="test-flow-form"></strong>, wypełnij pola i kliknij "Track test lead".</div>
           <a id="test-flow-fb-link" href="https://developers.facebook.com/tools/lead-ads-testing/" target="_blank" rel="noopener" class="btn btn-sm btn-primary" style="background:#1877F2; border-color:#1877F2;">Otwórz Lead Ads Testing Tool ↗</a>
         </div>
       </div>
 
       <!-- Step 2 -->
-      <div style="display:flex; gap:12px; padding:14px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px;">
+      <div style="display:flex; gap:12px; padding:14px; background:var(--bg-surface-hover); border:1px solid var(--border-primary); border-radius:8px;">
         <div style="flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#10B981; color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">2</div>
         <div style="flex:1;">
-          <div style="font-weight:600; color:#111827; margin-bottom:4px;">Sprawdź, czy lead doszedł do Medidesk</div>
-          <div style="font-size:0.78rem; color:#6B7280; margin-bottom:8px;">Otwórz listę leadów w trakcie — testowy zgłoszeniowiec powinien pojawić się w ciągu kilkunastu sekund.</div>
+          <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">Sprawdź, czy lead doszedł do Medidesk</div>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;">Otwórz listę leadów w trakcie — testowy zgłoszeniowiec powinien pojawić się w ciągu kilkunastu sekund.</div>
           <a href="https://app.medidesk.io/registration/leads/in-progress/" target="_blank" rel="noopener" class="btn btn-sm btn-success">Otwórz Medidesk — Leady w trakcie ↗</a>
         </div>
       </div>
 
       <!-- Step 3 -->
-      <div style="display:flex; gap:12px; padding:14px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px;">
+      <div style="display:flex; gap:12px; padding:14px; background:var(--bg-surface-hover); border:1px solid var(--border-primary); border-radius:8px;">
         <div style="flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#6366F1; color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">3</div>
         <div style="flex:1;">
-          <div style="font-weight:600; color:#111827; margin-bottom:4px;">Sprawdź szczegóły Leada</div>
-          <div style="font-size:0.78rem; color:#6B7280; margin-bottom:8px;">Testowy lead pojawi się poniżej w "Historia leadów". Status <span style="background:#DCFCE7; color:#166534; padding:1px 6px; border-radius:4px; font-size:0.7rem;">sent</span> = dotarł, <span style="background:#FEE2E2; color:#991B1B; padding:1px 6px; border-radius:4px; font-size:0.7rem;">failed</span> = błąd.</div>
+          <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">Sprawdź szczegóły Leada</div>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;">Testowy lead pojawi się poniżej w "Historia leadów". Status <span style="background:#DCFCE7; color:#166534; padding:1px 6px; border-radius:4px; font-size:0.7rem;">sent</span> = dotarł, <span style="background:#FEE2E2; color:#991B1B; padding:1px 6px; border-radius:4px; font-size:0.7rem;">failed</span> = błąd.</div>
           <button class="btn btn-sm btn-outline" onclick="refreshTestFlowStatus()">🔄 Odśwież historię</button>
-          <span id="test-flow-status" style="margin-left:8px; font-size:0.78rem; color:#6B7280;"></span>
+          <span id="test-flow-status" style="margin-left:8px; font-size:0.78rem; color:var(--text-muted);"></span>
         </div>
       </div>
 
-      <div style="font-size:0.72rem; color:#9CA3AF; border-top:1px solid #F3F4F6; padding-top:10px;">
+      <div style="font-size:0.72rem; color:#9CA3AF; border-top:1px solid var(--border-subtle); padding-top:10px;">
         💡 Wskazówka: w narzędziu FB po wysłaniu testowego leada użyj "Delete Lead", żeby nie zaśmiecać historii. Lead nadal trafi do Medidesk i zostanie zarejestrowany tutaj.
       </div>
 
-      <div style="display:flex;justify-content:flex-end;margin-top:0.5rem;padding-top:1rem;border-top:1px solid #E5E7EB;">
+      <div style="display:flex;justify-content:flex-end;margin-top:0.5rem;padding-top:1rem;border-top:1px solid var(--border-primary);">
         <button class="btn btn-outline" onclick="closeTestFlowModal()">Zamknij</button>
       </div>
     </div>
   </div>
 
   <div id="edit-mappings-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
-    <div class="card" style="width:100%; max-width:700px; max-height:90vh; overflow-y:auto; background:#FFFFFF; border:1px solid #E5E7EB; padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+    <div class="card" style="width:100%; max-width:700px; max-height:90vh; overflow-y:auto; background:var(--bg-surface); border:1px solid var(--border-primary); padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2 style="font-size:1.1rem; font-weight:700;">Edycja Mapowania</h2>
-        <button onclick="document.getElementById('edit-mappings-modal').style.display='none'" style="background:transparent; border:none; color:#71717a; cursor:pointer; font-size:1.2rem;">✕</button>
+        <button onclick="document.getElementById('edit-mappings-modal').style.display='none'" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">✕</button>
       </div>
-      <div style="font-size:0.85rem; color:#6B7280; margin-bottom:0.5rem;">Wprowadź zmiany w przepisaniu wartości z Facebooka na odpowiednie pola formularza w Medidesk. Zapobiegaj mapowaniu tych samych pól FB wielokrotnie.</div>
+      <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.5rem;">Wprowadź zmiany w przepisaniu wartości z Facebooka na odpowiednie pola formularza w Medidesk. Zapobiegaj mapowaniu tych samych pól FB wielokrotnie.</div>
       
       <div id="edit-missing-required-banner" style="display:none;"></div>
       <div id="edit-mapping-rows"></div>
       <div id="edit-missing-optional-banner" style="display:none;"></div>
 
-      <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem; padding-top:1rem; border-top:1px solid #E5E7EB;">
+      <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border-primary);">
         <button class="btn btn-outline" onclick="document.getElementById('edit-mappings-modal').style.display='none'">Anuluj</button>
         <button class="btn btn-success" id="btn-save-mappings" onclick="saveMappings()">💾 Zapisz zmiany</button>
       </div>
@@ -1252,11 +1267,11 @@
         if (fbId) topChips.push(`<span style="${chipBase}background:#EEF2FF;color:#4338CA;font-family:monospace;">${fbId}</span>`);
         topbarUser.innerHTML = `
           <div style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;">
-            <span style="font-size:0.82rem;color:#111827;font-weight:600;">${name}</span>
+            <span style="font-size:0.82rem;color:var(--text-primary);font-weight:600;">${name}</span>
             <div>${topChips.join('')}</div>
           </div>
           <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;color:#fff;">${initials}</div>
-          <button onclick="doLogout()" style="padding:4px 12px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;font-size:0.75rem;color:#374151;cursor:pointer;">Wyloguj</button>
+          <button onclick="doLogout()" style="padding:4px 12px;border:1px solid var(--border-primary);border-radius:6px;background:#fff;font-size:0.75rem;color:var(--text-secondary);cursor:pointer;">Wyloguj</button>
         `;
       }
     }
@@ -1288,7 +1303,7 @@
       const tbody = document.getElementById('recent-leads-body');
       const leads = stats.recent_leads || [];
       if (leads.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#52525b;padding:1.5rem;">Brak danych — leady pojawią się po pierwszym połączeniu z Facebook</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:1.5rem;">Brak danych — leady pojawią się po pierwszym połączeniu z Facebook</td></tr>';
         return;
       }
 
@@ -1343,15 +1358,15 @@
         const open = accIdx === 0; // newest accordion expanded by default
         const accKey = 'acc-' + integId.replace(/[^a-zA-Z0-9]/g, '_');
         html += `
-        <tr class="lead-acc-header" style="background:#F9FAFB;cursor:pointer;" onclick="toggleLeadAccordion('${accKey}', this)">
+        <tr class="lead-acc-header" style="background:var(--bg-surface-hover);cursor:pointer;" onclick="toggleLeadAccordion('${accKey}', this)">
           <td colspan="5" style="padding:0.7rem 1rem;">
             <div style="display:flex;align-items:center;gap:0.6rem;">
-              <span class="acc-arrow" style="display:inline-block;transition:transform 0.15s;transform:rotate(${open ? 90 : 0}deg);color:#6B7280;">▶</span>
-              <span style="font-weight:600;color:#111827;">${integLabel(integId)}</span>
-              <span style="font-size:0.7rem;color:#6B7280;background:#FFFFFF;border:1px solid #E5E7EB;padding:2px 8px;border-radius:10px;">${total} ${total === 1 ? 'lead' : 'leadów'}</span>
+              <span class="acc-arrow" style="display:inline-block;transition:transform 0.15s;transform:rotate(${open ? 90 : 0}deg);color:var(--text-muted);">▶</span>
+              <span style="font-weight:600;color:var(--text-primary);">${integLabel(integId)}</span>
+              <span style="font-size:0.7rem;color:var(--text-muted);background:var(--bg-surface);border:1px solid var(--border-primary);padding:2px 8px;border-radius:10px;">${total} ${total === 1 ? 'lead' : 'leadów'}</span>
               ${sentUnique ? `<span style="font-size:0.7rem;color:#166534;background:#DCFCE7;padding:2px 8px;border-radius:10px;">✓ ${sentUnique}</span>` : ''}
               ${failedUnique ? `<span style="font-size:0.7rem;color:#991B1B;background:#FEE2E2;padding:2px 8px;border-radius:10px;">✗ ${failedUnique}</span>` : ''}
-              <span style="margin-left:auto;font-size:0.7rem;color:#6B7280;">najnowszy: ${timeAgo(newestTs)}</span>
+              <span style="margin-left:auto;font-size:0.7rem;color:var(--text-muted);">najnowszy: ${timeAgo(newestTs)}</span>
             </div>
           </td>
         </tr>`;
@@ -1367,10 +1382,10 @@
         const failedCount = attempts.filter(a => a.status === 'failed').length;
         const deliveryCount = sentCount + failedCount;
         const countBadge = deliveryCount > 1
-          ? `<span style="margin-left:6px;font-size:0.68rem;color:#6B7280;background:#F3F4F6;padding:2px 6px;border-radius:10px;" title="Wysyłek do Medidesk (bez liczenia odbioru z FB)">${deliveryCount} wysyłek</span>`
+          ? `<span style="margin-left:6px;font-size:0.68rem;color:var(--text-muted);background:var(--border-subtle);padding:2px 6px;border-radius:10px;" title="Wysyłek do Medidesk (bez liczenia odbioru z FB)">${deliveryCount} wysyłek</span>`
           : '';
         const summary = deliveryCount > 1
-          ? `<div style="font-size:0.68rem;color:#6B7280;margin-top:2px;">${sentCount > 0 ? '✓ ' + sentCount + ' wysłane' : ''}${sentCount > 0 && failedCount > 0 ? ' · ' : ''}${failedCount > 0 ? '✗ ' + failedCount + ' nieudane' : ''}</div>`
+          ? `<div style="font-size:0.68rem;color:var(--text-muted);margin-top:2px;">${sentCount > 0 ? '✓ ' + sentCount + ' wysłane' : ''}${sentCount > 0 && failedCount > 0 ? ' · ' : ''}${failedCount > 0 ? '✗ ' + failedCount + ' nieudane' : ''}</div>`
           : '';
         return `
         <tr class="lead-row ${accKey}" style="${open ? '' : 'display:none;'}" onclick="toggleRecentLeadDetail('${leadId}')">
@@ -1378,7 +1393,7 @@
           <td>${leadStatusBadge(latest.status)}</td>
           <td>${latest.mapped_fields_count || 0} ${polPole(latest.mapped_fields_count || 0)}</td>
           <td>${timeAgo(latest.timestamp)}</td>
-          <td style="font-size:0.7rem;color:#6B7280;">${latest.integration_id?.substring(0, 8) || '—'}…</td>
+          <td style="font-size:0.7rem;color:var(--text-muted);">${latest.integration_id?.substring(0, 8) || '—'}…</td>
         </tr>
         <tr id="recent-detail-${leadId}" class="${accKey}" style="display:none;">
           <td colspan="5">
@@ -1388,10 +1403,10 @@
                   <h4 style="margin:0 0 0.4rem 0;">🕒 Historia zdarzeń (${eventCount}) · ${deliveryCount === 0 ? 'brak wysyłek' : deliveryCount + (deliveryCount === 1 ? ' wysyłka' : ' wysyłek')}</h4>
                   <div style="display:flex;flex-direction:column;gap:4px;">
                     ${attempts.map((a, idx) => `
-                      <div style="display:flex;align-items:center;gap:8px;font-size:0.72rem;padding:4px 8px;background:${idx === 0 ? '#F9FAFB' : 'transparent'};border-radius:4px;">
+                      <div style="display:flex;align-items:center;gap:8px;font-size:0.72rem;padding:4px 8px;background:${idx === 0 ? 'var(--bg-surface-hover)' : 'transparent'};border-radius:4px;">
                         <span style="color:#9CA3AF;min-width:20px;">#${eventCount - idx}</span>
                         ${leadStatusBadge(a.status)}
-                        <span style="color:#6B7280;">${timeAgo(a.timestamp)}</span>
+                        <span style="color:var(--text-muted);">${timeAgo(a.timestamp)}</span>
                         ${a.error ? `<span style="color:#DC2626;font-size:0.68rem;">${(a.error || '').substring(0, 120)}</span>` : ''}
                       </div>
                     `).join('')}
@@ -1522,7 +1537,7 @@
 
     function classifyIntegration(i) {
       const s = i.stats || { total: 0, sent: 0, failed: 0, last_lead_at: '' };
-      if (!i.active) return { key: 'inactive', color: '#9CA3AF', bg: '#F3F4F6', label: 'Wyłączona' };
+      if (!i.active) return { key: 'inactive', color: '#9CA3AF', bg: 'var(--border-subtle)', label: 'Wyłączona' };
       if (s.failed > 0) return { key: 'error', color: '#DC2626', bg: '#FEF2F2', label: 'Problem' };
       const lastTs = s.last_lead_at ? new Date(s.last_lead_at).getTime() : 0;
       const daysSince = lastTs ? (Date.now() - lastTs) / 86400000 : 999;
@@ -1555,11 +1570,11 @@
       if (!wrap) return;
       wrap.innerHTML = chips.map(c => {
         const active = integrationsFilter === c.val;
-        const bg = active ? '#111827' : '#FFFFFF';
-        const fg = active ? '#FFFFFF' : '#374151';
-        const bd = active ? '#111827' : '#E5E7EB';
+        const bg = active ? 'var(--text-primary)' : 'var(--bg-surface)';
+        const fg = active ? 'var(--bg-surface)' : 'var(--text-secondary)';
+        const bd = active ? 'var(--text-primary)' : 'var(--border-primary)';
         return `<button onclick="setIntegrationsFilter('${c.val}')" style="padding:6px 12px;border:1px solid ${bd};background:${bg};color:${fg};border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-          ${c.label}<span style="font-size:11px;opacity:0.75;background:${active?'rgba(255,255,255,0.2)':'#F3F4F6'};padding:1px 6px;border-radius:999px;">${c.count}</span>
+          ${c.label}<span style="font-size:11px;opacity:0.75;background:${active?'rgba(255,255,255,0.2)':'var(--border-subtle)'};padding:1px 6px;border-radius:999px;">${c.count}</span>
         </button>`;
       }).join('');
     }
@@ -1668,10 +1683,10 @@
           subText = `<span style="color:#92400E;">Brak leadów — ostatni: ${relativeTime(s.last_lead_at)}</span>`;
         } else if (cls.key === 'empty') {
           primaryCta = `<button class="btn btn-sm btn-outline" onclick="openRoom('${i.id}')">Otwórz →</button>`;
-          subText = `<span style="color:#6B7280;">Czeka na pierwszy lead</span>`;
+          subText = `<span style="color:var(--text-muted);">Czeka na pierwszy lead</span>`;
         } else if (cls.key === 'inactive') {
           primaryCta = `<button class="btn btn-sm btn-success" onclick="toggleIntegration('${i.id}','activate')">Włącz</button>`;
-          subText = `<span style="color:#6B7280;">Połączenie wyłączone — leady nie trafiają do Medidesk</span>`;
+          subText = `<span style="color:var(--text-muted);">Połączenie wyłączone — leady nie trafiają do Medidesk</span>`;
         } else {
           primaryCta = `<button class="btn btn-sm btn-outline" onclick="openRoom('${i.id}')">Otwórz →</button>`;
           const lastTxt = s.last_lead_at ? `ostatni ${relativeTime(s.last_lead_at)}` : 'gotowe na leady';
@@ -1680,32 +1695,32 @@
 
         return `
         <div class="int-tile" data-id="${i.id}" data-status="${cls.key}"
-             style="background:#FFFFFF;border:1px solid #E5E7EB;border-left:4px solid ${cls.color};border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;transition:box-shadow 0.15s;cursor:pointer;"
+             style="background:var(--bg-surface);border:1px solid var(--border-primary);border-left:4px solid ${cls.color};border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;transition:box-shadow 0.15s;cursor:pointer;"
              onclick="if(!event.target.closest('button')&&!event.target.closest('a'))openRoom('${i.id}')"
              onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseout="this.style.boxShadow=''">
 
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-              <span style="font-size:0.95rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;" title="${displayName}">${displayName}</span>
+              <span style="font-size:0.95rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;" title="${displayName}">${displayName}</span>
               <span style="background:${cls.bg};color:${cls.color};font-size:0.68rem;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;">${cls.label}</span>
             </div>
             <div style="font-size:0.72rem;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;" title="${contextLine}">${contextLine}</div>
             <div style="font-size:0.78rem;">${subText}</div>
           </div>
 
-          <div style="display:flex;gap:12px;align-items:center;white-space:nowrap;color:#6B7280;font-size:0.78rem;">
-            <div style="text-align:right;"><div style="font-weight:600;color:#111827;font-size:1rem;">${s.total}</div><div style="font-size:0.65rem;">leadów</div></div>
-            <div style="text-align:right;"><div style="font-weight:600;color:${s.failed>0?'#DC2626':'#111827'};font-size:1rem;">${s.failed}</div><div style="font-size:0.65rem;">błędów</div></div>
+          <div style="display:flex;gap:12px;align-items:center;white-space:nowrap;color:var(--text-muted);font-size:0.78rem;">
+            <div style="text-align:right;"><div style="font-weight:600;color:var(--text-primary);font-size:1rem;">${s.total}</div><div style="font-size:0.65rem;">leadów</div></div>
+            <div style="text-align:right;"><div style="font-weight:600;color:${s.failed>0?'#DC2626':'var(--text-primary)'};font-size:1rem;">${s.failed}</div><div style="font-size:0.65rem;">błędów</div></div>
           </div>
 
           <div style="display:flex;gap:6px;align-items:center;">
             ${primaryCta}
             <div style="position:relative;">
               <button class="btn btn-sm btn-outline" style="padding:4px 8px;" onclick="toggleTileMenu('${i.id}', event)">⋯</button>
-              <div id="tile-menu-${i.id}" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #E5E7EB;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);z-index:10;min-width:160px;padding:4px;">
-                <button style="display:block;width:100%;text-align:left;padding:8px 12px;background:transparent;border:none;font-size:0.8rem;color:#374151;cursor:pointer;border-radius:4px;" onclick="openRoom('${i.id}')" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">📋 Szczegóły i leady</button>
-                <button style="display:block;width:100%;text-align:left;padding:8px 12px;background:transparent;border:none;font-size:0.8rem;color:#374151;cursor:pointer;border-radius:4px;" onclick="toggleIntegration('${i.id}','${i.active?'deactivate':'activate'}')" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">${i.active?'⏸ Wyłącz':'▶ Włącz'}</button>
-                <div style="height:1px;background:#E5E7EB;margin:4px 0;"></div>
+              <div id="tile-menu-${i.id}" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border-primary);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);z-index:10;min-width:160px;padding:4px;">
+                <button style="display:block;width:100%;text-align:left;padding:8px 12px;background:transparent;border:none;font-size:0.8rem;color:var(--text-secondary);cursor:pointer;border-radius:4px;" onclick="openRoom('${i.id}')" onmouseover="this.style.background='var(--border-subtle)'" onmouseout="this.style.background='transparent'">📋 Szczegóły i leady</button>
+                <button style="display:block;width:100%;text-align:left;padding:8px 12px;background:transparent;border:none;font-size:0.8rem;color:var(--text-secondary);cursor:pointer;border-radius:4px;" onclick="toggleIntegration('${i.id}','${i.active?'deactivate':'activate'}')" onmouseover="this.style.background='var(--border-subtle)'" onmouseout="this.style.background='transparent'">${i.active?'⏸ Wyłącz':'▶ Włącz'}</button>
+                <div style="height:1px;background:var(--border-primary);margin:4px 0;"></div>
                 <button style="display:block;width:100%;text-align:left;padding:8px 12px;background:transparent;border:none;font-size:0.8rem;color:#DC2626;cursor:pointer;border-radius:4px;" onclick="deleteIntegration('${i.id}')" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">🗑 Usuń połączenie</button>
               </div>
             </div>
@@ -1988,7 +2003,7 @@
           <td class="arrow">→</td>
           <td class="md-col">${m.medidesk_field}</td>
         </tr>
-      `).join('') || '<tr><td colspan="3" style="color:#52525b;text-align:center;">Brak mapowań</td></tr>';
+      `).join('') || '<tr><td colspan="3" style="color:var(--text-dim);text-align:center;">Brak mapowań</td></tr>';
 
       // Group attempts by lead_id — latest attempt drives the row's status
       const leadGroups = new Map();
@@ -2015,7 +2030,7 @@
 
       const tbody = document.getElementById('room-leads-body');
       if (orderedLeads.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#52525b;padding:1.5rem;">Brak historii leadów</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:1.5rem;">Brak historii leadów</td></tr>';
       } else {
         tbody.innerHTML = orderedLeads.map(([leadId, attempts]) => {
           const finalStatus = leadFinalStatus(attempts);
@@ -2027,7 +2042,7 @@
           const failedCount = attempts.filter(a => a.status === 'failed').length;
           const deliveryCount = sentCount + failedCount;
           const countBadge = deliveryCount > 1
-            ? `<span style="margin-left:6px;font-size:0.68rem;color:#6B7280;background:#F3F4F6;padding:2px 6px;border-radius:10px;" title="Wysyłek do Medidesk">${deliveryCount} wysyłek</span>`
+            ? `<span style="margin-left:6px;font-size:0.68rem;color:var(--text-muted);background:var(--border-subtle);padding:2px 6px;border-radius:10px;" title="Wysyłek do Medidesk">${deliveryCount} wysyłek</span>`
             : '';
           const statusBadge = leadStatusBadge(finalStatus);
           const errorText = finalStatus === 'failed' ? (latest.error || '—') : '—';
@@ -2046,7 +2061,7 @@
               <td>${statusBadge}</td>
               <td>${latest.mapped_fields_count || 0} ${polPole(latest.mapped_fields_count || 0)}</td>
               <td>${timeAgo(latest.timestamp)}</td>
-              <td style="font-size:0.72rem;color:${finalStatus === 'failed' ? '#f87171' : '#52525b'};max-width:150px;overflow:hidden;text-overflow:ellipsis;">${errorText}</td>
+              <td style="font-size:0.72rem;color:${finalStatus === 'failed' ? '#f87171' : 'var(--text-dim)'};max-width:150px;overflow:hidden;text-overflow:ellipsis;">${errorText}</td>
               <td onclick="event.stopPropagation()" style="white-space:nowrap;"><div style="display:flex;gap:0.3rem;">${retryBtn}${deleteBtn}</div></td>
             </tr>
             <tr id="detail-${leadId}" style="display:none;">
@@ -2057,10 +2072,10 @@
                       <h4 style="margin:0 0 0.4rem 0;">🕒 Historia zdarzeń (${eventCount}) ${deliveryCount > 0 ? '· ' + deliveryCount + (deliveryCount === 1 ? ' wysyłka' : ' wysyłek') : '· brak wysyłek'}${sentCount > 0 ? ' · ✓ ' + sentCount : ''}${failedCount > 0 ? ' · ✗ ' + failedCount : ''}</h4>
                       <div style="display:flex;flex-direction:column;gap:4px;">
                         ${attempts.map((a, idx) => `
-                          <div style="display:flex;align-items:center;gap:8px;font-size:0.72rem;padding:4px 8px;background:${idx === 0 ? '#F9FAFB' : 'transparent'};border-radius:4px;">
+                          <div style="display:flex;align-items:center;gap:8px;font-size:0.72rem;padding:4px 8px;background:${idx === 0 ? 'var(--bg-surface-hover)' : 'transparent'};border-radius:4px;">
                             <span style="color:#9CA3AF;min-width:20px;">#${eventCount - idx}</span>
                             ${leadStatusBadge(a.status)}
-                            <span style="color:#6B7280;">${timeAgo(a.timestamp)}</span>
+                            <span style="color:var(--text-muted);">${timeAgo(a.timestamp)}</span>
                             ${a.error ? `<span style="color:#DC2626;font-size:0.68rem;">${(a.error || '').substring(0, 160)}</span>` : ''}
                           </div>
                         `).join('')}
@@ -2090,7 +2105,7 @@
 
     function renderDataPairs(obj) {
       const entries = Object.entries(obj);
-      if (entries.length === 0) return '<div style="color:#52525b;">— brak danych —</div>';
+      if (entries.length === 0) return '<div style="color:var(--text-dim);">— brak danych —</div>';
       return entries.map(([k, v]) => `
         <div class="data-row">
           <span class="data-key">${k}</span>
@@ -2156,9 +2171,9 @@
         failed:   '<span style="background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Nieudane</span>',
         received: '<span style="background:#FEF3C7;color:#D97706;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;" title="Lead odebrany z FB (przed wysłaniem do MD)">Odebrano z FB</span>',
         skipped_duplicate: '<span style="background:#E0E7FF;color:#4338CA;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;" title="Ten sam lead_id już trafił do MD — FB ponowił webhook, pominęliśmy żeby nie duplikować">Duplikat (pominięty)</span>',
-        pending:  '<span style="background:#F3F4F6;color:#6B7280;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Oczekuje</span>',
+        pending:  '<span style="background:var(--border-subtle);color:var(--text-muted);padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">Oczekuje</span>',
       };
-      return map[status] || `<span style="color:#6B7280;">${status}</span>`;
+      return map[status] || `<span style="color:var(--text-muted);">${status}</span>`;
     }
 
     // ─── Filter integrations by status ─────────────────
@@ -2563,7 +2578,7 @@
         addRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.8rem;padding:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
         const opts = unusedVirtuals.map(vf => `<option value="${vf.key}">${vf.label}</option>`).join('');
         addRow.innerHTML = `
-          <select id="add-virtual-select" style="flex:1;background:#FFFFFF;border:1px solid #E5E7EB;color:#374151;padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+          <select id="add-virtual-select" style="flex:1;background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-secondary);padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;">
             <option value="">➕ Dodaj pole meta-danych...</option>
             ${opts}
           </select>
@@ -2588,7 +2603,7 @@
       const constRow = document.createElement('div');
       constRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
       constRow.innerHTML = `
-        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="flex:1;background:#FFFFFF;border:1px solid #E5E7EB;color:#111827;padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;" />
+        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="flex:1;background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-primary);padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;" />
         <button id="btn-add-const" class="btn btn-outline" style="font-size:0.75rem;padding:0.4rem 0.8rem;" disabled>Dodaj</button>
       `;
       container.appendChild(constRow);
@@ -2842,14 +2857,14 @@
             return `<option value="${key}">${lbl}${lbl !== key ? ' ('+key+')' : ''}${tip}</option>`;
           })).join('');
         return `
-          <div id="edit-missing-row-${fid}" style="padding:0.6rem 0.7rem;background:#FFFFFF;border:1px solid ${palette.border};border-radius:8px;margin-top:0.4rem;">
+          <div id="edit-missing-row-${fid}" style="padding:0.6rem 0.7rem;background:var(--bg-surface);border:1px solid ${palette.border};border-radius:8px;margin-top:0.4rem;">
             <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
               <strong style="color:${palette.text};font-size:0.82rem;">${palette.icon} ${f.name || fid}</strong>
-              <span style="color:#6B7280;font-size:0.72rem;">(${f.type || 'field'})</span>
-              <select class="edit-missing-fb-select" data-fid="${fid}" style="flex:1;min-width:180px;padding:0.3rem 0.5rem;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:6px;font-size:0.78rem;">${rowFbOpts}</select>
+              <span style="color:var(--text-muted);font-size:0.72rem;">(${f.type || 'field'})</span>
+              <select class="edit-missing-fb-select" data-fid="${fid}" style="flex:1;min-width:180px;padding:0.3rem 0.5rem;background:var(--bg-surface);border:1px solid var(--border-primary);border-radius:6px;font-size:0.78rem;">${rowFbOpts}</select>
               <button class="btn btn-outline btn-edit-missing-const" data-fid="${fid}" style="font-size:0.75rem;padding:0.3rem 0.7rem;">✏️ Stała</button>
             </div>
-            ${hint ? `<div style="margin-top:0.3rem;font-size:0.7rem;color:#6B7280;">${hint}</div>` : ''}
+            ${hint ? `<div style="margin-top:0.3rem;font-size:0.7rem;color:var(--text-muted);">${hint}</div>` : ''}
             <div class="edit-const-editor" style="display:none;"></div>
           </div>
         `;
@@ -2916,20 +2931,20 @@
       let inputHTML;
       if (mtype === 'checkbox' || mtype === 'boolean' || mtype === 'bool' || mtype === 'consent') {
         inputHTML = `
-          <select class="const-input" style="flex:1;padding:0.35rem 0.5rem;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:6px;font-size:0.8rem;">
+          <select class="const-input" style="flex:1;padding:0.35rem 0.5rem;background:var(--bg-surface);border:1px solid #D1D5DB;border-radius:6px;font-size:0.8rem;">
             <option value="true" selected>true (zgoda wyrażona)</option>
             <option value="false">false (brak zgody)</option>
           </select>`;
       } else if ((mtype === 'select' || mtype === 'lista' || mtype === 'dropdown' || mtype === 'radio') && meta.options && meta.options.length) {
         const opts = meta.options.map(o => `<option value="${String(o).replace(/"/g,'&quot;')}">${o}</option>`).join('');
         inputHTML = `
-          <select class="const-input" style="flex:1;padding:0.35rem 0.5rem;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:6px;font-size:0.8rem;">${opts}</select>`;
+          <select class="const-input" style="flex:1;padding:0.35rem 0.5rem;background:var(--bg-surface);border:1px solid #D1D5DB;border-radius:6px;font-size:0.8rem;">${opts}</select>`;
       } else {
-        inputHTML = `<input type="text" class="const-input" value="${defaultVal.replace(/"/g,'&quot;')}" placeholder="np. true" style="flex:1;padding:0.35rem 0.5rem;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:6px;font-size:0.8rem;" />`;
+        inputHTML = `<input type="text" class="const-input" value="${defaultVal.replace(/"/g,'&quot;')}" placeholder="np. true" style="flex:1;padding:0.35rem 0.5rem;background:var(--bg-surface);border:1px solid #D1D5DB;border-radius:6px;font-size:0.8rem;" />`;
       }
 
       editor.innerHTML = `
-        <div style="margin-top:0.5rem;padding:0.5rem;background:#F3F4F6;border-radius:6px;display:flex;flex-direction:column;gap:0.3rem;">
+        <div style="margin-top:0.5rem;padding:0.5rem;background:var(--border-subtle);border-radius:6px;display:flex;flex-direction:column;gap:0.3rem;">
           <div style="display:flex;gap:0.4rem;align-items:center;">
             ${inputHTML}
             <button class="btn btn-success btn-apply-const" style="padding:0.3rem 0.7rem;font-size:0.75rem;">✓ Dodaj</button>
@@ -2956,7 +2971,7 @@
           errorEl.style.display = 'none';
           errorEl.textContent = '';
           input.style.borderColor = '#D1D5DB';
-          input.style.background = '#FFFFFF';
+          input.style.background = 'var(--bg-surface)';
           return true;
         }
         errorEl.textContent = `⚠️ ${result.message}`;
@@ -3066,7 +3081,7 @@
 
     async function loadFacilities() {
       if (DEMO) {
-        document.getElementById('facilities-list').innerHTML = '<p style="color:#52525b; padding:0.5rem;">DEMO: Brak danych placówek</p>';
+        document.getElementById('facilities-list').innerHTML = '<p style="color:var(--text-dim); padding:0.5rem;">DEMO: Brak danych placówek</p>';
         return;
       }
       try {
@@ -3080,11 +3095,11 @@
         const list = document.getElementById('facilities-list');
 
         if (data.facilities.length === 0 && !data.unassigned_count) {
-          list.innerHTML = '<p style="color:#52525b; padding:0.8rem; text-align:center;">Brak zarejestrowanych placówek. Kliknij "Dodaj" aby zarejestrować pierwszą.</p>';
+          list.innerHTML = '<p style="color:var(--text-dim); padding:0.8rem; text-align:center;">Brak zarejestrowanych placówek. Kliknij "Dodaj" aby zarejestrować pierwszą.</p>';
           return;
         }
 
-        let html = '<table style="width:100%; border-collapse: collapse;"><thead><tr style="color:#71717a; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">' +
+        let html = '<table style="width:100%; border-collapse: collapse;"><thead><tr style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">' +
           '<th style="text-align:left; padding:0.5rem 0.8rem;">Nazwa</th><th style="text-align:left; padding:0.5rem 0.8rem;">FB User ID</th><th style="text-align:left; padding:0.5rem 0.8rem;">FB Imię</th><th style="text-align:center; padding:0.5rem 0.8rem;">Integracje</th><th style="text-align:left; padding:0.5rem 0.8rem;">Data</th><th style="width:5%;"></th>' +
           '</tr></thead><tbody>';
 
@@ -3092,10 +3107,10 @@
           const date = f.created_at ? new Date(f.created_at).toLocaleDateString('pl-PL') : '—';
           html += `<tr>
             <td style="font-weight:600; padding:1rem 0.8rem;">${f.name}</td>
-            <td style="font-family:monospace; font-size:0.75rem; color:#71717a;">${f.fb_user_id}</td>
-            <td style="color:#111827;">${f.fb_user_name || '<span style="color:#9CA3AF;font-style:italic;">—</span>'}</td>
+            <td style="font-family:monospace; font-size:0.75rem; color:var(--text-muted);">${f.fb_user_id}</td>
+            <td style="color:var(--text-primary);">${f.fb_user_name || '<span style="color:#9CA3AF;font-style:italic;">—</span>'}</td>
             <td style="text-align:center;"><span class="badge badge-sent">${f.integrations_count}</span></td>
-            <td style="color:#52525b; font-size:0.75rem;">${date}</td>
+            <td style="color:var(--text-dim); font-size:0.75rem;">${date}</td>
             <td style="text-align:right;">
               <div style="display:flex; gap:0.3rem; justify-content:flex-end;">
                 <button class="btn btn-sm btn-outline" style="border-color:#1e3a8a; color:#60a5fa;" onclick="openFacilityRoom('${f.id}', '${(f.name || '').replace(/'/g, "\\'")}')">🔍 Integracje</button>
@@ -3110,8 +3125,8 @@
 
         if (data.unassigned_count > 0) {
           html += `<tr style="opacity:0.7; background:rgba(255,255,255,0.02);">
-            <td style="font-style:italic; padding:1rem 0.8rem; color:#6B7280;">Nieprzypisane</td>
-            <td colspan="2" style="font-size:0.75rem; color:#71717a;">Integracje bez przypisanej placówki</td>
+            <td style="font-style:italic; padding:1rem 0.8rem; color:var(--text-muted);">Nieprzypisane</td>
+            <td colspan="2" style="font-size:0.75rem; color:var(--text-muted);">Integracje bez przypisanej placówki</td>
             <td style="text-align:center;"><div class="badge badge-yellow">${data.unassigned_count}</div></td>
             <td>—</td>
             <td style="text-align:right;">
@@ -3149,7 +3164,7 @@
     async function loadUsers() {
       const list = document.getElementById('users-list');
       if (!list) return;
-      if (DEMO) { list.innerHTML = '<p style="color:#52525b;padding:0.5rem;">DEMO: brak danych</p>'; return; }
+      if (DEMO) { list.innerHTML = '<p style="color:var(--text-dim);padding:0.5rem;">DEMO: brak danych</p>'; return; }
       try {
         const resp = await apiFetch('/api/admin/users');
         if (!resp.ok) { list.innerHTML = '<p style="color:#f87171;padding:0.5rem;">Brak uprawnień</p>'; return; }
@@ -3175,7 +3190,7 @@
           || (u.facility_name || '').toLowerCase().includes(q);
       });
       if (users.length === 0) {
-        list.innerHTML = '<p style="color:#52525b;padding:0.8rem;text-align:center;">Brak użytkowników pasujących do filtra.</p>';
+        list.innerHTML = '<p style="color:var(--text-dim);padding:0.8rem;text-align:center;">Brak użytkowników pasujących do filtra.</p>';
         return;
       }
       // Display 2 practical levels. 'owner' is kept as an alias of 'user' (identical permissions)
@@ -3185,7 +3200,7 @@
         { value: 'viewer', label: 'viewer — tylko podgląd' },
       ];
       let html = '<table style="width:100%;border-collapse:collapse;">' +
-        '<thead><tr style="color:#71717a;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">' +
+        '<thead><tr style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">' +
         '<th style="text-align:left;padding:0.5rem 0.7rem;">Użytkownik</th>' +
         '<th style="text-align:left;padding:0.5rem 0.7rem;">Placówka</th>' +
         '<th style="text-align:left;padding:0.5rem 0.7rem;">Rola</th>' +
@@ -3199,22 +3214,22 @@
         // Normalize legacy roles (owner/admin) into the two displayed options.
         const displayRole = (u.role === 'viewer') ? 'viewer' : 'user';
         const opts = roleOptions.map(r => `<option value="${r.value}"${r.value === displayRole ? ' selected' : ''}>${r.label}</option>`).join('');
-        html += `<tr style="${faded}border-bottom:1px solid #F3F4F6;">
+        html += `<tr style="${faded}border-bottom:1px solid var(--border-subtle);">
           <td style="padding:0.7rem;">
-            <div style="font-weight:600;color:#111827;">${u.fb_user_name || '—'}${u.active ? '' : ' <span style="font-size:0.65rem;color:#B45309;background:rgba(245,158,11,0.12);padding:0.1rem 0.35rem;border-radius:4px;">nieaktywny</span>'}</div>
-            <div style="font-size:0.7rem;color:#71717a;">${u.email || ''}</div>
+            <div style="font-weight:600;color:var(--text-primary);">${u.fb_user_name || '—'}${u.active ? '' : ' <span style="font-size:0.65rem;color:#B45309;background:rgba(245,158,11,0.12);padding:0.1rem 0.35rem;border-radius:4px;">nieaktywny</span>'}</div>
+            <div style="font-size:0.7rem;color:var(--text-muted);">${u.email || ''}</div>
             <div style="font-family:monospace;font-size:0.65rem;color:#9CA3AF;">${u.fb_user_id}</div>
           </td>
-          <td style="padding:0.7rem;color:#111827;">${renderMembershipsCell(u)}</td>
+          <td style="padding:0.7rem;color:var(--text-primary);">${renderMembershipsCell(u)}</td>
           <td style="padding:0.7rem;">
-            <select onchange="changeUserRole('${u.fb_user_id}', this.value)" style="background:#FFFFFF;border:1px solid #E5E7EB;color:#111827;padding:0.25rem 0.4rem;border-radius:5px;font-size:0.75rem;">${opts}</select>
+            <select onchange="changeUserRole('${u.fb_user_id}', this.value)" style="background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-primary);padding:0.25rem 0.4rem;border-radius:5px;font-size:0.75rem;">${opts}</select>
           </td>
           <td style="padding:0.7rem;">
             <input type="text" id="label-${u.fb_user_id}" value="${(u.label || '').replace(/"/g,'&quot;')}" placeholder="np. Aga — marketing"
               onblur="saveUserLabel('${u.fb_user_id}', this.value)"
-              style="background:#FFFFFF;border:1px solid #E5E7EB;color:#111827;padding:0.25rem 0.45rem;border-radius:5px;font-size:0.75rem;width:160px;" />
+              style="background:var(--bg-surface);border:1px solid var(--border-primary);color:var(--text-primary);padding:0.25rem 0.45rem;border-radius:5px;font-size:0.75rem;width:160px;" />
           </td>
-          <td style="padding:0.7rem;color:#52525b;font-size:0.72rem;">${last}</td>
+          <td style="padding:0.7rem;color:var(--text-dim);font-size:0.72rem;">${last}</td>
           <td style="padding:0.7rem;text-align:right;">
             ${u.active
               ? `<button class="btn btn-sm btn-outline" title="Dezaktywuj" style="color:#B45309;" onclick="deactivateUser('${u.fb_user_id}', '${(u.fb_user_name || '').replace(/'/g,"\\'")}')">⏸</button>`
@@ -3237,11 +3252,11 @@
       const chips = ms.map(m => {
         const star = m.is_primary ? '★ ' : '';
         const primBtn = m.is_primary ? '' :
-          `<button title="Ustaw jako główną" onclick="setPrimaryMembership('${u.fb_user_id}','${m.facility_id}')" style="background:none;border:none;cursor:pointer;color:#6B7280;font-size:0.7rem;">☆</button>`;
+          `<button title="Ustaw jako główną" onclick="setPrimaryMembership('${u.fb_user_id}','${m.facility_id}')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:0.7rem;">☆</button>`;
         const rmBtn = `<button title="Usuń przypisanie" onclick="removeMembership('${u.fb_user_id}','${m.facility_id}','${(m.facility_name||'').replace(/'/g,"\\'")}')" style="background:none;border:none;cursor:pointer;color:#B45309;font-size:0.7rem;">✕</button>`;
-        return `<div style="display:inline-flex;align-items:center;gap:4px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:999px;padding:2px 8px;margin:2px 4px 2px 0;font-size:0.72rem;">
-          <span style="color:#111827;">${star}${m.facility_name || m.facility_id}</span>
-          <span style="color:#6B7280;font-size:0.65rem;">${m.role}</span>
+        return `<div style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-surface-hover);border:1px solid var(--border-primary);border-radius:999px;padding:2px 8px;margin:2px 4px 2px 0;font-size:0.72rem;">
+          <span style="color:var(--text-primary);">${star}${m.facility_name || m.facility_id}</span>
+          <span style="color:var(--text-muted);font-size:0.65rem;">${m.role}</span>
           ${primBtn}${rmBtn}
         </div>`;
       }).join('');
@@ -3348,14 +3363,14 @@
         let html = '';
         data.pending.forEach(p => {
           const when = p.attempted_at ? new Date(p.attempted_at).toLocaleString('pl-PL') : '—';
-          html += `<div style="display:flex; align-items:center; gap:0.8rem; padding:0.6rem 0; border-bottom:1px solid #E5E7EB;">
+          html += `<div style="display:flex; align-items:center; gap:0.8rem; padding:0.6rem 0; border-bottom:1px solid var(--border-primary);">
             <div style="flex:1;">
-              <div style="font-weight:600; color:#111827;">${p.fb_user_name || 'Brak nazwy'}</div>
-              <div style="font-family:monospace; font-size:0.7rem; color:#71717a;">ID: ${p.fb_user_id}</div>
-              <div style="font-size:0.68rem; color:#52525b;">Próba: ${when}</div>
+              <div style="font-weight:600; color:var(--text-primary);">${p.fb_user_name || 'Brak nazwy'}</div>
+              <div style="font-family:monospace; font-size:0.7rem; color:var(--text-muted);">ID: ${p.fb_user_id}</div>
+              <div style="font-size:0.68rem; color:var(--text-dim);">Próba: ${when}</div>
             </div>
             <input type="text" id="pend-name-${p.fb_user_id}" placeholder="Nazwa placówki" value="${p.fb_user_name || ''}"
-              style="background:#FFFFFF; border:1px solid #E5E7EB; color:#111827; padding:0.35rem 0.5rem; border-radius:5px; font-size:0.75rem; width:180px;" />
+              style="background:var(--bg-surface); border:1px solid var(--border-primary); color:var(--text-primary); padding:0.35rem 0.5rem; border-radius:5px; font-size:0.75rem; width:180px;" />
             <button class="btn btn-sm btn-success" onclick="approvePending('${p.fb_user_id}')">✅ Zatwierdź</button>
             <button class="btn btn-sm btn-outline" onclick="dismissPending('${p.fb_user_id}')" style="font-size:0.68rem;">✕</button>
           </div>`;

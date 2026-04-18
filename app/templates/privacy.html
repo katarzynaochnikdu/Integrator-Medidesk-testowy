@@ -3,11 +3,11 @@
 {% block head_styles %}
 <style>
 
-        body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
-        h1, h2, h3 { color: #1e3a8a; }
+        body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: var(--text-primary); max-width: 800px; margin: 0 auto; padding: 2rem; }
+        h1, h2, h3 { color: var(--accent-blue); }
         a { color: #2563eb; text-decoration: none; }
         a:hover { text-decoration: underline; }
-        .last-updated { color: #666; font-style: italic; margin-bottom: 2rem; }
+        .last-updated { color: var(--text-muted); font-style: italic; margin-bottom: 2rem; }
     
 </style>
 {% endblock %}
@@ -37,8 +37,8 @@
        👉 <a href="/data-deletion">Instrukcja usuwania danych z aplikacji</a>
     </p>
 
-    <hr style="margin-top: 3rem; border:0; border-top: 1px solid #ccc;">
-    <p style="text-align:center; font-size:0.9em; color:#666;">
+    <hr style="margin-top: 3rem; border:0; border-top: 1px solid var(--border-primary);">
+    <p style="text-align:center; font-size:0.9em; color:var(--text-muted);">
         Built with Integracja Leadów do Medidesk &copy; 2026
     </p>
 
