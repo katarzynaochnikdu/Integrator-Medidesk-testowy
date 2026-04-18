@@ -85,16 +85,23 @@ def build_urlencoded_body(
     site_domain: str | None = None,
     site_url: str | None = None,
 ) -> str:
-    """Buduje body w formacie fieldsValues[fieldId]=value (urlencoded, ASCII-safe).
+    """Buduje body w formacie fieldsValues[fieldId]=value.
 
-    Both keys and values are percent-encoded (UTF-8) so fieldIds with Polish
-    diacritics like "Imię-i-nazwisko" don't leak raw `ę` into the request body.
-    The `[` / `]` around fieldsValues stay literal — they're part of PHP-style
-    array-param syntax and every standard parser (including Medidesk) decodes
-    the key name back from its percent-encoded form.
+    Field IDs are kept as RAW UTF-8 (not percent-encoded) so that Polish
+    diacritics like "Imię-i-nazwisko" reach Medidesk as the literal field
+    name. Their /api/forms/web-form/{id} parser does NOT decode percent-
+    encoded keys back to UTF-8 — sending `Imi%C4%99-i-nazwisko` made the
+    server 500 because no field matched. ASCII-only fieldIds always
+    worked with both encodings; only Polish-char fieldIds were broken.
+
+    Values still get percent-encoded — they go through standard URL value
+    decoding regardless of MD's parser quirks. The encoded body is sent
+    as UTF-8 bytes with charset=UTF-8 hint in Content-Type (see
+    submit_form_urlencoded), which most form parsers (including MD) accept
+    as the convention for non-ASCII keys in urlencoded payloads.
 
     siteDomain / siteUrl are coerced through _resolve_with_fallback so they
-    are never empty — Medidesk crashes with 500 on blank values.
+    are never empty — kept percent-encoded since they're typically ASCII.
     """
     domain = _resolve_with_fallback(site_domain, settings.default_site_domain, _FALLBACK_SITE_DOMAIN)
     url = _resolve_with_fallback(site_url, settings.default_site_url, _FALLBACK_SITE_URL)
@@ -103,8 +110,9 @@ def build_urlencoded_body(
         f"siteUrl={quote(url, safe='')}",
     ]
     for key, value in fields_values.items():
+        # Key: raw UTF-8 (Polish chars stay literal). Value: percent-encoded.
         parts.append(
-            f"fieldsValues[{quote(str(key), safe='')}]={quote(str(value), safe='')}"
+            f"fieldsValues[{key}]={quote(str(value), safe='')}"
         )
     return "&".join(parts)
 
@@ -145,7 +153,10 @@ async def submit_form_urlencoded(
                 # on non-ASCII characters the way .encode("ascii") did (see Polish 'ę').
                 content=body.encode("utf-8"),
                 headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
+                    # charset=UTF-8 is the explicit signal that field-name bytes
+                    # are UTF-8 — MD's parser uses this to decide whether to
+                    # treat raw `Imię-i-nazwisko` bytes as the literal field key.
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
                     "Accept": "application/json, text/plain, */*",
                     "Origin": md_origin,
                     "Referer": md_referer,
