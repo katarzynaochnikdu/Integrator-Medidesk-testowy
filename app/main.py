@@ -997,6 +997,13 @@ async def privacy_policy():
     return path.read_text(encoding="utf-8")
 
 
+@app.get("/tos", response_class=HTMLResponse)
+async def terms_of_service():
+    """Terms of Service required for Facebook App Review."""
+    path = Path(__file__).parent / "tos.html"
+    return path.read_text(encoding="utf-8")
+
+
 @app.get("/data-deletion", response_class=HTMLResponse)
 async def data_deletion():
     """Data deletion instructions required for Facebook App Review."""

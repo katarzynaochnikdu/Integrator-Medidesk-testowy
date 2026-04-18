@@ -12,8 +12,8 @@
 
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: #0a0c10;
-      color: #e4e4e7;
+      background: #F8F9FA;
+      color: #111827;
       min-height: 100vh;
       font-size: 14px;
     }
@@ -24,9 +24,8 @@
       align-items: center;
       justify-content: space-between;
       padding: 1rem 2rem;
-      border-bottom: 1px solid #1e2030;
-      background: rgba(10, 12, 16, 0.95);
-      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #E5E7EB;
+      background: #FFFFFF;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -63,9 +62,9 @@
       border-radius: 999px;
       font-size: 0.78rem;
       font-weight: 500;
-      border: 1px solid #27272a;
-      background: #13141b;
-      color: #52525b;
+      border: 1px solid #E5E7EB;
+      background: #F3F4F6;
+      color: #6B7280;
       cursor: default;
       transition: all 0.25s;
     }
@@ -87,13 +86,13 @@
       justify-content: center;
       font-size: 0.65rem;
       font-weight: 700;
-      background: #27272a;
-      color: #71717a;
+      background: #E5E7EB;
+      color: #6B7280;
     }
     .step-pill.active .num { background: #3b82f6; color: #fff; }
     .step-pill.done .num { background: #22c55e; color: #fff; }
     .step-connector {
-      width: 24px; height: 1px; background: #27272a;
+      width: 24px; height: 1px; background: #E5E7EB;
     }
 
     /* ─── Main content ─── */
@@ -110,27 +109,28 @@
 
     /* ─── Cards ─── */
     .card {
-      background: #13141b;
-      border: 1px solid #1e2030;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
       border-radius: 12px;
       padding: 1.5rem;
       margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     .card h2 {
       font-size: 1rem;
       font-weight: 600;
       margin-bottom: 0.8rem;
-      color: #f4f4f5;
+      color: #111827;
     }
     .card h3 {
       font-size: 0.85rem;
       font-weight: 600;
-      color: #a1a1aa;
+      color: #374151;
       margin-bottom: 0.5rem;
     }
     .card p {
       font-size: 0.82rem;
-      color: #71717a;
+      color: #6B7280;
       line-height: 1.5;
       margin-bottom: 0.8rem;
     }
@@ -140,16 +140,16 @@
       display: block;
       font-size: 0.78rem;
       font-weight: 500;
-      color: #71717a;
+      color: #374151;
       margin-bottom: 0.3rem;
     }
     input[type="text"], select {
       width: 100%;
       padding: 0.55rem 0.75rem;
-      background: #0f1117;
-      border: 1px solid #27272a;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
       border-radius: 8px;
-      color: #e4e4e7;
+      color: #111827;
       font-size: 0.85rem;
       transition: border-color 0.15s;
       margin-bottom: 0.8rem;
@@ -189,10 +189,10 @@
     .btn-fb:hover { background: #1668d9; }
     .btn-outline {
       background: transparent;
-      border: 1px solid #27272a;
-      color: #a1a1aa;
+      border: 1px solid #E5E7EB;
+      color: #374151;
     }
-    .btn-outline:hover { border-color: #3b82f6; color: #93c5fd; }
+    .btn-outline:hover { border-color: #3b82f6; color: #1D4ED8; }
     .btn-row {
       display: flex;
       gap: 0.6rem;
@@ -223,9 +223,9 @@
       align-items: center;
       gap: 0.8rem;
       padding: 0.7rem 1rem;
-      border: 1px solid #1e2030;
+      border: 1px solid #E5E7EB;
       border-radius: 8px;
-      background: #0f1117;
+      background: #FFFFFF;
       cursor: pointer;
       transition: all 0.15s;
     }
@@ -235,7 +235,7 @@
     .select-item .meta { font-size: 0.72rem; color: #52525b; }
     .radio-dot {
       width: 16px; height: 16px; border-radius: 50%;
-      border: 2px solid #27272a;
+      border: 2px solid #D1D5DB;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -249,8 +249,8 @@
     /* ─── Forms accordion + table ─── */
     .forms-filter {
       width: 100%; padding: 0.5rem 0.8rem; margin-bottom: 0.8rem;
-      background: #0f1117; border: 1px solid #1e2030; border-radius: 6px;
-      color: #e4e4e7; font-size: 0.82rem;
+      background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 6px;
+      color: #111827; font-size: 0.82rem;
     }
     .forms-filter:focus { border-color: #3b82f6; outline: none; }
     .forms-filter::placeholder { color: #3f3f46; }
@@ -259,16 +259,16 @@
     .accordion-header {
       display: flex; align-items: center; gap: 0.6rem;
       padding: 0.6rem 0.8rem; cursor: pointer;
-      background: #13141c; border: 1px solid #1e2030; border-radius: 8px;
+      background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px;
       font-size: 0.82rem; font-weight: 600; user-select: none;
       transition: background 0.15s;
     }
-    .accordion-header:hover { background: #1a1b27; }
+    .accordion-header:hover { background: #F3F4F6; }
     .accordion-header .arrow { transition: transform 0.2s; font-size: 0.7rem; }
     .accordion-header.open .arrow { transform: rotate(90deg); }
     .accordion-header .count {
       margin-left: auto; font-size: 0.72rem; font-weight: 400;
-      color: #52525b; background: #1e2030; padding: 0.15rem 0.5rem; border-radius: 10px;
+      color: #6B7280; background: #F3F4F6; padding: 0.15rem 0.5rem; border-radius: 10px;
     }
     .accordion-body { display: none; padding-top: 0.4rem; }
     .accordion-header.open + .accordion-body { display: block; }
@@ -279,13 +279,13 @@
     .forms-table th {
       text-align: left; padding: 0.45rem 0.6rem; color: #71717a;
       font-weight: 600; font-size: 0.68rem; text-transform: uppercase;
-      letter-spacing: 0.04em; border-bottom: 1px solid #1e2030;
+      letter-spacing: 0.04em; border-bottom: 1px solid #E5E7EB;
       cursor: pointer; user-select: none; white-space: nowrap;
     }
     .forms-table th:hover { color: #a1a1aa; }
     .forms-table th .sort-icon { font-size: 0.6rem; margin-left: 0.25rem; }
     .forms-table td {
-      padding: 0.55rem 0.6rem; border-bottom: 1px solid #111218;
+      padding: 0.55rem 0.6rem; border-bottom: 1px solid #F3F4F6;
     }
     .forms-table tr { cursor: pointer; transition: background 0.1s; }
     .forms-table tbody tr:hover { background: rgba(59,130,246,0.05); }
@@ -328,9 +328,9 @@
     .form-summary-box {
       flex: 1;
       padding: 0.8rem 1rem;
-      border: 1px solid #1e2030;
+      border: 1px solid #E5E7EB;
       border-radius: 8px;
-      background: #0f1117;
+      background: #F9FAFB;
     }
     .form-summary-box .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #52525b; margin-bottom: 0.25rem; }
     .form-summary-box .title { font-weight: 600; font-size: 0.9rem; }
@@ -343,7 +343,7 @@
       gap: 0.6rem;
       padding: 0.5rem 0.8rem;
       min-height: 52px;
-      border-bottom: 1px solid #1a1b25;
+      border-bottom: 1px solid #E5E7EB;
       transition: background 0.1s;
     }
     .mapping-row:hover { background: rgba(255,255,255,0.02); }
@@ -386,12 +386,12 @@
     }
     .field-chip.empty {
       background: rgba(161, 161, 170, 0.05);
-      border: 1px dashed #27272a;
-      color: #52525b;
+      border: 1px dashed #D1D5DB;
+      color: #6B7280;
       font-style: italic;
     }
     .mapping-arrow {
-      color: #27272a;
+      color: #9CA3AF;
       font-size: 1rem;
       flex-shrink: 0;
     }
@@ -411,10 +411,10 @@
       padding: 0 0.6rem;
       height: 38px;
       box-sizing: border-box;
-      background: #0f1117;
-      border: 1px solid rgba(59, 130, 246, 0.2);
+      background: #FFFFFF;
+      border: 1px solid rgba(59, 130, 246, 0.3);
       border-radius: 6px;
-      color: #93c5fd;
+      color: #111827;
       font-size: 0.82rem;
       line-height: 38px;
       cursor: pointer;
@@ -485,11 +485,11 @@
     .topbar-back {
       display: inline-flex; align-items: center; gap: 0.35rem;
       padding: 0.35rem 0.7rem; border-radius: 6px;
-      border: 1px solid #27272a; background: transparent;
-      color: #71717a; font-size: 0.75rem; font-weight: 500;
+      border: 1px solid #E5E7EB; background: transparent;
+      color: #374151; font-size: 0.75rem; font-weight: 500;
       cursor: pointer; transition: all 0.15s; white-space: nowrap;
     }
-    .topbar-back:hover { border-color: #3b82f6; color: #93c5fd; }
+    .topbar-back:hover { border-color: #3b82f6; color: #1D4ED8; }
 
     /* ─── Confirm modal ─── */
     .confirm-overlay {
@@ -499,8 +499,9 @@
     }
     .confirm-overlay.open { display: flex; }
     .confirm-box {
-      background: #13141b; border: 1px solid #27272a; border-radius: 14px;
+      background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px;
       padding: 2rem; width: 380px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     .confirm-box .warn-icon { font-size: 2.2rem; margin-bottom: 0.8rem; }
     .confirm-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: #fbbf24; }
@@ -587,6 +588,14 @@
           <input type="text" id="md-form-id" placeholder="np. d908ee01-0b7d-44a0-a494-a707ab5a55ef" style="flex:1;margin-bottom:0;" />
           <button class="btn btn-primary" id="btn-fetch-md">Pobierz pola</button>
         </div>
+        <div class="field-guidance" style="margin-top:8px;background:#F0F9FF;border-left:3px solid #3B82F6;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#374151;">
+          <strong>Gdzie znajdziesz numer formularza?</strong>
+          <ol style="margin:6px 0 0 16px;padding:0;">
+            <li>Otwórz Medidesk i zaloguj się</li>
+            <li>Przejdź do: <em>Formularze &rarr; Lista formularzy</em></li>
+            <li>Kliknij właściwy formularz — skopiuj numer z nagłówka lub adresu strony</li>
+          </ol>
+        </div>
       </div>
 
       <div class="card" id="md-fields-card" style="display:none;">
@@ -620,7 +629,7 @@
           <label for="integration-name-input" style="display:block;font-size:0.78rem;color:#93c5fd;font-weight:600;margin-bottom:0.4rem;">Nazwa integracji</label>
           <input type="text" id="integration-name-input"
                  placeholder="np. Warszawa — formularz wakacje (nazwa pojawi się na liście)"
-                 style="width:100%;box-sizing:border-box;padding:0.55rem 0.8rem;background:#0a0a0f;border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#e4e4e7;font-size:0.88rem;" />
+                 style="width:100%;box-sizing:border-box;padding:0.55rem 0.8rem;background:#FFFFFF;border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#111827;font-size:0.88rem;" />
           <div style="margin-top:0.3rem;font-size:0.7rem;color:#71717a;">Opcjonalne — jeśli puste, użyjemy domyślnej „Formularz FB → Formularz Medidesk".</div>
         </div>
 
@@ -678,6 +687,8 @@
   <div class="toast" id="toast"></div>
 
   <script>
+
+
     // ─── Confirm exit ────────────────────────────────────
     function confirmExit() {
       document.getElementById('confirm-exit-modal').classList.add('open');
@@ -976,7 +987,7 @@
             acc.innerHTML = `
               <div class="accordion-header${isActive ? ' open' : ''}">
                 <span class="arrow">▶</span>
-                <span class="status-pill ${statusCls}">${status}</span>
+                <span class="status-pill ${statusCls}">${status === 'ACTIVE' ? 'Działa' : status === 'ARCHIVED' ? 'Wyłączone' : status}</span>
                 <span>${status === 'ACTIVE' ? 'Aktywne formularze' : status === 'ARCHIVED' ? 'Zarchiwizowane' : status}</span>
                 <span class="count">${items.length}</span>
               </div>
@@ -1075,7 +1086,7 @@
           dot.style.borderColor = '#3b82f6';
           dot.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;"></div>';
         } else {
-          dot.style.borderColor = '#27272a';
+          dot.style.borderColor = '#D1D5DB';
           dot.innerHTML = '';
         }
       });
@@ -1117,7 +1128,7 @@
 
         state.mdFields.forEach(f => {
           const el = document.createElement('div');
-          el.style.cssText = 'display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;border-bottom:1px solid #1a1b25;';
+          el.style.cssText = 'display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;border-bottom:1px solid #E5E7EB;';
 
           const typeIcon = {
             'TEXT_AREA': '📝', 'EMAIL': '✉️', 'PHONE': '📱',
@@ -1243,16 +1254,16 @@
       const unusedVirtuals = VIRTUAL_FIELDS.filter(vf => !mappedFb.has(vf.key));
       if (unusedVirtuals.length > 0) {
         const addRow = document.createElement('div');
-        addRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.8rem;padding:0.5rem;border:1px dashed #27272a;border-radius:10px;';
+        addRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.8rem;padding:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
         const opts = unusedVirtuals.map(vf =>
           `<option value="${vf.key}">${vf.label}</option>`
         ).join('');
         addRow.innerHTML = `
-          <select id="add-virtual-select" style="flex:1;background:#111218;border:1px solid #27272a;color:#a1a1aa;padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+          <select id="add-virtual-select" style="flex:1;background:#FFFFFF;border:1px solid #E5E7EB;color:#374151;padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;">
             <option value="">➕ Dodaj pole meta-danych...</option>
             ${opts}
           </select>
-          <button id="btn-add-virtual" class="btn" style="background:#27272a;color:#a1a1aa;font-size:0.75rem;padding:0.4rem 0.8rem;" disabled>Dodaj</button>
+          <button id="btn-add-virtual" class="btn" style="background:#F3F4F6;color:#374151;font-size:0.75rem;padding:0.4rem 0.8rem;" disabled>Dodaj</button>
         `;
         container.appendChild(addRow);
 
@@ -1268,10 +1279,10 @@
 
       // "Add constant value" row
       const constRow = document.createElement('div');
-      constRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.5rem;border:1px dashed #27272a;border-radius:10px;';
+      constRow.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.5rem;border:1px dashed #D1D5DB;border-radius:10px;';
       constRow.innerHTML = `
-        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="flex:1;background:#111218;border:1px solid #27272a;color:#e4e4e7;padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;" />
-        <button id="btn-add-const" class="btn" style="background:#27272a;color:#a1a1aa;font-size:0.75rem;padding:0.4rem 0.8rem;" disabled>Dodaj</button>
+        <input type="text" id="const-value-input" placeholder="✏️ Stała wartość..." style="flex:1;background:#FFFFFF;border:1px solid #E5E7EB;color:#111827;padding:0.4rem 0.6rem;border-radius:6px;font-size:0.78rem;" />
+        <button id="btn-add-const" class="btn" style="background:#F3F4F6;color:#374151;font-size:0.75rem;padding:0.4rem 0.8rem;" disabled>Dodaj</button>
       `;
       container.appendChild(constRow);
 
@@ -1333,7 +1344,7 @@
           <div style="font-size:0.72rem;color:#a78bfa;margin-bottom:0.4rem;">💡 ${hint}</div>
           <div style="display:flex;gap:0.4rem;align-items:center;">
             <input type="text" class="const-input" value="${defaultVal.replace(/"/g,'&quot;')}" placeholder="np. true"
-                   style="flex:1;padding:0.4rem 0.6rem;background:#0a0a0f;border:1px solid rgba(139,92,246,0.4);border-radius:6px;color:#e4e4e7;font-size:0.85rem;" />
+                   style="flex:1;padding:0.4rem 0.6rem;background:#FFFFFF;border:1px solid rgba(139,92,246,0.4);border-radius:6px;color:#111827;font-size:0.85rem;" />
             <button class="btn btn-primary btn-apply-const" style="padding:0.4rem 0.9rem;font-size:0.8rem;">✓ Dodaj</button>
             <button class="btn btn-outline btn-cancel-const" style="padding:0.4rem 0.8rem;font-size:0.8rem;">Anuluj</button>
           </div>
@@ -1394,7 +1405,7 @@
       const rowsHtml = missing.map(f => `
         <div id="missing-row-${f.fieldId}" style="padding:0.55rem 0.7rem;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:8px;margin-top:0.45rem;">
           <div style="display:grid;grid-template-columns:minmax(0,1fr) auto 20px auto;gap:0.55rem;align-items:center;">
-            <select class="fb-quickmap-select" data-md="${f.fieldId}" style="padding:0.4rem 0.55rem;background:#0a0a0f;border:1px solid rgba(34,197,94,0.3);border-radius:6px;color:#86efac;font-size:0.8rem;min-width:0;">${fbOpts}</select>
+            <select class="fb-quickmap-select" data-md="${f.fieldId}" style="padding:0.4rem 0.55rem;background:#FFFFFF;border:1px solid rgba(34,197,94,0.3);border-radius:6px;color:#374151;font-size:0.8rem;min-width:0;">${fbOpts}</select>
             <button class="btn btn-outline btn-open-const" data-md="${f.fieldId}" style="padding:0.4rem 0.7rem;font-size:0.78rem;border-color:rgba(139,92,246,0.5);color:#a78bfa;white-space:nowrap;">📌 Stała wartość</button>
             <span style="color:#52525b;text-align:center;font-size:0.9rem;">→</span>
             <code style="background:rgba(245,158,11,0.15);padding:0.2rem 0.55rem;border-radius:5px;color:#fbbf24;font-weight:600;font-size:0.82rem;white-space:nowrap;">${f.fieldId}<span style="color:#71717a;font-weight:400;font-size:0.68rem;margin-left:0.4rem;">wymagane</span></code>
@@ -1445,7 +1456,7 @@
       let chipStyle;
       if (isConst) {
         const constVal = fbField.replace('__const:', '').replace('__', '');
-        displayName = `📌 Stała: "${constVal}"`;
+        displayName = `Wypełniane automatycznie: „${constVal}"`;
         chipStyle = 'border-style:dashed;border-color:#8b5cf6;opacity:0.9;';
       } else if (isVirtual) {
         displayName = virtualLabels[fbField] || fbField;
