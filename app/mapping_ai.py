@@ -31,10 +31,15 @@ SYNONYMS: dict[str, list[str]] = {
     ],
     "email": [
         "email", "e-mail", "mail", "adres email", "adres e-mail", "e_mail",
+        "email kontaktowy", "e-mail kontaktowy", "mail kontaktowy",
+        "adres mail", "adres-email", "adres-e-mail",
     ],
     "phone": [
         "phone", "telefon", "phone_number", "tel", "numer telefonu",
         "numer_telefonu", "mobile", "komórka", "komorka",
+        "telefon kontaktowy", "telefon-kontaktowy", "numer kontaktowy",
+        "numer-kontaktowy", "tel kontaktowy", "kontakt telefon",
+        "nr telefonu", "nr_telefonu", "nr-telefonu",
     ],
     "message": [
         "message", "wiadomosc", "wiadomość", "dodatkowa informacja",

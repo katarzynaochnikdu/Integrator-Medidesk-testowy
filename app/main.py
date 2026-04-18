@@ -39,12 +39,38 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _session_facility_ids(session: dict) -> set[str]:
+    """All facility IDs the session user has access to.
+
+    Includes the primary `facility_id` from the session PLUS every secondary
+    membership from `user_facilities`. Without pulling memberships we reject
+    users who legitimately belong to multiple facilities — they'd get 403 on
+    anything outside their "primary" facility, even leads from integrations
+    they're explicitly assigned to.
+    """
+    ids: set[str] = set()
+    primary = (session.get("facility_id") or "").strip()
+    if primary:
+        ids.add(primary)
+    fb_user_id = session.get("fb_user_id") or (session.get("user") or {}).get("id") or ""
+    if fb_user_id:
+        try:
+            from app.users_store import list_user_facilities
+            for m in list_user_facilities(fb_user_id, only_active=True):
+                if m.facility_id:
+                    ids.add(m.facility_id)
+        except Exception:
+            # Never let membership lookup explode an access check — fall back
+            # to primary-only (previous behavior) if storage is unavailable.
+            pass
+    return ids
+
+
 def _check_integration_access(integration, session: dict) -> bool:
     """Verify the session user owns this integration (or is admin)."""
     if session.get("role") == "admin":
         return True
-    facility_id = session.get("facility_id", "")
-    return bool(facility_id and integration.facility_id == facility_id)
+    return bool(integration.facility_id and integration.facility_id in _session_facility_ids(session))
 
 
 def _audit(request: Request, session: dict, action: str, *, integration_id: str = "",
@@ -869,14 +895,15 @@ async def delete_lead(lead_id: str, request: Request, _session=Depends(require_a
     if not rows:
         return JSONResponse(status_code=404, content={"error": "Lead not found"})
 
-    # Facility scoping: non-admin may only delete their own facility's leads.
+    # Facility scoping: non-admin may delete leads from ANY facility they're
+    # a member of (primary OR secondary), not only their session's primary.
     if _session.get("role") != "admin":
-        facility_id = _session.get("facility_id", "")
-        if not facility_id:
+        allowed_facilities = _session_facility_ids(_session)
+        if not allowed_facilities:
             return JSONResponse(status_code=403, content={"error": "Brak dostępu"})
         for r in rows:
             integ = get_integration(r["integration_id"])
-            if not integ or integ.facility_id != facility_id:
+            if not integ or integ.facility_id not in allowed_facilities:
                 return JSONResponse(status_code=403, content={"error": "Brak dostępu do tego leada"})
 
     conn.execute("DELETE FROM lead_events WHERE lead_id = ?", (lead_id,))

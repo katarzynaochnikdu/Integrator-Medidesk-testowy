@@ -945,6 +945,12 @@
       if (t === 'EMAIL' || t === 'WORK_EMAIL') return 'email';
       if (t === 'PHONE' || t === 'WORK_PHONE_NUMBER') return 'phone';
       if (t === 'DOB' || t === 'BIRTHDAY') return 'date';
+      // Consent checkboxes synthesized from FB legal_content arrive as type
+      // "CHECKBOX". Without this branch they fell into the default "text"
+      // bucket which made every MD boolean/checkbox field show as 🚫 blocked
+      // (checkTypeCompat's `md==='checkbox' && fb!=='checkbox'` rule fired)
+      // — user couldn't map a single consent to an MD checkbox.
+      if (t === 'CHECKBOX' || t === 'BOOLEAN' || t === 'CONSENT' || t === 'BOOL') return 'checkbox';
       if (t === 'CUSTOM' || t === '') return 'custom';
       // FULL_NAME, FIRST_NAME, LAST_NAME, CITY, STATE, ZIP, STREET_ADDRESS, etc.
       return 'text';
@@ -2126,11 +2132,13 @@
         // structured (compliance log vs simple yes/no).
         const consentKind = (fbQuestion && fbQuestion.consent_kind) || 'checkbox';
         const labelTxt = consentLabel || fbField;
+        // Explicit "(checkbox)" / "(tekst)" suffix — the icon alone (🔒 vs 📝)
+        // was too subtle when the FB label is identical between the pair.
         if (consentKind === 'text') {
-          displayName = `📝 ${labelTxt}`;
+          displayName = `📝 ${labelTxt} (tekst)`;
           chipStyle = 'border-style:dashed;border-color:rgba(99,102,241,0.5);color:#3730a3;background:rgba(99,102,241,0.06);';
         } else {
-          displayName = `🔒 ${labelTxt}`;
+          displayName = `🔒 ${labelTxt} (checkbox)`;
           chipStyle = 'border-style:dashed;border-color:rgba(139,92,246,0.5);color:#5b21b6;background:rgba(139,92,246,0.06);';
         }
         const kindHint = consentKind === 'text'

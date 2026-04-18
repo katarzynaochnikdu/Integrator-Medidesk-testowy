@@ -2219,6 +2219,11 @@
       if (t === 'EMAIL' || t === 'WORK_EMAIL') return 'email';
       if (t === 'PHONE' || t === 'WORK_PHONE_NUMBER') return 'phone';
       if (t === 'DOB' || t === 'BIRTHDAY') return 'date';
+      // Consent checkboxes synthesized from FB legal_content arrive as type
+      // "CHECKBOX" — must map to 'checkbox' logical bucket so they pair
+      // cleanly with MD boolean fields. Without this they fell to 'text' and
+      // every MD checkbox showed 🚫 blocked.
+      if (t === 'CHECKBOX' || t === 'BOOLEAN' || t === 'CONSENT' || t === 'BOOL') return 'checkbox';
       if (t === 'CUSTOM' || t === '') return 'custom';
       return 'text';
     }
