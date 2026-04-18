@@ -2032,14 +2032,14 @@
         const q = getQuestion(m.fb_field);
         const isConsentText = q && q.is_consent && q.consent_kind === 'text';
         let fbLabel = formatFbField(m.fb_field);
+        const fullLabel = fbLabel.replace(/"/g, '&quot;');
         // Truncate long consent text labels to 80 chars
         if (isConsentText && fbLabel.length > 80) {
-          const full = fbLabel.replace(/"/g, '&quot;');
-          fbLabel = `<span title="${full}">${fbLabel.substring(0, 77)}…</span>`;
+          fbLabel = `<span title="${fullLabel}">${fbLabel.substring(0, 77)}…</span>`;
         }
         return `
         <tr>
-          <td class="fb-col" title="${(m.fb_field || '').replace(/"/g,'&quot;')}">${fbLabel}</td>
+          <td class="fb-col" title="${fullLabel}">${fbLabel}</td>
           <td class="arrow">→</td>
           <td class="md-col">${m.medidesk_field}</td>
         </tr>`;
