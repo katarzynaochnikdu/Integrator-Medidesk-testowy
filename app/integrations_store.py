@@ -250,6 +250,9 @@ def update_integration(integration_id: str, **updates: Any) -> Integration | Non
                 params.append(json.dumps([asdict(m) for m in v], ensure_ascii=False))
             else:
                 params.append(json.dumps(v, ensure_ascii=False))
+        elif k in ("medidesk_fields", "fb_form_questions"):
+            set_clauses.append(f"{k} = ?")
+            params.append(json.dumps(v or [], ensure_ascii=False))
         elif k in simple_fields:
             set_clauses.append(f"{k} = ?")
             params.append(v)

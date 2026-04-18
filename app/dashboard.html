@@ -603,7 +603,6 @@
   <div class="main">
     <div class="main-header">
       <h2 id="section-title">Przegląd</h2>
-      <button class="btn btn-primary" onclick="location.href='/setup'">➕ Nowa integracja</button>
     </div>
     <div class="main-content">
 
@@ -659,14 +658,7 @@
           <input type="text" id="integrations-search" placeholder="Szukaj..." style="width:100%; background:#FFFFFF; border:1px solid #E5E7EB; color:#111827; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:8px; font-size:0.85rem; outline:none;" oninput="renderIntegrationsList()">
           <span style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); font-size:0.9rem; opacity:0.5;">🔍</span>
         </div>
-        <div style="display:flex;gap:10px;margin-bottom:16px;">
-          <select onchange="filterIntegrationsByStatus(this.value)" style="padding:6px 12px;border:1px solid #E5E7EB;border-radius:6px;font-size:14px;background:#fff;color:#111827;">
-            <option value="all">Wszystkie</option>
-            <option value="active">Działające</option>
-            <option value="error">Z problemem</option>
-            <option value="inactive">Wyłączone</option>
-          </select>
-        </div>
+        <div id="integrations-filter-chips" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;"></div>
         <div id="integrations-list"></div>
       </div>
 
@@ -1118,6 +1110,58 @@
       renderIntegrationsList();
     }
 
+    let integrationsFilter = 'all';
+
+    function setIntegrationsFilter(val) {
+      integrationsFilter = val;
+      renderIntegrationsList();
+    }
+
+    function classifyIntegration(i) {
+      const s = i.stats || { total: 0, sent: 0, failed: 0, last_lead_at: '' };
+      if (!i.active) return { key: 'inactive', color: '#9CA3AF', bg: '#F3F4F6', label: 'Wyłączona' };
+      if (s.failed > 0) return { key: 'error', color: '#DC2626', bg: '#FEF2F2', label: 'Problem' };
+      if (s.total === 0) return { key: 'empty', color: '#9CA3AF', bg: '#F3F4F6', label: 'Brak leadów' };
+      const lastTs = s.last_lead_at ? new Date(s.last_lead_at).getTime() : 0;
+      const daysSince = lastTs ? (Date.now() - lastTs) / 86400000 : 999;
+      if (daysSince > 7) return { key: 'idle', color: '#F59E0B', bg: '#FFFBEB', label: 'Bez ruchu' };
+      return { key: 'ok', color: '#16A34A', bg: '#F0FDF4', label: 'Działa' };
+    }
+
+    function relativeTime(iso) {
+      if (!iso) return 'brak';
+      const d = new Date(iso).getTime();
+      if (!d) return 'brak';
+      const s = Math.floor((Date.now() - d) / 1000);
+      if (s < 60) return 'przed chwilą';
+      if (s < 3600) return `${Math.floor(s/60)} min temu`;
+      if (s < 86400) return `${Math.floor(s/3600)} h temu`;
+      const days = Math.floor(s/86400);
+      if (days < 30) return `${days} d temu`;
+      return new Date(iso).toLocaleDateString('pl-PL');
+    }
+
+    function renderFilterChips(counts) {
+      const chips = [
+        { val: 'all',      label: 'Wszystkie',     count: counts.all },
+        { val: 'error',    label: '🔴 Problem',    count: counts.error },
+        { val: 'idle',     label: '🟡 Bez ruchu',  count: counts.idle },
+        { val: 'ok',       label: '🟢 Działa',     count: counts.ok },
+        { val: 'inactive', label: '⚪ Wyłączone',   count: counts.inactive },
+      ];
+      const wrap = document.getElementById('integrations-filter-chips');
+      if (!wrap) return;
+      wrap.innerHTML = chips.map(c => {
+        const active = integrationsFilter === c.val;
+        const bg = active ? '#111827' : '#FFFFFF';
+        const fg = active ? '#FFFFFF' : '#374151';
+        const bd = active ? '#111827' : '#E5E7EB';
+        return `<button onclick="setIntegrationsFilter('${c.val}')" style="padding:6px 12px;border:1px solid ${bd};background:${bg};color:${fg};border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ${c.label}<span style="font-size:11px;opacity:0.75;background:${active?'rgba(255,255,255,0.2)':'#F3F4F6'};padding:1px 6px;border-radius:999px;">${c.count}</span>
+        </button>`;
+      }).join('');
+    }
+
     function renderIntegrationsList() {
       let integrations = [...allIntegrationsData];
       const query = document.getElementById('integrations-search').value.toLowerCase().trim();
@@ -1159,90 +1203,116 @@
         filterMsgContainer.style.display = 'none';
       }
 
+      // Compute filter counts BEFORE applying status filter
+      const counts = { all: integrations.length, error: 0, idle: 0, ok: 0, empty: 0, inactive: 0 };
+      integrations.forEach(i => { counts[classifyIntegration(i).key]++; });
+      renderFilterChips(counts);
+
+      // Apply status filter
+      if (integrationsFilter !== 'all') {
+        integrations = integrations.filter(i => classifyIntegration(i).key === integrationsFilter);
+      }
+
       if (integrations.length === 0) {
         if (query) {
           container.innerHTML = `
             <div class="empty-state">
               <div class="icon">🔍</div>
               <h3>Brak wyników</h3>
-              <p>Nie odnaleziono integracji pasujących do frazy: <strong>${document.getElementById('integrations-search').value}</strong></p>
-            </div>
-          `;
+              <p>Nie znaleziono połączeń dla: <strong>${document.getElementById('integrations-search').value}</strong></p>
+            </div>`;
+        } else if (integrationsFilter !== 'all') {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">✨</div>
+              <h3>Nic do pokazania w tym widoku</h3>
+              <p>Wybierz inny filtr lub <a style="color:#3B82F6;cursor:pointer;" onclick="setIntegrationsFilter('all')">pokaż wszystkie</a>.</p>
+            </div>`;
         } else {
           container.innerHTML = `
             <div class="empty-state">
               <div class="icon">🔗</div>
-              <h3>Brak integracji</h3>
-              <p>Dodaj pierwszą integrację łączącą Facebook Lead Ads z Medidesk.</p>
-              <button class="btn btn-primary" style="margin-top:1rem;" onclick="location.href='/setup'">➕ Dodaj integrację</button>
-            </div>
-          `;
+              <h3>Jeszcze żadnego połączenia</h3>
+              <p>Zacznij od połączenia formularza Facebook z Medidesk — zajmie Ci to ~90 sekund.</p>
+              <button class="btn btn-primary" style="margin-top:1rem;" onclick="location.href='/setup'">➕ Utwórz pierwsze połączenie</button>
+            </div>`;
         }
         return;
       }
 
       container.innerHTML = integrations.map(i => {
-        const stats = i.stats || { total: 0, sent: 0, failed: 0, success_rate: 0 };
-        const statusClass = i.active ? 'status-active' : 'status-inactive';
-        const statusLabel = i.active ? 'Aktywna' : 'Nieaktywna';
-        const toggleLabel = i.active ? 'Dezaktywuj' : 'Aktywuj';
-        const toggleAction = i.active ? 'deactivate' : 'activate';
-        const toggleClass = i.active ? 'btn-warning' : 'btn-success';
-        const dataStatus = i.active ? 'active' : 'inactive';
-        const statusColor = i.active ? '#16A34A' : (stats.failed > 0 ? '#DC2626' : '#9CA3AF');
-
-        // Display name = user-provided integration label, fall back to auto-generated if missing.
+        const s = i.stats || { total: 0, sent: 0, failed: 0, success_rate: 0, last_lead_at: '' };
+        const cls = classifyIntegration(i);
         const displayName = (i.name && i.name.trim()) || `${i.fb_form_name} → ${i.medidesk_form_name || i.medidesk_form_id}`;
-        // Context line under the name — only show if the user set a custom name (avoid duplication).
-        const showContext = !!(i.name && i.name.trim());
+        const contextLine = `${i.fb_page_name} · ${i.fb_form_name} → ${i.medidesk_form_name || i.medidesk_form_id}`;
+
+        let primaryCta, subText;
+        if (cls.key === 'error') {
+          primaryCta = `<button class="btn btn-sm btn-primary" style="background:#DC2626;border-color:#DC2626;" onclick="openRoom('${i.id}')">Napraw teraz →</button>`;
+          subText = `<span style="color:#B91C1C;font-weight:500;">⚠ ${s.failed} ${s.failed === 1 ? 'lead nie dotarł' : 'leadów nie dotarło'} do Medidesk</span>`;
+        } else if (cls.key === 'idle') {
+          primaryCta = `<button class="btn btn-sm btn-outline" onclick="openRoom('${i.id}')">Sprawdź →</button>`;
+          subText = `<span style="color:#92400E;">Brak leadów — ostatni: ${relativeTime(s.last_lead_at)}</span>`;
+        } else if (cls.key === 'empty') {
+          primaryCta = `<button class="btn btn-sm btn-outline" onclick="openRoom('${i.id}')">Otwórz →</button>`;
+          subText = `<span style="color:#6B7280;">Czeka na pierwszy lead</span>`;
+        } else if (cls.key === 'inactive') {
+          primaryCta = `<button class="btn btn-sm btn-success" onclick="toggleIntegration('${i.id}','activate')">Włącz</button>`;
+          subText = `<span style="color:#6B7280;">Połączenie wyłączone — leady nie trafiają do Medidesk</span>`;
+        } else {
+          primaryCta = `<button class="btn btn-sm btn-outline" onclick="openRoom('${i.id}')">Otwórz →</button>`;
+          const lastTxt = s.last_lead_at ? `ostatni ${relativeTime(s.last_lead_at)}` : 'gotowe na leady';
+          subText = `<span style="color:#166534;">${s.sent} dostarczonych · ${lastTxt}</span>`;
+        }
 
         return `
-        <div class="int-card" data-id="${i.id}" data-status="${dataStatus}" style="display:flex; align-items:center; justify-content:space-between; padding:0.8rem 1rem; gap:1rem; margin-bottom:0.6rem;">
-          <!-- Left: Icon & Names -->
-          <div style="display:flex; align-items:center; gap:0.8rem; flex:1; min-width:0;">
-            <div style="width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(24,119,242,0.15);border:1px solid rgba(24,119,242,0.3);color:#60a5fa;font-size:0.7rem;font-weight:800;letter-spacing:0.03em;flex-shrink:0;">FB</div>
-            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:0.25rem;">
-              <div style="display:flex; align-items:center; gap:0.5rem;">
-                <span style="width:10px;height:10px;border-radius:50%;background:${statusColor};display:inline-block;flex-shrink:0;"></span>
-                <span class="name" title="${displayName}" style="font-size:0.92rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${displayName}</span>
-                <div class="int-card-status ${statusClass}" style="transform:scale(0.8); transform-origin:left; margin:0; padding:0.15rem 0.5rem;">
-                  <div class="status-dot"></div>${statusLabel}
-                </div>
+        <div class="int-tile" data-id="${i.id}" data-status="${cls.key}"
+             style="background:#FFFFFF;border:1px solid #E5E7EB;border-left:4px solid ${cls.color};border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;transition:box-shadow 0.15s;"
+             onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseout="this.style.boxShadow=''">
+
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <span style="font-size:0.95rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;" title="${displayName}">${displayName}</span>
+              <span style="background:${cls.bg};color:${cls.color};font-size:0.68rem;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;">${cls.label}</span>
+            </div>
+            <div style="font-size:0.72rem;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;" title="${contextLine}">${contextLine}</div>
+            <div style="font-size:0.78rem;">${subText}</div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:center;white-space:nowrap;color:#6B7280;font-size:0.78rem;">
+            <div style="text-align:right;"><div style="font-weight:600;color:#111827;font-size:1rem;">${s.total}</div><div style="font-size:0.65rem;">leadów</div></div>
+            <div style="text-align:right;"><div style="font-weight:600;color:${s.failed>0?'#DC2626':'#111827'};font-size:1rem;">${s.failed}</div><div style="font-size:0.65rem;">błędów</div></div>
+          </div>
+
+          <div style="display:flex;gap:6px;align-items:center;">
+            ${primaryCta}
+            <div style="position:relative;">
+              <button class="btn btn-sm btn-outline" style="padding:4px 8px;" onclick="toggleTileMenu('${i.id}', event)">⋯</button>
+              <div id="tile-menu-${i.id}" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #E5E7EB;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);z-index:10;min-width:160px;padding:4px;">
+                <button style="display:block;width:100%;text-align:left;padding:8px 12px;background:transparent;border:none;font-size:0.8rem;color:#374151;cursor:pointer;border-radius:4px;" onclick="openRoom('${i.id}')" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">📋 Szczegóły i leady</button>
+                <button style="display:block;width:100%;text-align:left;padding:8px 12px;background:transparent;border:none;font-size:0.8rem;color:#374151;cursor:pointer;border-radius:4px;" onclick="toggleIntegration('${i.id}','${i.active?'deactivate':'activate'}')" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">${i.active?'⏸ Wyłącz':'▶ Włącz'}</button>
+                <div style="height:1px;background:#E5E7EB;margin:4px 0;"></div>
+                <button style="display:block;width:100%;text-align:left;padding:8px 12px;background:transparent;border:none;font-size:0.8rem;color:#DC2626;cursor:pointer;border-radius:4px;" onclick="deleteIntegration('${i.id}')" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">🗑 Usuń połączenie</button>
               </div>
-              ${showContext ? `
-              <div style="font-size:0.68rem; color:#71717a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                ${i.fb_page_name} · ${i.fb_form_name} → ${i.medidesk_form_name || i.medidesk_form_id}
-              </div>` : `
-              <div class="int-card-flow" style="margin:0; padding:0; background:transparent; font-size:0.7rem;">
-                <span style="color:#71717a;">${i.fb_page_name}</span>
-              </div>`}
             </div>
           </div>
-
-          <!-- Middle: Stats block -->
-          <div class="int-card-stats" style="flex-direction:column; gap:0.25rem; align-items:flex-end; white-space:nowrap; margin-right:1rem;">
-            <div style="display:flex; gap:0.8rem;">
-              <span style="min-width:70px;text-align:right;"><strong>${stats.total}</strong> leadów</span>
-              <span style="min-width:75px;text-align:right;"><strong>${stats.sent}</strong> wysłanych</span>
-            </div>
-            <div style="display:flex; gap:0.8rem;">
-              <span style="min-width:70px;text-align:right;color:#f87171;"><strong>${stats.failed}</strong> błędów</span>
-              <span style="min-width:75px;text-align:right;"><strong>${stats.success_rate}%</strong> sukcesu</span>
-            </div>
-          </div>
-
-          <!-- Right: Actions -->
-          <div class="int-card-actions" style="margin:0; padding:0; border:none; flex-direction:column; gap:0.3rem; width:130px; align-items:stretch;">
-            <button class="btn btn-sm btn-outline" style="justify-content:center; padding:0.25rem;" onclick="openRoom('${i.id}')">📋 Szczegóły</button>
-            <div style="display:flex; gap:0.3rem;">
-              <button class="btn btn-sm ${toggleClass}" style="flex:1; padding:0.25rem; font-size:0.68rem; justify-content:center;" onclick="toggleIntegration('${i.id}', '${toggleAction}')">${toggleLabel}</button>
-              <button class="btn btn-sm btn-outline" style="flex:1; padding:0.25rem; font-size:0.68rem; color:#f87171; border-color:#451a1d; justify-content:center;" onclick="deleteIntegration('${i.id}')">Usuń</button>
-            </div>
-          </div>
-        </div>
-        `;
+        </div>`;
       }).join('');
     }
+
+    function toggleTileMenu(id, evt) {
+      if (evt) evt.stopPropagation();
+      document.querySelectorAll('[id^="tile-menu-"]').forEach(m => {
+        if (m.id !== `tile-menu-${id}`) m.style.display = 'none';
+      });
+      const menu = document.getElementById(`tile-menu-${id}`);
+      if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('[id^="tile-menu-"]') && !e.target.matches('button[onclick^="toggleTileMenu"]')) {
+        document.querySelectorAll('[id^="tile-menu-"]').forEach(m => m.style.display = 'none');
+      }
+    });
 
     async function toggleIntegration(id, action) {
       if (DEMO) {
@@ -1507,7 +1577,6 @@
     ];
 
     async function openEditMappingsModal() {
-      // 1. Fetch deep detail (in DEMO, use Mock or current memory)
       if (DEMO) {
         editState.integration = JSON.parse(JSON.stringify(MOCK_INTEGRATIONS.find(i => i.id === currentRoomId)));
       } else {
@@ -1519,12 +1588,30 @@
           return;
         }
       }
-      
-      // Clone mappings
+
       editState.mappings = (editState.integration.field_mappings || []).map(m => ({...m}));
-      
       document.getElementById('edit-mappings-modal').style.display = 'flex';
       renderEditMappings();
+
+      // Background refresh: pobierz aktualną definicję formularza Medidesk i przerenderuj
+      if (!DEMO) refreshMdFieldsInBackground();
+    }
+
+    async function refreshMdFieldsInBackground() {
+      try {
+        const resp = await apiFetch(`/api/integrations/${currentRoomId}/refresh-md-fields`, { method: 'POST' });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (!data.medidesk_fields) return;
+        const before = JSON.stringify(editState.integration.medidesk_fields || []);
+        editState.integration.medidesk_fields = data.medidesk_fields;
+        if (data.medidesk_form_name) editState.integration.medidesk_form_name = data.medidesk_form_name;
+        const after = JSON.stringify(data.medidesk_fields);
+        if (before !== after) {
+          renderEditMappings();
+          showToast('🔄 Odświeżono definicję formularza Medidesk', 'success');
+        }
+      } catch {}
     }
 
     function renderEditMappings() {

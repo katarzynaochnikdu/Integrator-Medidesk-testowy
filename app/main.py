@@ -458,6 +458,34 @@ async def get_integration_detail(integration_id: str, _session=Depends(require_a
     return data
 
 
+@app.post("/api/integrations/{integration_id}/refresh-md-fields")
+async def refresh_medidesk_fields(integration_id: str, _session=Depends(require_auth)):
+    """Re-fetch Medidesk form definition (name, fields, required flags, options) and update the cached copy."""
+    from app.integrations_store import get_integration, update_integration
+
+    integration = get_integration(integration_id)
+    if not integration:
+        return JSONResponse(status_code=404, content={"error": "Integration not found"})
+    if not _check_integration_access(integration, _session):
+        return JSONResponse(status_code=403, content={"error": "Brak dostępu do tej integracji"})
+
+    defn = await fetch_form_definition(integration.medidesk_form_id)
+    if not defn or not defn.fields:
+        return JSONResponse(status_code=502, content={"error": "Nie udało się pobrać aktualnej definicji formularza z Medidesk"})
+
+    fields = [
+        {"fieldId": f.field_id, "type": f.field_type, "required": f.required,
+         "name": f.name, "options": f.options}
+        for f in defn.fields
+    ]
+    update_integration(
+        integration_id,
+        medidesk_fields=fields,
+        medidesk_form_name=defn.name or integration.medidesk_form_name,
+    )
+    return {"status": "ok", "medidesk_fields": fields, "medidesk_form_name": defn.name}
+
+
 @app.put("/api/integrations/{integration_id}/mappings")
 async def update_mappings(integration_id: str, request: Request, _session=Depends(require_write_role)):
     """Update field mappings for an existing integration."""
