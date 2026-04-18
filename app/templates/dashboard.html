@@ -1951,16 +1951,16 @@
       }
 
       // Set titles. Subtitle shows the FB→Medidesk chain so the title can be the user-given name.
-      const hasCustomName = !!(integration.name && integration.name.trim());
+      const hasName = !!(integration.name && integration.name.trim());
       const chain = `${integration.fb_form_name} → ${integration.medidesk_form_name || integration.medidesk_form_id}`;
-      const roomTitle = hasCustomName ? integration.name.trim() : chain;
+      const roomTitle = hasName ? integration.name.trim() : chain;
       _currentRoomIntegration = integration;
       // Refresh the Pause/Wznów button label + color based on the integration's
       // current active state. Done here (after _currentRoomIntegration is set)
       // so it runs on every openRoom + every refresh cycle.
       refreshRoomActionButtons();
       document.getElementById('room-title').textContent = roomTitle;
-      document.getElementById('room-subtitle').textContent = hasCustomName
+      document.getElementById('room-subtitle').textContent = (hasName && integration.name.trim() !== chain)
         ? `${integration.fb_page_name} · ${chain}`
         : `Strona FB: ${integration.fb_page_name}`;
 
