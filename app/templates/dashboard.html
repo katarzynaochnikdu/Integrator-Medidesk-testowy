@@ -112,7 +112,7 @@
     /* ─── KPI Grid ─── */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
@@ -586,7 +586,7 @@
       .sidebar { display: none; }
       .main { margin-left: 0; }
       .main-content { padding: 1rem; }
-      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     /* ─── Login screen ─── */
@@ -753,7 +753,7 @@
             <div class="sub">pomyślnie przesłane</div>
           </div>
           <div class="kpi-card kpi-yellow">
-            <div class="label">Success rate</div>
+            <div class="label">Sukces</div>
             <div class="value" id="kpi-rate">—</div>
             <div class="sub">procent sukcesu</div>
           </div>
@@ -1966,7 +1966,7 @@
         <div class="kpi-card kpi-blue"><div class="label">Leady</div><div class="value">${stats.total}</div></div>
         <div class="kpi-card kpi-green"><div class="label">Wysłane</div><div class="value">${stats.sent}</div></div>
         <div class="kpi-card kpi-red"><div class="label">Błędy</div><div class="value">${failCount}</div></div>
-        <div class="kpi-card kpi-yellow"><div class="label">Success</div><div class="value">${stats.success_rate}%</div></div>
+        <div class="kpi-card kpi-yellow"><div class="label">Sukces</div><div class="value">${stats.success_rate}%</div></div>
       `;
 
       // Mapping table — render virtuals/constants/consents with friendly labels
