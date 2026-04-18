@@ -546,8 +546,24 @@
 
     <!-- STEP 1: Facebook -->
     <div class="step-panel active" id="step-1">
+      <!-- Sticky context banner — shows selected user + page once chosen, freeing space for the forms list below. -->
+      <div id="fb-sticky-banner" style="display:none;position:sticky;top:10px;z-index:20;margin-bottom:1rem;padding:0.65rem 1rem;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
+          <div id="sticky-user" style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#111827;"></div>
+          <span style="color:#D1D5DB;">·</span>
+          <div id="sticky-page" style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:#111827;"></div>
+          <button class="btn btn-sm btn-outline" id="sticky-change" style="margin-left:auto;padding:0.3rem 0.7rem;font-size:0.72rem;">Zmień</button>
+        </div>
+      </div>
+
       <div class="card" id="fb-login-card">
-        <div class="fb-login-box">
+        <!-- Session-check placeholder — shown while we decide whether user is already logged in.
+             Prevents the login button from flashing before a saved session resumes. -->
+        <div id="fb-session-check" style="display:flex;align-items:center;justify-content:center;gap:0.8rem;padding:2rem;color:#6B7280;font-size:0.9rem;">
+          <span class="spinner"></span>
+          <span>Sprawdzanie sesji Facebook…</span>
+        </div>
+        <div class="fb-login-box" id="fb-login-box" style="display:none;">
           <div class="icon">📘</div>
           <h2>Połącz się z Facebookiem</h2>
           <p>Zaloguj się, aby zobaczyć swoje strony i formularze Lead Ads.</p>
@@ -794,6 +810,14 @@
       });
     }
 
+    // Show the login button (called when we determine the user needs to sign in).
+    function showLoginButton() {
+      const check = document.getElementById('fb-session-check');
+      const box = document.getElementById('fb-login-box');
+      if (check) check.style.display = 'none';
+      if (box) box.style.display = '';
+    }
+
     // Check if returning from FB OAuth or resuming saved session
     const fbSession = params.get('fb_session');
     if (fbSession) {
@@ -810,7 +834,11 @@
       if (saved) {
         state.sessionId = saved;
         loadSession();
+      } else {
+        showLoginButton();
       }
+    } else {
+      showLoginButton();
     }
 
     // ─── Step 1: Facebook ───────────────────────────────
@@ -850,9 +878,10 @@
         // Fire-and-forget: load existing integrations to mark already-connected forms.
         loadExistingIntegrations();
       } catch (e) {
-        // Session expired — clear saved state
+        // Session expired — clear saved state, surface login button.
         localStorage.removeItem('md_fb_session');
         state.sessionId = null;
+        showLoginButton();
         showToast('Sesja wygasła — zaloguj się ponownie', 'error');
       }
     }
@@ -878,9 +907,10 @@
     }
 
     function showLoggedInUI() {
+      // Replace whole card (including the session-check spinner) with the logged-in summary.
       document.getElementById('fb-login-card').innerHTML = `
         <div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem;">
-          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;">${(state.user.name || '?')[0]}</div>
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;color:#FFFFFF;">${(state.user.name || '?')[0]}</div>
           <div>
             <div style="font-weight:600;font-size:0.9rem;">${state.user.name || 'Użytkownik FB'}</div>
             <div style="font-size:0.72rem;color:#52525b;">Zalogowano przez Facebook</div>
@@ -1201,28 +1231,31 @@
         const data = await resp.json();
         state.mappings = data.suggestions || [];
 
-        // Count unique Medidesk fields covered by the AI suggestions (one MD field can
-        // receive multiple FB fields — e.g. first_name + last_name → Imię-i-nazwisko —
-        // so "matched FB fields" ≠ "covered MD fields"). Operators care about MD coverage.
-        const mdFieldsTotal = (state.mdFields || []).length;
-        const mdCovered = new Set(
-          (data.suggestions || []).filter(s => s.medidesk_field).map(s => s.medidesk_field)
-        ).size;
-        const requiredMd = (state.mdFields || []).filter(f => f.required);
-        const requiredMissing = requiredMd.filter(f =>
-          !(data.suggestions || []).some(s => s.medidesk_field === (f.fieldId || f.id || f.name))
+        // Count coverage against REQUIRED Medidesk fields only — optional ones shouldn't
+        // drag the ratio down. Also note that one MD field can receive multiple FB fields
+        // (e.g. first_name + last_name → Imię-i-nazwisko); we count unique covered MD fields.
+        const suggestions = data.suggestions || [];
+        const coveredMd = new Set(
+          suggestions.filter(s => s.medidesk_field).map(s => s.medidesk_field)
         );
-        let msg = `AI dopasowało ${data.matched} z ${data.total_fb_fields} pól FB → pokryto ${mdCovered} z ${mdFieldsTotal} pól Medidesk.`;
-        if (requiredMissing.length > 0) {
-          msg += ` ⚠ Brakuje wymaganych: ${requiredMissing.map(f => f.name || f.fieldId).join(', ')}.`;
+        const requiredMd = (state.mdFields || []).filter(f => f.required);
+        const optionalMd = (state.mdFields || []).filter(f => !f.required);
+        const requiredCovered = requiredMd.filter(f => coveredMd.has(f.fieldId || f.id || f.name)).length;
+        const optionalCovered = optionalMd.filter(f => coveredMd.has(f.fieldId || f.id || f.name)).length;
+        const requiredMissing = requiredMd.filter(f => !coveredMd.has(f.fieldId || f.id || f.name));
+
+        const allRequiredDone = requiredMissing.length === 0;
+        let msg = `✓ Pokryto ${requiredCovered}/${requiredMd.length} wymaganych pól Medidesk`;
+        if (optionalMd.length > 0) msg += ` (+ ${optionalCovered}/${optionalMd.length} opcjonalnych)`;
+        msg += '.';
+        if (allRequiredDone) {
+          msg += ' Gotowe do zapisu — opcjonalne pola możesz dodać później.';
         } else {
-          msg += ' Użyj list aby poprawić.';
+          msg += ` ⚠ Brakuje wymaganych: ${requiredMissing.map(f => f.name || f.fieldId).join(', ')}.`;
         }
         const infoEl = document.getElementById('mapping-info-text');
         infoEl.textContent = msg;
-        if (requiredMissing.length > 0) {
-          infoEl.style.color = '#B45309';
-        }
+        infoEl.style.color = allRequiredDone ? '#047857' : '#B45309';
 
         renderMappings();
       } catch (e) {
@@ -1466,34 +1499,49 @@
         }))
         .join('');
 
-      // Row renderer — tone 'required' (red) or 'optional' (yellow)
+      // Row renderer — uses the same .mapping-row grid as real mappings so the whole list
+      // reads as one unified table. Left column = FB source selector (empty placeholder
+      // style), middle = ↔, right = MD target chip (tinted red/yellow), meta = "stała" btn.
       const buildRow = (f, tone) => {
         const palette = tone === 'required'
-          ? { bg:'rgba(239,68,68,0.06)', border:'rgba(239,68,68,0.35)', chipBg:'rgba(239,68,68,0.15)', chipText:'#DC2626', tagText:'wymagane' }
-          : { bg:'rgba(245,158,11,0.06)', border:'rgba(245,158,11,0.25)', chipBg:'rgba(245,158,11,0.15)', chipText:'#B45309', tagText:'opcjonalne' };
+          ? { chipBg:'rgba(239,68,68,0.1)', chipBorder:'rgba(239,68,68,0.35)', chipText:'#B91C1C', tagBg:'rgba(239,68,68,0.18)', tagText:'wymagane' }
+          : { chipBg:'rgba(245,158,11,0.1)', chipBorder:'rgba(245,158,11,0.3)', chipText:'#B45309', tagBg:'rgba(245,158,11,0.18)', tagText:'opcjonalne' };
         return `
-        <div id="missing-row-${f.fieldId}" style="padding:0.55rem 0.7rem;background:${palette.bg};border:1px solid ${palette.border};border-radius:8px;margin-top:0.45rem;">
-          <div style="display:grid;grid-template-columns:minmax(0,1fr) auto 20px auto;gap:0.55rem;align-items:center;">
-            <select class="fb-quickmap-select" data-md="${f.fieldId}" style="padding:0.4rem 0.55rem;background:#FFFFFF;border:1px solid rgba(34,197,94,0.3);border-radius:6px;color:#374151;font-size:0.8rem;min-width:0;">${fbOpts}</select>
-            <button class="btn btn-outline btn-open-const" data-md="${f.fieldId}" style="padding:0.4rem 0.7rem;font-size:0.78rem;border-color:rgba(139,92,246,0.5);color:#a78bfa;white-space:nowrap;">📌 Stała wartość</button>
-            <span style="color:#52525b;text-align:center;font-size:0.9rem;">→</span>
-            <code style="background:${palette.chipBg};padding:0.2rem 0.55rem;border-radius:5px;color:${palette.chipText};font-weight:600;font-size:0.82rem;white-space:nowrap;">${f.fieldId}<span style="color:#71717a;font-weight:400;font-size:0.68rem;margin-left:0.4rem;">${palette.tagText}</span></code>
+        <div id="missing-row-${f.fieldId}" class="mapping-row" style="border-bottom:1px solid #E5E7EB;">
+          <select class="fb-quickmap-select" data-md="${f.fieldId}"
+                  style="flex:1;width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:#6B7280;font-size:0.82rem;line-height:38px;cursor:pointer;">
+            ${fbOpts}
+          </select>
+          <span class="mapping-arrow" style="text-align:center;">↔</span>
+          <div class="field-chip" style="background:${palette.chipBg};border:1px solid ${palette.chipBorder};color:${palette.chipText};font-weight:600;">
+            ${f.fieldId}
+            <span style="margin-left:0.5rem;padding:2px 7px;border-radius:10px;background:${palette.tagBg};color:${palette.chipText};font-size:0.66rem;font-weight:500;">${palette.tagText}</span>
           </div>
-          <div class="const-editor" style="display:none;"></div>
+          <div class="row-meta">
+            <button class="btn-open-const" data-md="${f.fieldId}" title="Ustaw stałą wartość"
+                    style="background:none;border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;font-size:0.7rem;padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;">📌 stała</button>
+          </div>
+          <div class="const-editor" style="grid-column:1 / -1;display:none;"></div>
+        </div>`;
+      };
+
+      // Section header helper — keeps the two groups visually distinct without breaking row rhythm.
+      const sectionHeader = (icon, title, tone) => {
+        const color = tone === 'required' ? '#B91C1C' : '#B45309';
+        return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.8rem;color:${color};font-size:0.8rem;font-weight:600;border-bottom:1px solid #F3F4F6;background:#FAFAFA;">
+          <span>${icon}</span><span>${title}</span>
         </div>`;
       };
 
       const requiredHtml = requiredMissing.length > 0 ? `
-        <div style="margin-bottom:0.8rem;padding:0.85rem 1rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.3);border-radius:10px;color:#DC2626;font-size:0.85rem;line-height:1.5;">
-          ⛔ <strong>Wymagane pola Medidesk bez źródła (${requiredMissing.length})</strong>
-          <div style="color:#6B7280;font-size:0.78rem;margin-bottom:0.3rem;">Zmapuj każde na pole FB albo ustaw stałą wartość (np. dla zgód RODO). Bez tego nie da się zapisać — Medidesk odrzuci leady.</div>
+        <div style="margin-bottom:0.6rem;border:1px solid rgba(239,68,68,0.3);border-radius:10px;overflow:hidden;">
+          ${sectionHeader('⛔', `Wymagane pola Medidesk bez źródła (${requiredMissing.length}) — wymagają zmapowania lub stałej wartości`, 'required')}
           ${requiredMissing.map(f => buildRow(f, 'required')).join('')}
         </div>` : '';
 
       const optionalHtml = optionalMissing.length > 0 ? `
-        <div style="margin-bottom:0.8rem;padding:0.85rem 1rem;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.25);border-radius:10px;color:#B45309;font-size:0.85rem;line-height:1.5;">
-          💡 <strong>Opcjonalne pola Medidesk bez źródła (${optionalMissing.length})</strong>
-          <div style="color:#6B7280;font-size:0.78rem;margin-bottom:0.3rem;">Możesz je zostawić puste — lead przejdzie bez nich. Dodaj źródło tylko jeśli chcesz te dane w Medidesk.</div>
+        <div style="margin-bottom:0.6rem;border:1px solid rgba(245,158,11,0.25);border-radius:10px;overflow:hidden;">
+          ${sectionHeader('💡', `Opcjonalne pola Medidesk bez źródła (${optionalMissing.length}) — można zostawić puste`, 'optional')}
           ${optionalMissing.map(f => buildRow(f, 'optional')).join('')}
         </div>` : '';
 
