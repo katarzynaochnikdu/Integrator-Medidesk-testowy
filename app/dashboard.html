@@ -2078,7 +2078,9 @@
             <td style="text-align:right;">
               <div style="display:flex; gap:0.3rem; justify-content:flex-end;">
                 <button class="btn btn-sm btn-outline" style="border-color:#1e3a8a; color:#60a5fa;" onclick="openFacilityRoom('${f.id}', '${(f.name || '').replace(/'/g, "\\'")}')">🔍 Integracje</button>
-                <button class="btn btn-sm btn-outline" style="color:#f87171; border-color:#451a1d;" onclick="deleteFac('${f.id}', '${(f.name || '').replace(/'/g, "\\'")}')">🗑</button>
+                <button class="btn btn-sm btn-outline" title="Zmień nazwę" onclick="renameFac('${f.id}', '${(f.name || '').replace(/'/g, "\\'")}')">✏️</button>
+                <button class="btn btn-sm btn-outline" title="Zawieś wszystkie integracje" style="color:#B45309;" onclick="suspendFac('${f.id}', '${(f.name || '').replace(/'/g, "\\'")}')">⏸</button>
+                <button class="btn btn-sm btn-outline" title="Usuń" style="color:#f87171; border-color:#451a1d;" onclick="deleteFac('${f.id}', '${(f.name || '').replace(/'/g, "\\'")}')">🗑</button>
               </div>
             </td>
           </tr>`;
@@ -2201,6 +2203,43 @@
       } catch (e) {
         showToast(e.message, 'error');
       }
+    }
+
+    async function renameFac(id, currentName) {
+      const next = prompt('Nowa nazwa placówki:', currentName || '');
+      if (next === null) return;
+      const name = next.trim();
+      if (!name) { showToast('Nazwa nie może być pusta', 'error'); return; }
+      if (name === currentName) return;
+      try {
+        const resp = await apiFetch('/api/facilities/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        });
+        if (!resp.ok) { const d = await resp.json().catch(() => ({})); throw new Error(d.error || 'Błąd zmiany nazwy'); }
+        showToast('Nazwa zmieniona na "' + name + '"', 'success');
+        loadFacilities();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function suspendFac(id, name) {
+      if (!confirm('Zawiesić placówkę "' + name + '"? Wszystkie jej aktywne integracje zostaną wyłączone — leady przestaną być przekazywane do Medidesk.')) return;
+      try {
+        const resp = await apiFetch('/api/integrations');
+        const data = await resp.json();
+        const integrations = (data.integrations || []).filter(i => i.facility_id === id && i.active);
+        if (integrations.length === 0) { showToast('Brak aktywnych integracji do zawieszenia', 'success'); return; }
+        let done = 0;
+        for (const intg of integrations) {
+          try {
+            const r = await apiFetch('/api/integrations/' + intg.id + '/deactivate', { method: 'POST' });
+            if (r.ok) done++;
+          } catch {}
+        }
+        showToast('Zawieszono ' + done + ' z ' + integrations.length + ' integracji', done === integrations.length ? 'success' : 'error');
+        loadFacilities();
+      } catch (e) { showToast(e.message, 'error'); }
     }
 
     async function deleteFac(id, name) {
