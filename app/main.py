@@ -918,9 +918,13 @@ async def retry_lead(lead_id: str, _session=Depends(require_auth)):
     from app.lead_tracker import get_lead_event, log_lead_event, mark_retried
     from app.webhook import build_medidesk_fields
 
-    event = get_lead_event(lead_id, status="failed")
+    # Prefer the last failed attempt (most useful: the one that needs fixing),
+    # but fall back to the latest event of any status so the UI can offer
+    # "Wyślij ponownie" on already-sent leads too — duplicate guard in the
+    # webhook path doesn't apply here, retry is always an explicit user action.
+    event = get_lead_event(lead_id, status="failed") or get_lead_event(lead_id)
     if not event:
-        return JSONResponse(status_code=404, content={"error": "No failed event found for this lead"})
+        return JSONResponse(status_code=404, content={"error": "No event found for this lead"})
 
     fb_raw_data = event.get("fb_raw_data", {}) or {}
     integration_id = event.get("integration_id", "")

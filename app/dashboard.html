@@ -2034,9 +2034,14 @@
             : '';
           const statusBadge = leadStatusBadge(finalStatus);
           const errorText = finalStatus === 'failed' ? (latest.error || '—') : '—';
+          // Retry label depends on the final status: failed leads need fixing
+          // ("Powtórz"), successful ones are an explicit re-send ("Wyślij ponownie").
+          // Both go through the same /retry endpoint — webhook-level duplicate
+          // guard doesn't apply to explicit UI retries.
           const retryBtn = finalStatus === 'failed'
-            ? `<button class="btn btn-sm btn-success" onclick="retryLead('${leadId}')">🔄 Powtórz</button>`
-            : '';
+            ? `<button class="btn btn-sm btn-success" style="font-size:0.72rem;" onclick="event.stopPropagation();retryLead('${leadId}')" title="Spróbuj ponownie wysłać do Medidesk">🔄 Powtórz</button>`
+            : `<button class="btn btn-sm btn-outline" style="color:#15803D;border-color:#BBF7D0;font-size:0.72rem;" onclick="event.stopPropagation();retryLead('${leadId}')" title="Wyślij ten lead do Medidesk jeszcze raz">🔄 Wyślij ponownie</button>`;
+          const deleteBtn = `<button class="btn btn-sm btn-outline" style="color:#B91C1C;border-color:#FECACA;font-size:0.72rem;" onclick="event.stopPropagation();deleteLead('${leadId}')" title="Usuń leada z historii">🗑 Usuń</button>`;
 
           return `
             <tr class="lead-row" onclick="toggleLeadDetail('${leadId}')">
@@ -2045,7 +2050,7 @@
               <td>${latest.mapped_fields_count || 0} ${polPole(latest.mapped_fields_count || 0)}</td>
               <td>${timeAgo(latest.timestamp)}</td>
               <td style="font-size:0.72rem;color:${finalStatus === 'failed' ? '#f87171' : '#52525b'};max-width:150px;overflow:hidden;text-overflow:ellipsis;">${errorText}</td>
-              <td onclick="event.stopPropagation()">${retryBtn}</td>
+              <td onclick="event.stopPropagation()" style="white-space:nowrap;"><div style="display:flex;gap:0.3rem;justify-content:flex-end;">${retryBtn}${deleteBtn}</div></td>
             </tr>
             <tr id="detail-${leadId}" style="display:none;">
               <td colspan="6">
