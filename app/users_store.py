@@ -15,7 +15,7 @@ from app.db import get_connection
 logger = logging.getLogger(__name__)
 
 
-ROLES = ("owner", "admin", "viewer")
+ROLES = ("owner", "admin", "user", "viewer")
 
 
 @dataclass
