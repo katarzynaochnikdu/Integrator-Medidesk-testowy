@@ -128,6 +128,27 @@ class TestBuildUrlencoded:
         body = build_urlencoded_body({"Telefon": "+48500600700"})
         assert "fieldsValues[Telefon]=%2B48500600700" in body
 
+    def test_polish_diacritics_in_keys_and_values(self):
+        """Regression: Polish `ę`/`ą`/`ł` in fieldIds or values used to crash
+        submit_form_urlencoded with UnicodeEncodeError because the body wasn't
+        being percent-encoded on the key side. The body must be pure ASCII so
+        it can safely encode to either ascii or utf-8 without loss."""
+        from app.medidesk_client import build_urlencoded_body
+
+        body = build_urlencoded_body({
+            "Imię-i-nazwisko": "Łukasz Gęsty",
+            "Załącznik": "Wyrażam zgodę",
+        })
+        # Key: "ę" → %C4%99, "ł" covered elsewhere — the important part is NO raw diacritic.
+        assert "fieldsValues[Imi%C4%99-i-nazwisko]=" in body
+        assert "fieldsValues[Za%C5%82%C4%85cznik]=" in body
+        # Body must be pure ASCII.
+        assert body == body.encode("ascii").decode("ascii")
+        # Value "Łukasz Gęsty" → %C5%81ukasz G%C4%99sty
+        assert "%C5%81ukasz" in body and "G%C4%99sty" in body
+        # Value "Wyrażam zgodę" → ...Wyra%C5%BCam zgod%C4%99
+        assert "Wyra%C5%BCam" in body and "zgod%C4%99" in body
+
 
 class TestDemoPage:
     def test_demo_disabled_by_default(self):

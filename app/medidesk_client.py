@@ -64,13 +64,22 @@ def build_urlencoded_body(
     site_domain: str | None = None,
     site_url: str | None = None,
 ) -> str:
-    """Buduje body w formacie fieldsValues[fieldId]=value (urlencoded, ASCII-safe)."""
+    """Buduje body w formacie fieldsValues[fieldId]=value (urlencoded, ASCII-safe).
+
+    Both keys and values are percent-encoded (UTF-8) so fieldIds with Polish
+    diacritics like "Imię-i-nazwisko" don't leak raw `ę` into the request body.
+    The `[` / `]` around fieldsValues stay literal — they're part of PHP-style
+    array-param syntax and every standard parser (including Medidesk) decodes
+    the key name back from its percent-encoded form.
+    """
     parts: list[str] = [
         f"siteDomain={quote(site_domain or settings.default_site_domain, safe='')}",
         f"siteUrl={quote(site_url or settings.default_site_url, safe='')}",
     ]
     for key, value in fields_values.items():
-        parts.append(f"fieldsValues[{key}]={quote(str(value), safe='')}")
+        parts.append(
+            f"fieldsValues[{quote(str(key), safe='')}]={quote(str(value), safe='')}"
+        )
     return "&".join(parts)
 
 
@@ -88,7 +97,11 @@ async def submit_form_urlencoded(
         try:
             resp = await client.post(
                 url,
-                content=body.encode("ascii"),
+                # Body is guaranteed pure ASCII after build_urlencoded_body percent-encodes
+                # every key + value, but we still encode as UTF-8 as defense-in-depth —
+                # if a future caller passes raw bytes by accident, UTF-8 won't blow up
+                # on non-ASCII characters the way .encode("ascii") did (see Polish 'ę').
+                content=body.encode("utf-8"),
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
         except httpx.TimeoutException:
