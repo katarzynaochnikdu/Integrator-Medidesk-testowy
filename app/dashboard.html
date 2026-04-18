@@ -1023,33 +1023,76 @@
         return;
       }
 
-      tbody.innerHTML = leads.map(l => `
-        <tr class="lead-row" onclick="toggleRecentLeadDetail('${l.lead_id}')">
-          <td style="font-family:monospace;font-size:0.72rem;">${l.lead_id.substring(0, 18)}</td>
-          <td>${leadStatusBadge(l.status)}</td>
-          <td>${l.mapped_fields_count || 0} ${polPole(l.mapped_fields_count || 0)}</td>
-          <td>${timeAgo(l.timestamp)}</td>
-          <td style="font-size:0.7rem;color:#6B7280;">${l.integration_id?.substring(0, 8) || '—'}…</td>
+      // Group by lead_id — retries of the same lead should collapse into one row
+      const groups = new Map();
+      for (const l of leads) {
+        const key = l.lead_id;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(l);
+      }
+      // Sort each group by timestamp desc (newest attempt first)
+      for (const arr of groups.values()) {
+        arr.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+      }
+      // Order groups by newest attempt timestamp desc
+      const ordered = Array.from(groups.entries()).sort((a, b) => {
+        return (b[1][0].timestamp || '').localeCompare(a[1][0].timestamp || '');
+      });
+
+      tbody.innerHTML = ordered.map(([leadId, attempts]) => {
+        const latest = attempts[0];
+        const count = attempts.length;
+        const sentCount = attempts.filter(a => a.status === 'sent').length;
+        const failedCount = attempts.filter(a => a.status === 'failed').length;
+        const countBadge = count > 1
+          ? `<span style="margin-left:6px;font-size:0.68rem;color:#6B7280;background:#F3F4F6;padding:2px 6px;border-radius:10px;">${count} prób</span>`
+          : '';
+        const summary = count > 1
+          ? `<div style="font-size:0.68rem;color:#6B7280;margin-top:2px;">${sentCount > 0 ? '✓ ' + sentCount + ' wysłane' : ''}${sentCount > 0 && failedCount > 0 ? ' · ' : ''}${failedCount > 0 ? '✗ ' + failedCount + ' nieudane' : ''}</div>`
+          : '';
+        return `
+        <tr class="lead-row" onclick="toggleRecentLeadDetail('${leadId}')">
+          <td style="font-family:monospace;font-size:0.72rem;">${leadId.substring(0, 18)}${countBadge}${summary}</td>
+          <td>${leadStatusBadge(latest.status)}</td>
+          <td>${latest.mapped_fields_count || 0} ${polPole(latest.mapped_fields_count || 0)}</td>
+          <td>${timeAgo(latest.timestamp)}</td>
+          <td style="font-size:0.7rem;color:#6B7280;">${latest.integration_id?.substring(0, 8) || '—'}…</td>
         </tr>
-        <tr id="recent-detail-${l.lead_id}" style="display:none;">
+        <tr id="recent-detail-${leadId}" style="display:none;">
           <td colspan="5">
             <div class="lead-detail">
+              ${count > 1 ? `
+                <div style="margin-bottom:0.8rem;">
+                  <h4 style="margin:0 0 0.4rem 0;">🕒 Historia prób (${count})</h4>
+                  <div style="display:flex;flex-direction:column;gap:4px;">
+                    ${attempts.map((a, idx) => `
+                      <div style="display:flex;align-items:center;gap:8px;font-size:0.72rem;padding:4px 8px;background:${idx === 0 ? '#F9FAFB' : 'transparent'};border-radius:4px;">
+                        <span style="color:#9CA3AF;min-width:20px;">#${count - idx}</span>
+                        ${leadStatusBadge(a.status)}
+                        <span style="color:#6B7280;">${timeAgo(a.timestamp)}</span>
+                        ${a.error ? `<span style="color:#DC2626;font-size:0.68rem;">${(a.error || '').substring(0, 120)}</span>` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
               <div class="lead-detail-grid">
                 <div>
                   <h4>📥 Dane wejściowe (Facebook)</h4>
-                  ${renderDataPairs(l.fb_raw_data || {})}
+                  ${renderDataPairs(latest.fb_raw_data || {})}
                 </div>
                 <div>
-                  <h4>📤 Dane wyjściowe (Medidesk)</h4>
-                  ${renderDataPairs(l.mapped_values || {})}
+                  <h4>📤 Dane wyjściowe (Medidesk) — ostatnia próba</h4>
+                  ${renderDataPairs(latest.mapped_values || {})}
                 </div>
               </div>
-              ${l.error ? `<div class="error-box">❌ ${l.error}</div>` : ''}
-              ${l.integration_id ? `<div style="margin-top:0.8rem;"><a href="#" onclick="openRoom('${l.integration_id}');return false;" style="font-size:0.75rem;color:#3B82F6;">Otwórz integrację →</a></div>` : ''}
+              ${latest.error ? `<div class="error-box">❌ ${latest.error}</div>` : ''}
+              ${latest.integration_id ? `<div style="margin-top:0.8rem;"><a href="#" onclick="openRoom('${latest.integration_id}');return false;" style="font-size:0.75rem;color:#3B82F6;">Otwórz integrację →</a></div>` : ''}
             </div>
           </td>
         </tr>
-      `).join('');
+        `;
+      }).join('');
     }
 
     async function toggleRecentLeadDetail(leadId) {
@@ -1418,44 +1461,86 @@
         </tr>
       `).join('') || '<tr><td colspan="3" style="color:#52525b;text-align:center;">Brak mapowań</td></tr>';
 
-      // Leads history
-      const hasFailures = leads.some(l => l.status === 'failed');
-      document.getElementById('btn-retry-all').style.display = hasFailures ? 'inline-flex' : 'none';
+      // Group attempts by lead_id — latest attempt drives the row's status
+      const leadGroups = new Map();
+      for (const l of leads) {
+        if (!leadGroups.has(l.lead_id)) leadGroups.set(l.lead_id, []);
+        leadGroups.get(l.lead_id).push(l);
+      }
+      for (const arr of leadGroups.values()) {
+        arr.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+      }
+      // "Final status" = sent if any attempt sent, else failed if any failed, else received
+      const leadFinalStatus = (attempts) => {
+        if (attempts.some(a => a.status === 'sent')) return 'sent';
+        if (attempts.some(a => a.status === 'failed')) return 'failed';
+        return attempts[0]?.status || 'received';
+      };
+      const orderedLeads = Array.from(leadGroups.entries()).sort(
+        (a, b) => (b[1][0].timestamp || '').localeCompare(a[1][0].timestamp || '')
+      );
+
+      // "Retry all" button visible only if any lead's final status is failed
+      const hasRealFailures = orderedLeads.some(([, arr]) => leadFinalStatus(arr) === 'failed');
+      document.getElementById('btn-retry-all').style.display = hasRealFailures ? 'inline-flex' : 'none';
 
       const tbody = document.getElementById('room-leads-body');
-      if (leads.length === 0) {
+      if (orderedLeads.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#52525b;padding:1.5rem;">Brak historii leadów</td></tr>';
       } else {
-        tbody.innerHTML = leads.map(l => {
-          const statusBadge = leadStatusBadge(l.status);
-          const errorText = l.error || '—';
-          const retryBtn = l.status === 'failed'
-            ? `<button class="btn btn-sm btn-success" onclick="retryLead('${l.lead_id}')">🔄 Powtórz</button>`
-            : (l.status === 'failed' ? '<span style="font-size:0.68rem;color:#52525b;">brak danych</span>' : '');
+        tbody.innerHTML = orderedLeads.map(([leadId, attempts]) => {
+          const finalStatus = leadFinalStatus(attempts);
+          const latest = attempts[0];
+          const count = attempts.length;
+          const sentCount = attempts.filter(a => a.status === 'sent').length;
+          const failedCount = attempts.filter(a => a.status === 'failed').length;
+          const countBadge = count > 1
+            ? `<span style="margin-left:6px;font-size:0.68rem;color:#6B7280;background:#F3F4F6;padding:2px 6px;border-radius:10px;">${count} prób</span>`
+            : '';
+          const statusBadge = leadStatusBadge(finalStatus);
+          const errorText = finalStatus === 'failed' ? (latest.error || '—') : '—';
+          const retryBtn = finalStatus === 'failed'
+            ? `<button class="btn btn-sm btn-success" onclick="retryLead('${leadId}')">🔄 Powtórz</button>`
+            : '';
 
           return `
-            <tr class="lead-row" onclick="toggleLeadDetail('${l.lead_id}')">
-              <td style="font-family:monospace;font-size:0.72rem;">${l.lead_id.substring(0, 20)}</td>
+            <tr class="lead-row" onclick="toggleLeadDetail('${leadId}')">
+              <td style="font-family:monospace;font-size:0.72rem;">${leadId.substring(0, 20)}${countBadge}</td>
               <td>${statusBadge}</td>
-              <td>${l.mapped_fields_count || 0} ${polPole(l.mapped_fields_count || 0)}</td>
-              <td>${timeAgo(l.timestamp)}</td>
-              <td style="font-size:0.72rem;color:${l.status === 'failed' ? '#f87171' : '#52525b'};max-width:150px;overflow:hidden;text-overflow:ellipsis;">${errorText}</td>
+              <td>${latest.mapped_fields_count || 0} ${polPole(latest.mapped_fields_count || 0)}</td>
+              <td>${timeAgo(latest.timestamp)}</td>
+              <td style="font-size:0.72rem;color:${finalStatus === 'failed' ? '#f87171' : '#52525b'};max-width:150px;overflow:hidden;text-overflow:ellipsis;">${errorText}</td>
               <td onclick="event.stopPropagation()">${retryBtn}</td>
             </tr>
-            <tr id="detail-${l.lead_id}" style="display:none;">
+            <tr id="detail-${leadId}" style="display:none;">
               <td colspan="6">
                 <div class="lead-detail">
+                  ${count > 1 ? `
+                    <div style="margin-bottom:0.8rem;">
+                      <h4 style="margin:0 0 0.4rem 0;">🕒 Historia prób (${count}) ${sentCount > 0 ? '· ✓ ' + sentCount : ''}${failedCount > 0 ? ' · ✗ ' + failedCount : ''}</h4>
+                      <div style="display:flex;flex-direction:column;gap:4px;">
+                        ${attempts.map((a, idx) => `
+                          <div style="display:flex;align-items:center;gap:8px;font-size:0.72rem;padding:4px 8px;background:${idx === 0 ? '#F9FAFB' : 'transparent'};border-radius:4px;">
+                            <span style="color:#9CA3AF;min-width:20px;">#${count - idx}</span>
+                            ${leadStatusBadge(a.status)}
+                            <span style="color:#6B7280;">${timeAgo(a.timestamp)}</span>
+                            ${a.error ? `<span style="color:#DC2626;font-size:0.68rem;">${(a.error || '').substring(0, 160)}</span>` : ''}
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
                   <div class="lead-detail-grid">
                     <div>
                       <h4>📥 Dane wejściowe (Facebook)</h4>
-                      ${renderDataPairs(l.fb_raw_data || {})}
+                      ${renderDataPairs(latest.fb_raw_data || {})}
                     </div>
                     <div>
-                      <h4>📤 Dane wyjściowe (Medidesk)</h4>
-                      ${renderDataPairs(l.mapped_values || {})}
+                      <h4>📤 Dane wyjściowe (Medidesk) — ostatnia próba</h4>
+                      ${renderDataPairs(latest.mapped_values || {})}
                     </div>
                   </div>
-                  ${l.error ? `<div class="error-box">❌ ${l.error}</div>` : ''}
+                  ${finalStatus === 'failed' && latest.error ? `<div class="error-box">❌ ${latest.error}</div>` : ''}
                 </div>
               </td>
             </tr>

@@ -158,17 +158,27 @@ def mark_retried(lead_id: str) -> None:
 
 
 def get_stats(integration_id: str) -> IntegrationStats:
-    """Get stats for a specific integration."""
+    """Get stats for a specific integration.
+
+    Counts *unique* leads, not every attempt. A lead counts as 'sent' if it was
+    ever successfully sent (even after retries); 'failed' only if it has at least
+    one failed attempt and was never sent.
+    """
     conn = get_connection()
     row = conn.execute(
         """SELECT
-               COUNT(*) as total,
-               SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
-               SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed,
+               COUNT(DISTINCT lead_id) as total,
+               COUNT(DISTINCT CASE WHEN status = 'sent' THEN lead_id END) as sent,
+               COUNT(DISTINCT CASE
+                   WHEN status = 'failed' AND lead_id NOT IN (
+                       SELECT lead_id FROM lead_events
+                       WHERE status = 'sent' AND integration_id = ?
+                   ) THEN lead_id
+               END) as failed,
                MAX(timestamp) as last_lead_at
            FROM lead_events
            WHERE integration_id = ?""",
-        (integration_id,),
+        (integration_id, integration_id),
     ).fetchone()
     total = row["total"] or 0
     sent = row["sent"] or 0
@@ -184,13 +194,17 @@ def get_stats(integration_id: str) -> IntegrationStats:
 
 
 def get_global_stats() -> dict[str, Any]:
-    """Aggregate stats across all integrations."""
+    """Aggregate stats across all integrations. Counts unique leads — see get_stats."""
     conn = get_connection()
     row = conn.execute(
         """SELECT
-               COUNT(*) as total,
-               SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
-               SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed,
+               COUNT(DISTINCT lead_id) as total,
+               COUNT(DISTINCT CASE WHEN status = 'sent' THEN lead_id END) as sent,
+               COUNT(DISTINCT CASE
+                   WHEN status = 'failed' AND lead_id NOT IN (
+                       SELECT lead_id FROM lead_events WHERE status = 'sent'
+                   ) THEN lead_id
+               END) as failed,
                MAX(timestamp) as last_lead_at
            FROM lead_events""",
     ).fetchone()
