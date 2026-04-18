@@ -353,7 +353,7 @@
 
     .mapping-row {
       display: grid;
-      grid-template-columns: minmax(120px, 0.7fr) 24px minmax(180px, 1.4fr) 80px;
+      grid-template-columns: minmax(0, 7fr) 24px minmax(0, 14fr) 90px;
       align-items: center;
       gap: 0.6rem;
       padding: 0.5rem 0.8rem;
@@ -363,8 +363,11 @@
     }
     .mapping-row:hover { background: rgba(255,255,255,0.02); }
     .mapping-row:last-child { border-bottom: none; }
-    .mapping-row > .field-chip { flex: none; width: 100%; }
-    .mapping-row > .md-select { flex: none; width: 100%; }
+    .mapping-row > * { min-width: 0; }
+    .mapping-row > .field-chip { flex: none; width: 100%; box-sizing: border-box; }
+    .mapping-row > .md-select { flex: none; width: 100%; box-sizing: border-box; }
+    .mapping-row > .fb-quickmap-select { width: 100%; box-sizing: border-box; }
+    .mapping-row > .const-input-wrapper { width: 100%; box-sizing: border-box; }
     .mapping-row .row-meta {
       display: flex;
       justify-content: flex-end;
@@ -558,21 +561,6 @@
   </div>
 
   <div class="container">
-
-    <!-- Shared sticky context banner — accumulates selections across steps so you always
-         see what's being worked on without the large summary cards taking vertical space. -->
-    <div id="fb-sticky-banner" style="display:none;position:sticky;top:10px;z-index:20;margin-bottom:1rem;padding:0.55rem 0.9rem;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:10px;min-height:42px;">
-      <div style="display:flex;align-items:center;gap:0.55rem;flex-wrap:wrap;font-size:0.8rem;color:#111827;min-height:26px;">
-        <div id="sticky-user" style="display:none;align-items:center;gap:0.4rem;"></div>
-        <span class="sticky-sep" style="color:#D1D5DB;display:none;">·</span>
-        <div id="sticky-page" style="display:none;align-items:center;"></div>
-        <span class="sticky-sep" style="color:#D1D5DB;display:none;">·</span>
-        <div id="sticky-fbform" style="display:none;align-items:center;"></div>
-        <span class="sticky-sep" style="color:#D1D5DB;display:none;">·</span>
-        <div id="sticky-mdform" style="display:none;align-items:center;"></div>
-        <button class="btn btn-outline" id="sticky-change" style="margin-left:auto;padding:0.25rem 0.65rem;font-size:0.72rem;">Zmień</button>
-      </div>
-    </div>
 
     <!-- STEP 1: Facebook -->
     <div class="step-panel active" id="step-1">
@@ -1467,26 +1455,26 @@
       }
     }
 
-    // Open inline constant editor for a specific required MD field.
+    // Open inline constant editor — replaces the FB-select in place (left column of the row)
+    // so the constant input sits in the exact same slot the FB mapping would occupy.
     function openConstantEditor(fieldId) {
       const row = document.getElementById(`missing-row-${fieldId}`);
       if (!row) return;
-      const editor = row.querySelector('.const-editor');
+      const fbSelect = row.querySelector('.fb-quickmap-select');
+      const meta = row.querySelector('.row-meta');
+      if (!fbSelect || !meta) return;
+
       const suggest = guessConstantDefault(fieldId);
       const defaultVal = suggest ? suggest.value : '';
-      const hint = suggest ? suggest.hint : 'Wybierz wartość, która trafi do tego pola dla każdego leada.';
-
-      // Look up the MD field's type + options to render a matching input.
       const mdField = (state.mdFields || []).find(f => (f.fieldId || f.id || f.name) === fieldId) || {};
       const mtype = (mdField.type || '').toLowerCase();
       const options = Array.isArray(mdField.options) ? mdField.options : [];
 
-      // Pick the input control based on type: checkbox → toggle, select/list → dropdown, else text.
+      const sharedStyle = 'flex:1;width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:#FFFFFF;border:1px solid rgba(139,92,246,0.5);border-radius:6px;color:#111827;font-size:0.85rem;';
       let inputHtml;
       if (['checkbox', 'boolean', 'bool', 'consent'].includes(mtype)) {
         const checked = ['true', '1', 'yes', 'tak', 'on'].includes(String(defaultVal).toLowerCase()) ? 'checked' : '';
-        inputHtml = `
-          <label class="const-toggle" style="display:flex;align-items:center;gap:0.5rem;flex:1;padding:0.5rem 0.7rem;background:#FFFFFF;border:1px solid rgba(139,92,246,0.4);border-radius:6px;cursor:pointer;font-size:0.82rem;color:#111827;">
+        inputHtml = `<label class="const-toggle" style="${sharedStyle}display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
             <input type="checkbox" class="const-input" ${checked} style="width:18px;height:18px;accent-color:#8b5cf6;cursor:pointer;" />
             <span class="const-toggle-label">${checked ? 'Zaznaczone (true)' : 'Niezaznaczone (false)'}</span>
           </label>`;
@@ -1497,35 +1485,36 @@
             return `<option value="${String(o).replace(/"/g,'&quot;')}"${sel}>${o}</option>`;
           }))
           .join('');
-        inputHtml = `<select class="const-input" style="flex:1;padding:0.45rem 0.6rem;background:#FFFFFF;border:1px solid rgba(139,92,246,0.4);border-radius:6px;color:#111827;font-size:0.85rem;">${opts}</select>`;
+        inputHtml = `<select class="const-input" style="${sharedStyle}">${opts}</select>`;
       } else {
-        inputHtml = `<input type="text" class="const-input" value="${String(defaultVal).replace(/"/g,'&quot;')}" placeholder="Wpisz wartość..."
-                            style="flex:1;padding:0.45rem 0.6rem;background:#FFFFFF;border:1px solid rgba(139,92,246,0.4);border-radius:6px;color:#111827;font-size:0.85rem;" />`;
+        inputHtml = `<input type="text" class="const-input" value="${String(defaultVal).replace(/"/g,'&quot;')}" placeholder="📌 Wpisz stałą wartość..." style="${sharedStyle}" />`;
       }
 
-      const typeTag = mtype ? `<span style="font-size:0.65rem;color:#8b5cf6;background:rgba(139,92,246,0.1);padding:2px 7px;border-radius:10px;margin-left:0.3rem;font-weight:500;">${mtype}</span>` : '';
+      // Save originals so Anuluj can restore.
+      const origFbHtml = fbSelect.outerHTML;
+      const origMetaHtml = meta.innerHTML;
 
-      editor.innerHTML = `
-        <div style="margin-top:0.5rem;padding:0.65rem 0.8rem;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.3);border-radius:8px;">
-          <div style="font-size:0.72rem;color:#6B7280;margin-bottom:0.5rem;">💡 ${hint}${typeTag}</div>
-          <div style="display:flex;gap:0.4rem;align-items:center;">
-            ${inputHtml}
-            <button class="btn btn-primary btn-apply-const" style="padding:0.45rem 1rem;font-size:0.8rem;">✓ Dodaj</button>
-            <button class="btn btn-outline btn-cancel-const" style="padding:0.45rem 0.9rem;font-size:0.8rem;">Anuluj</button>
-          </div>
-        </div>
+      // Swap left column: FB-select → const input.
+      const wrapper = document.createElement('div');
+      wrapper.className = 'const-input-wrapper';
+      wrapper.style.cssText = 'flex:1;width:100%;display:flex;';
+      wrapper.innerHTML = inputHtml;
+      fbSelect.replaceWith(wrapper);
+
+      // Swap meta column: stała button → ✓ Dodaj / ✕
+      meta.innerHTML = `
+        <button class="btn btn-sm btn-primary btn-apply-const" title="Zapisz stałą wartość" style="padding:4px 10px;font-size:0.72rem;">✓ Dodaj</button>
+        <button class="btn btn-sm btn-outline btn-cancel-const" title="Anuluj" style="padding:4px 8px;font-size:0.72rem;margin-left:4px;">✕</button>
       `;
-      editor.style.display = 'block';
-      const input = editor.querySelector('.const-input');
 
+      const input = wrapper.querySelector('.const-input');
       const readValue = () => {
         if (input.type === 'checkbox') return input.checked ? 'true' : 'false';
         return (input.value || '').trim();
       };
 
-      // Checkbox: keep label text in sync with the toggle state.
       if (input.type === 'checkbox') {
-        const lbl = editor.querySelector('.const-toggle-label');
+        const lbl = wrapper.querySelector('.const-toggle-label');
         input.addEventListener('change', () => {
           if (lbl) lbl.textContent = input.checked ? 'Zaznaczone (true)' : 'Niezaznaczone (false)';
         });
@@ -1534,11 +1523,28 @@
         if (input.select) input.select();
       }
 
-      editor.querySelector('.btn-apply-const').addEventListener('click', () => applyConstantToField(fieldId, readValue()));
-      editor.querySelector('.btn-cancel-const').addEventListener('click', () => { editor.style.display = 'none'; editor.innerHTML = ''; });
+      const restore = () => {
+        wrapper.outerHTML = origFbHtml;
+        meta.innerHTML = origMetaHtml;
+        // Re-bind handlers on the freshly restored nodes.
+        const newSelect = row.querySelector('.fb-quickmap-select');
+        if (newSelect) {
+          newSelect.addEventListener('change', function() {
+            const md = this.dataset.md;
+            const fb = this.value;
+            if (!fb) return;
+            quickMapField(md, fb);
+          });
+        }
+        const newBtn = row.querySelector('.btn-open-const');
+        if (newBtn) newBtn.addEventListener('click', () => openConstantEditor(fieldId));
+      };
+
+      meta.querySelector('.btn-apply-const').addEventListener('click', () => applyConstantToField(fieldId, readValue()));
+      meta.querySelector('.btn-cancel-const').addEventListener('click', restore);
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') applyConstantToField(fieldId, readValue());
-        if (e.key === 'Escape') { editor.style.display = 'none'; editor.innerHTML = ''; }
+        if (e.key === 'Escape') restore();
       });
     }
 
@@ -1582,17 +1588,24 @@
         }))
         .join('');
 
-      // Row renderer — uses the same .mapping-row grid as real mappings so the whole list
-      // reads as one unified table. Left column = FB source selector (empty placeholder
-      // style), middle = ↔, right = MD target chip (tinted red/yellow), meta = "stała" btn.
+      // Row renderer — uses the same .mapping-row grid as real mappings so left/middle/right
+      // columns line up pole-w-pole with completed mappings above. The "stała" action lives
+      // in the far-right meta column so column 1 (FB select) stays flush with mapped FB chips.
       const buildRow = (f, tone) => {
         const palette = tone === 'required'
           ? { chipBg:'rgba(239,68,68,0.1)', chipBorder:'rgba(239,68,68,0.35)', chipText:'#B91C1C', tagBg:'rgba(239,68,68,0.18)', tagText:'wymagane' }
           : { chipBg:'rgba(245,158,11,0.1)', chipBorder:'rgba(245,158,11,0.3)', chipText:'#B45309', tagBg:'rgba(245,158,11,0.18)', tagText:'opcjonalne' };
+        // Attachment-type MD fields can only be populated by a real FB upload — a constant
+        // value makes no sense (we can't fabricate a file), so hide the "stała" shortcut.
+        const isAttachment = /^attach/i.test(f.type || '');
+        const metaHtml = isAttachment
+          ? `<span style="font-size:0.68rem;color:#6B7280;white-space:nowrap;" title="Załączniki muszą przyjść z FB — nie da się ustawić stałej wartości">tylko z FB</span>`
+          : `<button class="btn-open-const" data-md="${f.fieldId}" title="Ustaw stałą wartość"
+                     style="background:none;border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;font-size:0.7rem;padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;">📌 stała</button>`;
         return `
         <div id="missing-row-${f.fieldId}" class="mapping-row" style="border-bottom:1px solid #E5E7EB;">
           <select class="fb-quickmap-select" data-md="${f.fieldId}"
-                  style="flex:1;width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:#6B7280;font-size:0.82rem;line-height:38px;cursor:pointer;">
+                  style="width:100%;padding:0 0.6rem;height:38px;box-sizing:border-box;background:rgba(161,161,170,0.05);border:1px dashed #D1D5DB;border-radius:6px;color:#6B7280;font-size:0.82rem;line-height:38px;cursor:pointer;">
             ${fbOpts}
           </select>
           <span class="mapping-arrow" style="text-align:center;">↔</span>
@@ -1600,31 +1613,29 @@
             ${f.fieldId}
             <span style="margin-left:0.5rem;padding:2px 7px;border-radius:10px;background:${palette.tagBg};color:${palette.chipText};font-size:0.66rem;font-weight:500;">${palette.tagText}</span>
           </div>
-          <div class="row-meta">
-            <button class="btn-open-const" data-md="${f.fieldId}" title="Ustaw stałą wartość"
-                    style="background:none;border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;font-size:0.7rem;padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;">📌 stała</button>
-          </div>
+          <div class="row-meta">${metaHtml}</div>
           <div class="const-editor" style="grid-column:1 / -1;display:none;"></div>
         </div>`;
       };
 
-      // Section header helper — keeps the two groups visually distinct without breaking row rhythm.
-      const sectionHeader = (icon, title, tone) => {
+      // Section caption sits ABOVE the container (not as a header bar inside), so the
+      // rows below visually lock onto the same column rhythm as the mapped rows.
+      const sectionCaption = (icon, title, tone) => {
         const color = tone === 'required' ? '#B91C1C' : '#B45309';
-        return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.8rem;color:${color};font-size:0.8rem;font-weight:600;border-bottom:1px solid #F3F4F6;background:#FAFAFA;">
+        return `<div style="display:flex;align-items:center;gap:0.4rem;margin:0.4rem 0.2rem 0.3rem;color:${color};font-size:0.78rem;font-weight:600;">
           <span>${icon}</span><span>${title}</span>
         </div>`;
       };
 
       const requiredHtml = requiredMissing.length > 0 ? `
+        ${sectionCaption('⛔', `Wymagane pola Medidesk bez źródła (${requiredMissing.length}) — wymagają zmapowania lub stałej wartości`, 'required')}
         <div style="margin-bottom:0.6rem;border:1px solid rgba(239,68,68,0.3);border-radius:10px;overflow:hidden;">
-          ${sectionHeader('⛔', `Wymagane pola Medidesk bez źródła (${requiredMissing.length}) — wymagają zmapowania lub stałej wartości`, 'required')}
           ${requiredMissing.map(f => buildRow(f, 'required')).join('')}
         </div>` : '';
 
       const optionalHtml = optionalMissing.length > 0 ? `
+        ${sectionCaption('💡', `Opcjonalne pola Medidesk bez źródła (${optionalMissing.length}) — można zostawić puste`, 'optional')}
         <div style="margin-bottom:0.6rem;border:1px solid rgba(245,158,11,0.25);border-radius:10px;overflow:hidden;">
-          ${sectionHeader('💡', `Opcjonalne pola Medidesk bez źródła (${optionalMissing.length}) — można zostawić puste`, 'optional')}
           ${optionalMissing.map(f => buildRow(f, 'optional')).join('')}
         </div>` : '';
 
