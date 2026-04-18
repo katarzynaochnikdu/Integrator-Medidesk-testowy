@@ -441,13 +441,20 @@ async def handle_webhook(request: Request):
                 continue
 
             # Submit to Medidesk. siteDomain/siteUrl carry per-lead provenance
-            # (which FB page + which form). If left empty Medidesk crashes 500
-            # in its web-form handler — defensive fallbacks live in
-            # build_urlencoded_body, but giving Medidesk meaningful values up
-            # front also makes their internal logs traceable back to us.
+            # (which integration + which FB form). If left empty Medidesk
+            # crashes 500 in its web-form handler — defensive fallbacks live
+            # in build_urlencoded_body, but giving Medidesk meaningful values
+            # up front also makes their internal logs traceable back to us.
+            #
+            # siteDomain: integration name (user-picked label visible on their
+            # dashboard, e.g. "Warszawa — Stomatologia FB"). Matches what
+            # colleagues expect in MD so FB-sourced leads look consistent with
+            # regular web-form leads (which carry the site's actual domain).
+            # Falls back to the FB page name, then to "facebook-leads".
             page_name = (getattr(integration, "fb_page_name", "") or "").strip()
             form_id_str = (getattr(integration, "fb_form_id", "") or "").strip()
-            site_domain_for_md = page_name or "facebook-leads"
+            integration_name = (getattr(integration, "name", "") or "").strip()
+            site_domain_for_md = integration_name or page_name or "facebook-leads"
             site_url_for_md = f"/fb-lead/{form_id_str}" if form_id_str else "/fb-lead"
             result = await submit_form_urlencoded(
                 integration.medidesk_form_id,

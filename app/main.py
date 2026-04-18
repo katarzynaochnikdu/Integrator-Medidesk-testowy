@@ -949,7 +949,20 @@ async def retry_lead(lead_id: str, _session=Depends(require_auth)):
     if not medidesk_form_id:
         return JSONResponse(status_code=400, content={"error": "No Medidesk form ID saved"})
 
-    result = await submit_form_urlencoded(medidesk_form_id, mapped_values)
+    # Match the live webhook path's siteDomain/siteUrl so retried leads look
+    # identical to automatically-delivered ones in Medidesk (no "this came
+    # from retry" outlier — same provenance markers).
+    page_name = (getattr(integration, "fb_page_name", "") or "").strip() if integration else ""
+    form_id_str = (getattr(integration, "fb_form_id", "") or "").strip() if integration else ""
+    integration_name = (getattr(integration, "name", "") or "").strip() if integration else ""
+    site_domain_for_md = integration_name or page_name or "facebook-leads"
+    site_url_for_md = f"/fb-lead/{form_id_str}" if form_id_str else "/fb-lead"
+    result = await submit_form_urlencoded(
+        medidesk_form_id,
+        mapped_values,
+        site_domain=site_domain_for_md,
+        site_url=site_url_for_md,
+    )
 
     if result.success:
         mark_retried(lead_id)

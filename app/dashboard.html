@@ -933,7 +933,7 @@
       <div style="display:flex; gap:12px; padding:14px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px;">
         <div style="flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#6366F1; color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">3</div>
         <div style="flex:1;">
-          <div style="font-weight:600; color:#111827; margin-bottom:4px;">Sprawdź historię tutaj</div>
+          <div style="font-weight:600; color:#111827; margin-bottom:4px;">Sprawdź szczegóły Leada</div>
           <div style="font-size:0.78rem; color:#6B7280; margin-bottom:8px;">Testowy lead pojawi się poniżej w "Historia leadów". Status <span style="background:#DCFCE7; color:#166534; padding:1px 6px; border-radius:4px; font-size:0.7rem;">sent</span> = dotarł, <span style="background:#FEE2E2; color:#991B1B; padding:1px 6px; border-radius:4px; font-size:0.7rem;">failed</span> = błąd.</div>
           <button class="btn btn-sm btn-outline" onclick="refreshTestFlowStatus()">🔄 Odśwież historię</button>
           <span id="test-flow-status" style="margin-left:8px; font-size:0.78rem; color:#6B7280;"></span>
@@ -2050,7 +2050,7 @@
               <td>${latest.mapped_fields_count || 0} ${polPole(latest.mapped_fields_count || 0)}</td>
               <td>${timeAgo(latest.timestamp)}</td>
               <td style="font-size:0.72rem;color:${finalStatus === 'failed' ? '#f87171' : '#52525b'};max-width:150px;overflow:hidden;text-overflow:ellipsis;">${errorText}</td>
-              <td onclick="event.stopPropagation()" style="white-space:nowrap;"><div style="display:flex;gap:0.3rem;justify-content:flex-end;">${retryBtn}${deleteBtn}</div></td>
+              <td onclick="event.stopPropagation()" style="white-space:nowrap;"><div style="display:flex;gap:0.3rem;">${retryBtn}${deleteBtn}</div></td>
             </tr>
             <tr id="detail-${leadId}" style="display:none;">
               <td colspan="6">
