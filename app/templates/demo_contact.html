@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Test — wysyłka do Medidesk</title>
-<script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:system-ui,sans-serif;background:#0f1117;color:#e4e4e7;font-size:13px}
@@ -46,7 +45,6 @@
 </div>
 <script>
 const FORM_ID = "{{ default_form_id }}";
-const SITE_KEY = "{{ recaptcha_site_key }}";
 
 document.getElementById("fid").textContent = FORM_ID;
 
@@ -90,15 +88,6 @@ function prefill(setIdx) {
   });
   document.getElementById("out").className = "";
   document.getElementById("out").textContent = "";
-}
-
-function getCaptchaToken() {
-  if (!SITE_KEY || !window.grecaptcha) return Promise.resolve("");
-  return new Promise(function(resolve, reject) {
-    grecaptcha.ready(function() {
-      grecaptcha.execute(SITE_KEY, {action: "submit"}).then(resolve, reject);
-    });
-  });
 }
 
 const NAMES = ["Anna Nowak", "Marek Zieliński", "Ewa Kowalczyk"];
@@ -169,7 +158,7 @@ fetch("/api/forms/" + FORM_ID + "/fields")
       var btn = e.target.querySelector(".btn");
       var out = document.getElementById("out");
       btn.disabled = true;
-      btn.textContent = "captcha…";
+      btn.textContent = "wysyłanie…";
       out.textContent = ""; out.className = "";
 
       var fd = new FormData(e.target);
@@ -181,12 +170,7 @@ fetch("/api/forms/" + FORM_ID + "/fields")
       body.siteDomain = location.hostname;
       body.siteUrl = location.pathname;
 
-      getCaptchaToken()
-        .then(function(token) {
-          if (token) body.captchaResponse = token;
-          btn.textContent = "wysyłanie…";
-          return fetch("/api/submit/" + FORM_ID, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
-        })
+      fetch("/api/submit/" + FORM_ID, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})
         .then(function(r) { return r.json().then(function(d) { return {status: r.status, data: d}; }); })
         .then(function(res) {
           out.classList.add("show");
