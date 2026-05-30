@@ -39,6 +39,8 @@
 - [ ] [Warunek 1 — np. "endpoint /X zwraca 200"]
 - [ ] [Warunek 2 — np. "brak błędów w konsoli JS"]
 - [ ] [Warunek 3 — np. "CHANGELOG.md zaktualizowany"]
+- [ ] 🛡 **SecGate**: PASS — raport w `.agents/security_reports/integrator_woNNN_<slug>.md`
+- [ ] 📝 **DocGate**: PASS — raport w `.agents/doc_reports/integrator_woNNN_<slug>.md`
 
 ### Ograniczenia
 

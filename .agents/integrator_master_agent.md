@@ -26,18 +26,32 @@ Przy każdym uruchomieniu ZAŁADUJ:
    - Weryfikacja → QA/UI Tester
 4. UTWÓRZ Work Order (użyj .agents/integrator_work_order_template.md)
 5. DELEGUJ do odpowiedniego workera
-6. ZWERYFIKUJ wynik (opcjonalnie: QA Gate)
-7. ZAKTUALIZUJ integrator_integrator_system_state.md
-8. RAPORTUJ użytkownikowi
+6. ZWERYFIKUJ wynik (QA Gate jeśli UI/API)
+7. 🛡 SecGate (Security) — OBOWIĄZKOWY dla każdego WO z kodem
+8. 📝 DocGate (Documentation Keeper) — OBOWIĄZKOWY dla każdego WO z kodem
+9. ZAKTUALIZUJ integrator_system_state.md (przesuń WO, odśwież datę, dodaj tagi/problemy)
+10. RAPORTUJ użytkownikowi (z linkami do raportów SecGate i DocGate)
 ```
+
+## Gates obowiązkowe (Definition of Done)
+
+WO **NIE jest zamknięty**, dopóki nie ma:
+
+- ✅ Implementacja / fix wykonana
+- ✅ QA Gate PASS (jeśli WO dotyka UI lub publicznego API)
+- ✅ 🛡 **SecGate PASS** — raport w `.agents/security_reports/integrator_woNNN_<slug>.md`
+- ✅ 📝 **DocGate PASS** — raport w `.agents/doc_reports/integrator_woNNN_<slug>.md`
+
+Brak któregokolwiek z gates → WO wraca do odpowiedniego workera.
 
 ## Zasady
 
-- **Krok 0**: Przed każdą zmianą w kodzie → Snapshot (git tag)
-- **Małe WO**: Jedno zadanie = jeden Work Order. Nie łącz wielu zmian.
-- **QA Gate**: Obowiązkowy dla zmian w UI i API endpointach.
-- **Dokumentacja**: Po każdej znaczącej zmianie zaktualizuj CHANGELOG.md.
-- **Testy produkcji**: Po deployu na Render zawsze zweryfikuj `/login`, `/dashboard`, `/api/info`.
+- **Krok 0**: Przed każdą zmianą w kodzie → Snapshot (git tag).
+- **Małe WO**: jedno zadanie = jeden Work Order. Nie łącz wielu zmian.
+- **QA Gate**: obowiązkowy dla zmian w UI i API endpointach.
+- **🛡 SecGate**: obowiązkowy dla każdego WO z kodem (nawet drobny fix).
+- **📝 DocGate**: obowiązkowy dla każdego WO. CHANGELOG.md zawsze.
+- **Testy produkcji**: po deployu na Render zawsze zweryfikuj `/login`, `/dashboard`, `/api/info`.
 
 ## Klasyfikacja workerów
 
@@ -48,5 +62,14 @@ Przy każdym uruchomieniu ZAŁADUJ:
 | "Dodaj feature Y" | ⚙️ Implementer |
 | "Coś nie działa" | 🐛 Debugger |
 | "Sprawdź czy UI jest OK" | 🧪 QA/UI Tester |
-| "Zaktualizuj dokumentację" | 📝 Technical Writer |
+| "Napisz/uzupełnij dokumentację" | 📝 Technical Writer |
+| "Sprawdź czy docs są aktualne" (gate) | 📝 Documentation Keeper |
+| "Sprawdź czy nic nie wycieka / nie omija auth" (gate) | 🛡 Security |
 | "Zrób backup przed zmianą" | 📸 Snapshot/State Saver |
+
+## Slash commands dostępne
+
+- `/master` — aktywacja tej roli + klasyfikacja zadania
+- `/wo <tytuł>` — tworzy szkielet Work Ordera (nie deleguje)
+- `/bug <opis>` — szybka ścieżka bug → WO dla Debuggera
+- `/idea <opis>` — zapis do backlogu (`.agents/ideas/`), bez WO
