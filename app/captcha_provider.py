@@ -34,15 +34,16 @@ async def get_captcha_token(
     form_id: str,
     action: str | None = None,
     enterprise: bool | None = None,
+    min_score: float | None = None,
 ) -> str | None:
     """Zwraca token reCAPTCHA v3 wg skonfigurowanego trybu lub ``None``.
 
-    ``action`` / ``enterprise`` pozwalają nadpisać ustawienia (do testów
+    ``action`` / ``enterprise`` / ``min_score`` nadpisują config (testy
     przez /debug/send) — gdy None, biorą wartość z configu.
     """
     mode = (settings.captcha_mode or "none").strip().lower()
     if mode == "solver":
-        return await _solve_capsolver(form_id, action=action, enterprise=enterprise)
+        return await _solve_capsolver(form_id, action=action, enterprise=enterprise, min_score=min_score)
     if mode == "bridge":
         try:
             from app.captcha_bridge import get_captcha_token as bridge_token
@@ -66,6 +67,7 @@ async def _solve_capsolver(
     form_id: str,
     action: str | None = None,
     enterprise: bool | None = None,
+    min_score: float | None = None,
 ) -> str | None:
     """CapSolver: createTask → poll getTaskResult → gRecaptchaResponse.
 
@@ -83,6 +85,7 @@ async def _solve_capsolver(
 
     use_action = action if action is not None else (settings.captcha_action or "submit")
     use_enterprise = settings.captcha_enterprise if enterprise is None else enterprise
+    use_min_score = settings.captcha_min_score if min_score is None else min_score
     task_type = "ReCaptchaV3EnterpriseTaskProxyLess" if use_enterprise else "ReCaptchaV3TaskProxyLess"
 
     task = {
@@ -90,7 +93,7 @@ async def _solve_capsolver(
         "websiteURL": _website_url(form_id),
         "websiteKey": settings.recaptcha_site_key,
         "pageAction": use_action,
-        "minScore": settings.captcha_min_score,
+        "minScore": use_min_score,
     }
     create_payload = {"clientKey": settings.solver_captcha_api_key, "task": task}
 
