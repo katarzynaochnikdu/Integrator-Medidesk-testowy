@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 CAPSOLVER_BASE = "https://api.capsolver.com"
 
+# Ostatni błąd CapSolvera — do podglądu w /debug/send (diagnostyka).
+last_solver_error: str | None = None
+
 
 async def get_captcha_token(
     form_id: str,
@@ -80,7 +83,7 @@ async def _solve_capsolver(
 
     use_action = action if action is not None else (settings.captcha_action or "submit")
     use_enterprise = settings.captcha_enterprise if enterprise is None else enterprise
-    task_type = "ReCaptchaV3EnterpriseTask" if use_enterprise else "ReCaptchaV3TaskProxyLess"
+    task_type = "ReCaptchaV3EnterpriseTaskProxyLess" if use_enterprise else "ReCaptchaV3TaskProxyLess"
 
     task = {
         "type": task_type,
@@ -100,10 +103,9 @@ async def _solve_capsolver(
             return None
 
         if data.get("errorId"):
-            logger.warning(
-                "CapSolver createTask odrzucony: %s / %s",
-                data.get("errorCode"), data.get("errorDescription"),
-            )
+            global last_solver_error
+            last_solver_error = f"createTask: {data.get('errorCode')} / {data.get('errorDescription')}"
+            logger.warning("CapSolver %s", last_solver_error)
             return None
 
         task_id = data.get("taskId")

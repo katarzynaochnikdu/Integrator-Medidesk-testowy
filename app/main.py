@@ -103,7 +103,12 @@ async def debug_send(
     out["token_s"] = round(time.time() - t0, 1)
     if not token:
         out["stage"] = "token"
-        out["note"] = "solver nie zwrócił tokenu — sprawdź logi"
+        out["note"] = "solver nie zwrócił tokenu"
+        try:
+            import app.captcha_provider as cp
+            out["solver_error"] = cp.last_solver_error
+        except Exception:
+            pass
         return out
 
     # 2. POST do Medideska z tym tokenem + syntetyczne dane wg typów pól
