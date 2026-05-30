@@ -47,7 +47,7 @@ async def debug_captcha(form_id: str = "e8342a6a-b31a-4e2c-82be-146b73fe8457"):
     info: dict[str, Any] = {
         "mode": settings.captcha_mode,
         "site_key_set": bool(settings.recaptcha_site_key),
-        "api_key_set": bool(settings.captcha_api_key),
+        "api_key_set": bool(settings.solver_captcha_api_key),
         "action": settings.captcha_action,
         "min_score": settings.captcha_min_score,
         "website_url": settings.recaptcha_bridge_url or f"https://app.medidesk.io/forms/{form_id}",

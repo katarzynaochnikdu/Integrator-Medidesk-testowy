@@ -58,7 +58,7 @@ async def _solve_capsolver(form_id: str) -> str | None:
     ``MEDIDESK_RECAPTCHA_SITE_KEY``. Akcja i próg konfigurowalne przez
     ``MEDIDESK_CAPTCHA_ACTION`` / ``MEDIDESK_CAPTCHA_MIN_SCORE``.
     """
-    if not settings.captcha_api_key:
+    if not settings.solver_captcha_api_key:
         logger.warning("CapSolver: brak MEDIDESK_CAPTCHA_API_KEY")
         return None
     if not settings.recaptcha_site_key:
@@ -72,7 +72,7 @@ async def _solve_capsolver(form_id: str) -> str | None:
         "pageAction": settings.captcha_action or "submit",
         "minScore": settings.captcha_min_score,
     }
-    create_payload = {"clientKey": settings.captcha_api_key, "task": task}
+    create_payload = {"clientKey": settings.solver_captcha_api_key, "task": task}
 
     async with httpx.AsyncClient(timeout=settings.captcha_timeout) as client:
         try:
@@ -101,7 +101,7 @@ async def _solve_capsolver(form_id: str) -> str | None:
             try:
                 rr = await client.post(
                     f"{CAPSOLVER_BASE}/getTaskResult",
-                    json={"clientKey": settings.captcha_api_key, "taskId": task_id},
+                    json={"clientKey": settings.solver_captcha_api_key, "taskId": task_id},
                 )
                 res = rr.json()
             except Exception:
