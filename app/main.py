@@ -68,6 +68,72 @@ async def debug_captcha(form_id: str = "e8342a6a-b31a-4e2c-82be-146b73fe8457"):
     return info
 
 
+@app.get("/debug/send")
+async def debug_send(
+    form_id: str = "e8342a6a-b31a-4e2c-82be-146b73fe8457",
+    action: str | None = None,
+    enterprise: bool = False,
+):
+    """Pełny przepływ end-to-end: token → POST do Medideska → realny status.
+
+    Parametry URL nadpisują config bez redeployu, np.:
+      /debug/send?action=submit
+      /debug/send?action=
+      /debug/send?enterprise=true
+    Pozwala szybko przelecieć kandydatów na `action` i tryb Enterprise.
+    """
+    import time
+
+    out: dict[str, Any] = {
+        "form_id": form_id,
+        "action_used": settings.captcha_action if action is None else action,
+        "enterprise": enterprise,
+    }
+
+    # 1. token z solvera (z override action/enterprise)
+    t0 = time.time()
+    try:
+        from app.captcha_provider import get_captcha_token
+        token = await get_captcha_token(form_id, action=action, enterprise=enterprise)
+    except Exception as e:
+        out["stage"] = "token"
+        out["error"] = repr(e)
+        return out
+    out["token_ok"] = bool(token)
+    out["token_s"] = round(time.time() - t0, 1)
+    if not token:
+        out["stage"] = "token"
+        out["note"] = "solver nie zwrócił tokenu — sprawdź logi"
+        return out
+
+    # 2. POST do Medideska z tym tokenem + syntetyczne dane wg typów pól
+    defn = await fetch_form_definition(form_id)
+    if not defn:
+        out["stage"] = "form"
+        out["error"] = "GET form definition failed"
+        return out
+
+    fake = {"TEXT_FIELD": "Jan Testowy", "TEXT_AREA": "Test", "EMAIL": "jan.test@example.com",
+            "PHONE": "+48500600700", "CHECKBOX": "true"}
+    fields_values: dict[str, str] = {}
+    for f in defn.fields:
+        if f.field_type == "SELECT" and f.options:
+            fields_values[f.field_id] = f.options[0]
+        else:
+            fields_values[f.field_id] = fake.get(f.field_type, "test")
+
+    result = await submit_form_urlencoded(
+        form_id, fields_values,
+        site_domain="app.medidesk.io", site_url=f"/forms/{form_id}",
+        captcha_response=token,
+    )
+    out["stage"] = "done"
+    out["medidesk_status"] = result.status_code
+    out["medidesk_ok"] = result.success
+    out["medidesk_body"] = (result.raw_text or "")[:500]
+    return out
+
+
 @app.get("/api/forms/{form_id}/fields")
 async def get_form_fields(form_id: str) -> dict[str, Any]:
     defn = await fetch_form_definition(form_id)

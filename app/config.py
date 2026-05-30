@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     captcha_action: str = "submit"      # pageAction reCAPTCHA v3
     captcha_min_score: float = 0.3      # minimalny akceptowany score
     captcha_timeout: float = 60.0       # budżet czasu na solve (sekundy)
+    captcha_enterprise: bool = False    # True = reCAPTCHA Enterprise (inny typ tasku)
 
     model_config = {"env_prefix": "MEDIDESK_"}
 

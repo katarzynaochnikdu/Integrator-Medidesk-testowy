@@ -27,11 +27,19 @@ logger = logging.getLogger(__name__)
 CAPSOLVER_BASE = "https://api.capsolver.com"
 
 
-async def get_captcha_token(form_id: str) -> str | None:
-    """Zwraca token reCAPTCHA v3 wg skonfigurowanego trybu lub ``None``."""
+async def get_captcha_token(
+    form_id: str,
+    action: str | None = None,
+    enterprise: bool | None = None,
+) -> str | None:
+    """Zwraca token reCAPTCHA v3 wg skonfigurowanego trybu lub ``None``.
+
+    ``action`` / ``enterprise`` pozwalają nadpisać ustawienia (do testów
+    przez /debug/send) — gdy None, biorą wartość z configu.
+    """
     mode = (settings.captcha_mode or "none").strip().lower()
     if mode == "solver":
-        return await _solve_capsolver(form_id)
+        return await _solve_capsolver(form_id, action=action, enterprise=enterprise)
     if mode == "bridge":
         try:
             from app.captcha_bridge import get_captcha_token as bridge_token
@@ -51,25 +59,34 @@ def _website_url(form_id: str) -> str:
     return settings.recaptcha_bridge_url or f"https://app.medidesk.io/forms/{form_id}"
 
 
-async def _solve_capsolver(form_id: str) -> str | None:
+async def _solve_capsolver(
+    form_id: str,
+    action: str | None = None,
+    enterprise: bool | None = None,
+) -> str | None:
     """CapSolver: createTask → poll getTaskResult → gRecaptchaResponse.
 
-    Wymaga ``MEDIDESK_CAPTCHA_API_KEY`` (clientKey CapSolvera) oraz
-    ``MEDIDESK_RECAPTCHA_SITE_KEY``. Akcja i próg konfigurowalne przez
-    ``MEDIDESK_CAPTCHA_ACTION`` / ``MEDIDESK_CAPTCHA_MIN_SCORE``.
+    Wymaga ``MEDIDESK_SOLVER_CAPTCHA_API_KEY`` oraz
+    ``MEDIDESK_RECAPTCHA_SITE_KEY``. Akcja/próg z configu (lub override).
+    ``enterprise=True`` używa typu Enterprise (inny endpoint weryfikacji
+    po stronie Medideska — token classic nie przejdzie do Enterprise).
     """
     if not settings.solver_captcha_api_key:
-        logger.warning("CapSolver: brak MEDIDESK_CAPTCHA_API_KEY")
+        logger.warning("CapSolver: brak MEDIDESK_SOLVER_CAPTCHA_API_KEY")
         return None
     if not settings.recaptcha_site_key:
         logger.warning("CapSolver: brak MEDIDESK_RECAPTCHA_SITE_KEY")
         return None
 
+    use_action = action if action is not None else (settings.captcha_action or "submit")
+    use_enterprise = settings.captcha_enterprise if enterprise is None else enterprise
+    task_type = "ReCaptchaV3EnterpriseTask" if use_enterprise else "ReCaptchaV3TaskProxyLess"
+
     task = {
-        "type": "ReCaptchaV3TaskProxyLess",
+        "type": task_type,
         "websiteURL": _website_url(form_id),
         "websiteKey": settings.recaptcha_site_key,
-        "pageAction": settings.captcha_action or "submit",
+        "pageAction": use_action,
         "minScore": settings.captcha_min_score,
     }
     create_payload = {"clientKey": settings.solver_captcha_api_key, "task": task}
