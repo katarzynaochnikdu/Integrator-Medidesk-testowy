@@ -198,6 +198,21 @@ async def startup_db():
 
     asyncio.create_task(_token_check_loop())
 
+
+@app.on_event("shutdown")
+async def shutdown_captcha_bridge():
+    """Zamyka headless Chromium z captcha_bridge przy zamknięciu aplikacji.
+
+    Bez tego Render killuje proces po SIGTERM, ale dziecko-procesy Chromium
+    mogą zostać i marnować pamięć / zostać zombie. Bezpieczne także gdy
+    bridge nigdy nie został zainicjowany (lazy init).
+    """
+    try:
+        from app.captcha_bridge import shutdown_bridge
+        await shutdown_bridge()
+    except Exception:
+        logger.warning("Failed to shutdown captcha bridge cleanly", exc_info=True)
+
     # Hard-delete soft-deleted lead history after the 72h grace window.
     # Runs hourly so the purge is quick and continuous rather than piling up
     # thousands of rows for a single daily sweep.
@@ -278,6 +293,64 @@ async def debug_fb_config(session: dict = Depends(require_admin)):
                 if not active else "",
             ] if msg
         ],
+    }
+
+
+@app.get("/debug/captcha-test")
+async def debug_captcha_test(
+    form_id: str = "d908ee01-0b7d-44a0-a494-a707ab5a55ef",
+    session: dict = Depends(require_admin),
+):
+    """Admin-only: sprawdza czy headless captcha-bridge wystawia ważny token.
+
+    Nie zwraca samego tokenu (mogłoby trafić do logów / cache przeglądarki) —
+    tylko długość i czy bridge w ogóle wystartował. Po deployu: GET tego
+    endpointu z panelu admina powie czy Playwright + Chromium + reCAPTCHA
+    działa zanim spróbujemy puścić prawdziwy lead.
+    """
+    import time
+
+    try:
+        from app.captcha_bridge import get_captcha_token
+    except Exception as exc:
+        return {
+            "ok": False,
+            "stage": "import",
+            "error": f"Cannot import captcha_bridge: {exc!r}",
+        }
+
+    t0 = time.time()
+    try:
+        token = await get_captcha_token(form_id)
+    except Exception as exc:
+        return {
+            "ok": False,
+            "stage": "get_token",
+            "elapsed_ms": int((time.time() - t0) * 1000),
+            "error": repr(exc),
+        }
+
+    elapsed_ms = int((time.time() - t0) * 1000)
+    if not token:
+        return {
+            "ok": False,
+            "stage": "no_token",
+            "elapsed_ms": elapsed_ms,
+            "hint": (
+                "Sprawdź logi: czy Playwright zainstalowany? "
+                "Czy `playwright install chromium` było puszczone w buildCommand? "
+                "Czy site-key zgadza się z whitelistą domeny w panelu reCAPTCHA Medideska?"
+            ),
+        }
+    return {
+        "ok": True,
+        "token_length": len(token),
+        "elapsed_ms": elapsed_ms,
+        "bridge_url": (
+            settings.recaptcha_bridge_url
+            or f"https://app.medidesk.io/forms/{form_id}"
+        ),
+        "site_key_prefix": settings.recaptcha_site_key[:12] + "..." if settings.recaptcha_site_key else "",
     }
 
 

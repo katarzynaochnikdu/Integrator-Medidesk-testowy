@@ -146,10 +146,31 @@ async def submit_form_urlencoded(
     site_url: str | None = None,
     captcha_response: str | None = None,
 ) -> MedideskResult:
-    """POST urlencoded do Medidesk, optionally with reCAPTCHA v3 token."""
+    """POST urlencoded do Medidesk, optionally with reCAPTCHA v3 token.
+
+    Jeśli ``captcha_response`` nie został podany przez wywołującego (np.
+    /api/submit z przeglądarki — tam token przychodzi z grecaptcha w body),
+    próbujemy zdobyć token z headless captcha-bridge'a (Playwright). To
+    pokrywa ścieżkę FB webhook → Medidesk, która nie ma własnej przeglądarki.
+
+    Gdy bridge nie jest dostępny (Playwright nie zainstalowany, Chromium
+    nie startuje) — POST idzie bez nagłówka i dostaniemy 500/401 od
+    Medideska, czyli ten sam stan co wcześniej. Brak silent failures.
+    """
     submit_form_id = await resolve_submit_form_id(form_id)
     url = f"{settings.medidesk_api_base}/{quote(submit_form_id, safe='')}"
     body = build_urlencoded_body(fields_values, site_domain, site_url)
+
+    if not captcha_response:
+        try:
+            from app.captcha_bridge import get_captcha_token
+            captcha_response = await get_captcha_token(form_id)
+        except Exception:
+            logger.warning(
+                "Medidesk POST form=%s: captcha-bridge import/call failed",
+                form_id,
+                exc_info=True,
+            )
 
     # Mimic a real browser form submission: Medidesk's "web-form" handler
     # (the path that shows up in 500 error responses) appears to require

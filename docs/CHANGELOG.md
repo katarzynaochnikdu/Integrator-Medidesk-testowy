@@ -25,8 +25,19 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 ### Bezpieczeństwo
 - Tag `przed_captcha_bridge_20260530` utworzony jako punkt powrotu przed pracami nad captcha.
 
+### Dodane (cd.)
+- **Captcha bridge** (`app/captcha_bridge.py`) — headless Chromium (Playwright) generuje tokeny reCAPTCHA v3 dla ścieżki server-to-server (FB webhook → Medidesk).
+  Otwiera ``https://app.medidesk.io/forms/{form_id}`` (origin Medideska jest na whiteliście ich site-key'a), woła ``grecaptcha.execute()``, zwraca token.
+  Lazy init (start na pierwsze użycie), singleton browser, shutdown w lifespan hook.
+  Cichy fallback: gdy Playwright/Chromium nie są dostępne → ``None`` (nie wysadza aplikacji).
+- **`medidesk_client.submit_form_urlencoded`** — automatycznie woła bridge gdy wywołujący nie podał ``captcha_response`` (np. ścieżka webhook). Browser-driven path (demo, /api/submit) nadal wysyła własny token z body — bez podwójnej weryfikacji.
+- **Endpoint `/debug/captcha-test`** (admin) — szybkie sprawdzenie czy bridge w ogóle wystawia token; zwraca długość, czas i URL bridge'a (bez samego tokenu).
+- **`render.yaml` buildCommand** → `playwright install --with-deps chromium`.
+- **`requirements.txt`** → `playwright>=1.40`.
+
 ### Znane problemy
-- **FB webhook → Medidesk wciąż nie działa** — ścieżka server-to-server nie ma własnej przeglądarki, nie wygeneruje tokenu reCAPTCHA. Rozwiązanie w toku: Playwright captcha-bridge (kolejny commit na tej gałęzi).
+- **Origin whitelisty reCAPTCHA Medideska — do weryfikacji**: zakładamy, że ``app.medidesk.io`` jest na liście dozwolonych domen site-key'a (Medidesk powinien mieć siebie). Jeśli mają tylko domeny klinik — bridge wystawi niski-score token / odrzucany. W tym wypadku rozwiązaniem jest poproszenie Medideska o dodanie origin'u albo skierowanie bridge'a na URL strony kliniki przez ``MEDIDESK_RECAPTCHA_BRIDGE_URL``.
+- **Medidesk zwraca 500 zamiast 401** przy braku/błędnym tokenie — ich bug, do zgłoszenia (PDF spec str. 3 mówi 401).
 
 ---
 

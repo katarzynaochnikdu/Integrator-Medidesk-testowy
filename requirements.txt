@@ -8,3 +8,8 @@ pytest-asyncio>=0.25
 cryptography>=43.0
 bcrypt>=4.0
 jinja2>=3.1
+# Headless captcha bridge — generuje tokeny reCAPTCHA v3 dla
+# wywołań server-to-server (FB webhook → Medidesk). Wymaga osobnej
+# instalacji binariów Chromium: `playwright install --with-deps chromium`
+# (wpięte w buildCommand render.yaml).
+playwright>=1.40
