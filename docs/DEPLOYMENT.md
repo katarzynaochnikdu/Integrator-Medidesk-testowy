@@ -2,10 +2,10 @@
 
 ## Platforma: Render.com
 
-- **Plan**: Free tier
+- **Plan**: Starter (płatny)
 - **Region**: Frankfurt
 - **Auto-deploy**: Tak (z `main` branch)
-- **URL**: https://md-integrator-v1.onrender.com
+- **URL**: https://md-integrator-old.onrender.com
 
 ### Komendy
 
@@ -58,12 +58,14 @@ Render Free tier usypia serwer po ~15 min nieaktywności. Pierwszy request po u�
 
 ## Zmienne środowiskowe na Render
 
-Ustaw w: Dashboard → md-integrator-v1 → Environment → Environment Variables.
+Ustaw w: Dashboard → md-integrator-old → Environment → Environment Variables.
+
+> ⚠ **Uwaga przy zmianie URL produkcji**: jeśli URL serwisu się zmienia, równolegle zaktualizuj `MEDIDESK_FB_REDIRECT_URI` (zmienna na Render) **i** redirect URI w Facebook Developer Console — inaczej OAuth padnie.
 
 Obowiązkowe:
 - `MEDIDESK_FB_APP_ID`
 - `MEDIDESK_FB_APP_SECRET`
-- `MEDIDESK_FB_REDIRECT_URI` = `https://md-integrator-v1.onrender.com/auth/facebook/callback`
+- `MEDIDESK_FB_REDIRECT_URI` = `https://md-integrator-old.onrender.com/auth/facebook/callback`
 - `MEDIDESK_ENCRYPTION_KEY` (wygeneruj: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`)
 - `MEDIDESK_FB_SESSION_SECRET`
 - `MEDIDESK_ADMIN_PASSWORD`

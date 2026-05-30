@@ -33,6 +33,7 @@ class FormField:
 class FormDefinition:
     name: str
     fields: list[FormField]
+    web_form_id: str = ""
 
 
 async def fetch_form_definition(form_id: str) -> FormDefinition | None:
@@ -56,7 +57,28 @@ async def fetch_form_definition(form_id: str) -> FormDefinition | None:
         )
         for f in data.get("fields", [])
     ]
-    return FormDefinition(name=data.get("name", ""), fields=fields)
+    return FormDefinition(
+        name=data.get("name", ""),
+        fields=fields,
+        web_form_id=data.get("webFormId", "") or "",
+    )
+
+
+async def resolve_submit_form_id(form_id: str) -> str:
+    """Resolve Medidesk template UUID to webFormId for POST submissions.
+
+    Medidesk's GET uses formTemplateId, but POST is routed internally through
+    `/api/forms/web-form/{webFormId}`. Posting to the UUID now crashes their
+    handler with HTTP 500; posting to webFormId returns the documented 401/400.
+    """
+    try:
+        defn = await fetch_form_definition(form_id)
+    except Exception as exc:
+        logger.warning("Could not resolve Medidesk webFormId for %s: %s", form_id, exc)
+        return form_id
+    if defn and defn.web_form_id:
+        return defn.web_form_id
+    return form_id
 
 
 # Hard fallbacks for siteDomain/siteUrl — Medidesk's API returns HTTP 500
@@ -122,9 +144,11 @@ async def submit_form_urlencoded(
     fields_values: dict[str, str],
     site_domain: str | None = None,
     site_url: str | None = None,
+    captcha_response: str | None = None,
 ) -> MedideskResult:
-    """POST urlencoded do Medidesk — bez captchy."""
-    url = f"{settings.medidesk_api_base}/{form_id}"
+    """POST urlencoded do Medidesk, optionally with reCAPTCHA v3 token."""
+    submit_form_id = await resolve_submit_form_id(form_id)
+    url = f"{settings.medidesk_api_base}/{quote(submit_form_id, safe='')}"
     body = build_urlencoded_body(fields_values, site_domain, site_url)
 
     # Mimic a real browser form submission: Medidesk's "web-form" handler
@@ -141,7 +165,20 @@ async def submit_form_urlencoded(
             md_origin = f"{parsed.scheme}://{parsed.netloc}"
     except Exception:
         pass
-    md_referer = f"{md_origin}/forms/{form_id}"
+    md_referer = f"{md_origin}/forms/{quote(form_id, safe='')}"
+    headers = {
+        # charset=UTF-8 is the explicit signal that field-name bytes
+        # are UTF-8 — MD's parser uses this to decide whether to
+        # treat raw `Imię-i-nazwisko` bytes as the literal field key.
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": md_origin,
+        "Referer": md_referer,
+        "User-Agent": "MedideskIntegrator/2.0 (+https://md-integrator-old.onrender.com)",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+    if captcha_response:
+        headers["captcha-response"] = captcha_response
 
     async with httpx.AsyncClient(timeout=settings.http_timeout) as client:
         try:
@@ -152,17 +189,7 @@ async def submit_form_urlencoded(
                 # if a future caller passes raw bytes by accident, UTF-8 won't blow up
                 # on non-ASCII characters the way .encode("ascii") did (see Polish 'ę').
                 content=body.encode("utf-8"),
-                headers={
-                    # charset=UTF-8 is the explicit signal that field-name bytes
-                    # are UTF-8 — MD's parser uses this to decide whether to
-                    # treat raw `Imię-i-nazwisko` bytes as the literal field key.
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                    "Accept": "application/json, text/plain, */*",
-                    "Origin": md_origin,
-                    "Referer": md_referer,
-                    "User-Agent": "MedideskIntegrator/2.0 (+https://md-integrator-v1.onrender.com)",
-                    "X-Requested-With": "XMLHttpRequest",
-                },
+                headers=headers,
             )
         except httpx.TimeoutException:
             logger.warning("Medidesk request timed out")
@@ -184,9 +211,11 @@ async def submit_form_urlencoded(
         # (value too long? wrong format? missing required?). Body is already
         # URL-encoded so values are non-readable secrets-style.
         logger.warning(
-            "Medidesk POST form=%s status=%s response=%s sent_body=%s",
+            "Medidesk POST form=%s submit_form=%s status=%s captcha=%s response=%s sent_body=%s",
             form_id,
+            submit_form_id,
             resp.status_code,
+            bool(captcha_response),
             (resp.text or "")[:1200],
             body[:2000],
         )

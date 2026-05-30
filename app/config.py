@@ -12,6 +12,15 @@ class Settings(BaseSettings):
     medidesk_api_base: str = "https://app.medidesk.io/api/forms"
     default_site_domain: str = "twoja-domena.pl"
     default_site_url: str = "/kontakt"
+    # reCAPTCHA v3 — site key Medideska (zaczerpnięty wprost ze specyfikacji
+    # API, sekcja "Google reCAPTCHA v3"). Musi zgadzać się z secret, który
+    # Medidesk ma po swojej stronie do `siteverify` — inaczej każdy token
+    # wygenerowany u nas zostanie odrzucony.
+    recaptcha_site_key: str = "6Lfs81ghAAAAAL1x7coNFL3OORZHAkNk7ugPcBJ_"
+    # URL strony hostującej skrypt grecaptcha — używany przez captcha_bridge
+    # (Playwright). Musi być na liście domen powiązanej z site-key powyżej
+    # w panelu reCAPTCHA. Pusty = bridge wyłączony (server-to-server bez captchy).
+    recaptcha_bridge_url: str = ""
     http_timeout: float = 15.0
 
     demo_page_enabled: bool = False

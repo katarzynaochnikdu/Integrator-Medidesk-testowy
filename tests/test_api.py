@@ -46,6 +46,7 @@ class TestGetFormFields:
         assert len(data["fields"]) == 2
         assert data["fields"][0]["fieldId"] == "Osoba"
         assert data["form_name"] == "Test Form"
+        assert data["web_form_id"] == ""
 
     @patch("app.main.fetch_form_definition", new_callable=AsyncMock)
     def test_returns_404_when_empty(self, mock_fetch):
@@ -112,6 +113,15 @@ class TestSubmitToMedidesk:
         assert "siteDomain" not in args[1]
         assert kwargs.get("site_domain") or args[2] == "klinika.pl"
 
+    @patch("app.main.submit_form_urlencoded", new_callable=AsyncMock)
+    def test_passes_captcha_response(self, mock_submit):
+        mock_submit.return_value = MedideskResult(success=True, status_code=200)
+        payload = {**VALID_PAYLOAD, "captchaResponse": "captcha-token"}
+        client.post(f"/api/submit/{FORM_ID}", json=payload)
+        args, kwargs = mock_submit.call_args
+        assert "captchaResponse" not in args[1]
+        assert kwargs["captcha_response"] == "captcha-token"
+
 
 class TestBuildUrlencoded:
     def test_builds_correct_format(self):
@@ -148,6 +158,29 @@ class TestBuildUrlencoded:
         # Values keep percent-encoding (standard URL-value behavior).
         assert "%C5%81ukasz" in body and "G%C4%99sty" in body
         assert "Wyra%C5%BCam" in body and "zgod%C4%99" in body
+
+
+class TestResolveSubmitFormId:
+    @patch("app.medidesk_client.fetch_form_definition", new_callable=AsyncMock)
+    def test_uses_web_form_id_for_submit(self, mock_fetch):
+        import asyncio
+        from app.medidesk_client import resolve_submit_form_id
+
+        mock_fetch.return_value = FormDefinition(
+            name="Test Form",
+            fields=[],
+            web_form_id="Formularz-kontaktowy-KOCHNIKA",
+        )
+
+        assert asyncio.run(resolve_submit_form_id(FORM_ID)) == "Formularz-kontaktowy-KOCHNIKA"
+
+    @patch("app.medidesk_client.fetch_form_definition", new_callable=AsyncMock)
+    def test_falls_back_to_original_form_id(self, mock_fetch):
+        import asyncio
+        from app.medidesk_client import resolve_submit_form_id
+
+        mock_fetch.return_value = None
+        assert asyncio.run(resolve_submit_form_id(FORM_ID)) == FORM_ID
 
 
 class TestDemoPage:

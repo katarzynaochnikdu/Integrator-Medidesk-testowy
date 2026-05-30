@@ -293,6 +293,8 @@ async def get_form_fields(form_id: str):
     return {
         "form_id": form_id,
         "form_name": defn.name,
+        "web_form_id": defn.web_form_id,
+        "recaptcha_site_key": settings.recaptcha_site_key,
         "fields": [
             {
                 "fieldId": f.field_id,
@@ -319,6 +321,11 @@ async def submit_to_medidesk(form_id: str, request: Request):
 
     site_domain = body.pop("siteDomain", None)
     site_url = body.pop("siteUrl", None)
+    captcha_response = (
+        body.pop("captchaResponse", None)
+        or body.pop("captchaToken", None)
+        or request.headers.get("captcha-response")
+    )
 
     fields_values: dict[str, str] = {
         k: str(v) for k, v in body.items() if v is not None
@@ -331,7 +338,11 @@ async def submit_to_medidesk(form_id: str, request: Request):
         )
 
     result = await submit_form_urlencoded(
-        form_id, fields_values, site_domain, site_url
+        form_id,
+        fields_values,
+        site_domain,
+        site_url,
+        captcha_response=captcha_response,
     )
 
     if result.success:
@@ -1290,7 +1301,11 @@ async def demo_contact_page(request: Request):
             "<p>Demo disabled. Set <code>MEDIDESK_DEMO_PAGE_ENABLED=true</code>.</p>",
             status_code=404,
         )
-    return render_template(request, "demo_contact.html")
+    return render_template(
+        request,
+        "demo_contact.html",
+        recaptcha_site_key=settings.recaptcha_site_key,
+    )
 
 
 @app.get("/setup", include_in_schema=False)

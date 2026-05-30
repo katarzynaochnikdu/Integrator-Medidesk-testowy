@@ -1,11 +1,21 @@
 # Render Blueprint: https://render.com/docs/blueprint-spec
+#
+# UWAGA: Aktywny serwis na Render to `md-integrator-old` (Starter plan).
+# Ten plik powinien być spójny z faktycznym serwisem; zmiana `name` po
+# pierwszym deployu Blueprint na Render może utworzyć nowy serwis zamiast
+# zaktualizować istniejący, dlatego trzymamy nazwę aktualną.
+#
+# buildCommand instaluje Chromium dla Playwright (potrzebny do
+# captcha-bridge: generuje tokeny reCAPTCHA v3 w headless-browserze
+# dla wywołań server-to-server (FB webhook → Medidesk), które nie
+# mają własnej przeglądarki).
 services:
   - type: web
-    name: md-integrator-v1
+    name: md-integrator-old
     runtime: python
     region: frankfurt
-    plan: free
-    buildCommand: pip install -r requirements.txt
+    plan: starter
+    buildCommand: pip install -r requirements.txt && playwright install --with-deps chromium
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /
     envVars:

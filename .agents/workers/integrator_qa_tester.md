@@ -33,7 +33,7 @@ uvicorn app.main:app --reload --port 8000
 - Sprawdź czy theme.css i theme.js się ładują
 
 ### 4. Testy produkcji (po deploy)
-Zamień `127.0.0.1:8000` na `md-integrator-v1.onrender.com`
+Zamień `127.0.0.1:8000` na `md-integrator-old.onrender.com`
 
 ## Format raportu
 

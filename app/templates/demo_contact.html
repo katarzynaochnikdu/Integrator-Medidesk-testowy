@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Test – Integracja Leadów do Medidesk v2{% endblock %}
 {% block head_styles %}
+<script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
 <style>
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -92,14 +93,15 @@
   </div>
 
   <script>
-    const DEFAULT_FORM_ID = "d908ee01-0b7d-44a0-a494-a707ab5a55ef";
+    const DEFAULT_FORM_ID = "e8342a6a-b31a-4e2c-82be-146b73fe8457";
+    const RECAPTCHA_SITE_KEY = "{{ recaptcha_site_key }}";
     const formId = new URLSearchParams(location.search).get("form_id") || DEFAULT_FORM_ID;
     document.getElementById("fid").textContent = formId;
 
     const TEST_SETS = [
-      { name: "Anna Nowak", values: { "Imie-i-nazwisko": "Anna Nowak", "Mail": "anna.nowak@gmail.com", "Telefon": "+48600700800", "Lista": "Opcja 1", "Zyczenie": "Wizyta u ortopedy w przyszlym tygodniu", "zgoda": "true" } },
-      { name: "Marek Zielinski", values: { "Imie-i-nazwisko": "Marek Zielinski", "Mail": "m.zielinski@wp.pl", "Telefon": "+48501234567", "Lista": "Opcja 2", "Zyczenie": "Prosze o kontakt po 16:00", "zgoda": "true" } },
-      { name: "Ewa Kowalczyk", values: { "Imie-i-nazwisko": "Ewa Kowalczyk", "Mail": "ewa.k@onet.pl", "Telefon": "+48512345678", "Lista": "Opcja 3", "Zyczenie": "Chce umowic wizyte dla dziecka", "zgoda": "true" } },
+      { name: "Anna Nowak", values: { "Imie-i-nazwisko": "Anna Nowak", "Mail": "anna.nowak@gmail.com", "Telefon": "+48600700800", "zgoda": "true" } },
+      { name: "Marek Zielinski", values: { "Imie-i-nazwisko": "Marek Zielinski", "Mail": "m.zielinski@wp.pl", "Telefon": "+48501234567", "zgoda": "true" } },
+      { name: "Ewa Kowalczyk", values: { "Imie-i-nazwisko": "Ewa Kowalczyk", "Mail": "ewa.k@onet.pl", "Telefon": "+48512345678", "zgoda": "true" } },
     ];
 
     const NICE_LABELS = {
@@ -118,6 +120,15 @@
     const setsEl = document.getElementById("sets");
     const container = document.getElementById("form-container");
     const out = document.getElementById("out");
+
+    function getCaptchaToken() {
+      if (!RECAPTCHA_SITE_KEY || !window.grecaptcha) return Promise.resolve("");
+      return new Promise((resolve, reject) => {
+        grecaptcha.ready(() => {
+          grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: "submit" }).then(resolve, reject);
+        });
+      });
+    }
 
     TEST_SETS.forEach(s => {
       const btn = document.createElement("button");
@@ -183,8 +194,16 @@
           const body = {};
           for (const [k, v] of fd.entries()) body[k] = v;
           data.fields.forEach(f => { if (f.type === "CHECKBOX" && !fd.has(f.fieldId)) body[f.fieldId] = "false"; });
+          body.siteDomain = location.hostname;
+          body.siteUrl = location.pathname;
 
-          fetch("/api/submit/" + formId, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+          btn.textContent = "captcha...";
+          getCaptchaToken()
+          .then(token => {
+            if (token) body.captchaResponse = token;
+            btn.textContent = "wysylanie...";
+            return fetch("/api/submit/" + formId, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+          })
           .then(r => r.json().then(d => ({ status: r.status, data: d })))
           .then(({ status, data }) => {
             out.classList.add("show");
