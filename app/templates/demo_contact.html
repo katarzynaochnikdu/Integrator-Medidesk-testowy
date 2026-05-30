@@ -1,220 +1,205 @@
-{% extends "base.html" %}
-{% block title %}Test – Integracja Leadów do Medidesk v2{% endblock %}
-{% block head_styles %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test — wysyłka do Medidesk</title>
 <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
 <style>
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: #0f1117; color: #e4e4e7; min-height: 100vh; font-size: 13px; }
-    .layout { display: flex; max-width: 36rem; margin: 0 auto; padding: 1.2rem 1rem; gap: 1rem; min-height: 100vh; }
-
-    .sidebar { width: 130px; flex-shrink: 0; padding-top: 0.5rem; }
-    .sidebar h3 { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; padding-bottom: 0.4rem; }
-    .sidebar-box { border: 1px solid #27272a; border-radius: 8px; padding: 0.5rem; background: #13141b; }
-    .set-btn {
-      display: block; width: 100%; text-align: left; margin-bottom: 0.35rem;
-      padding: 0.4rem 0.6rem; border: 1px solid #27272a; border-radius: 6px; background: #1a1b23;
-      color: #d4d4d8; cursor: pointer; font-size: 0.75rem; transition: all 0.12s;
-    }
-    .set-btn:hover { border-color: #3b82f6; background: #1e2030; color: #fff; }
-    .set-btn .name { font-weight: 600; font-size: 0.78rem; }
-    .set-btn .preview { color: var(--text-dim); font-size: 0.65rem; }
-
-    .main { flex: 1; min-width: 0; }
-    .header { margin-bottom: 0.8rem; }
-    .header h1 { font-size: 1.1rem; font-weight: 700; background: linear-gradient(135deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .header .sub { color: var(--text-dim); font-size: 0.72rem; margin-top: 0.15rem; }
-    .meta-bar { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.4rem; padding: 0.3rem 0.5rem; background: #1a1b23; border-radius: 5px; font-size: 0.68rem; color: var(--text-muted); }
-    .meta-bar code { background: #27272a; padding: 1px 4px; border-radius: 3px; color: #a1a1aa; font-size: 0.65rem; }
-
-    .row { display: flex; gap: 0.6rem; }
-    .row > * { flex: 1; min-width: 0; }
-
-    label { display: block; margin-top: 0.6rem; font-weight: 500; font-size: 0.75rem; color: var(--text-muted); }
-    input, select, textarea {
-      width: 100%; margin-top: 0.2rem; padding: 0.4rem 0.5rem;
-      background: #1a1b23; border: 1px solid #27272a; border-radius: 5px;
-      color: #e4e4e7; font-size: 0.82rem; transition: border-color 0.12s;
-    }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1.5px rgba(59,130,246,0.2); }
-    textarea { resize: vertical; min-height: 48px; }
-    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2371717a' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.5rem center; padding-right: 1.5rem; }
-    select option { background: #1a1b23; color: #e4e4e7; }
-    .checkbox-row { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; }
-    .checkbox-row input { width: auto; margin: 0; accent-color: #3b82f6; }
-    .checkbox-row label { margin: 0; font-weight: 400; font-size: 0.75rem; color: #a1a1aa; }
-    .field-id { font-size: 0.58rem; color: #27272a; font-family: monospace; margin-top: 0.05rem; }
-    .req { color: #ef4444; }
-
-    .submit-btn {
-      margin-top: 0.8rem; width: 100%; padding: 0.5rem; border: none; border-radius: 6px;
-      background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; font-size: 0.85rem;
-      font-weight: 600; cursor: pointer; transition: opacity 0.12s;
-    }
-    .submit-btn:hover { opacity: 0.9; }
-    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    #out {
-      margin-top: 0.6rem; white-space: pre-wrap; font-size: 0.7rem; padding: 0.5rem;
-      border-radius: 6px; font-family: monospace; display: none;
-    }
-    #out.show { display: block; }
-    .err { color: #fca5a5; background: #1c1215; border: 1px solid #7f1d1d; }
-    .ok { color: #86efac; background: #0f1a14; border: 1px solid #14532d; }
-
-    @media (max-width: 640px) {
-      .layout { flex-direction: column; }
-      .sidebar { width: 100%; display: flex; gap: 0.4rem; flex-wrap: wrap; }
-      .sidebar h3 { width: 100%; }
-      .set-btn { width: auto; }
-      .row { flex-direction: column; gap: 0; }
-    }
-  
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:#0f1117;color:#e4e4e7;font-size:13px}
+  .wrap{max-width:32rem;margin:2rem auto;padding:0 1rem}
+  h1{font-size:1.1rem;margin-bottom:.2rem}
+  .sub{color:#71717a;font-size:.75rem;margin-bottom:1rem}
+  .meta{display:inline-flex;gap:.4rem;padding:.3rem .5rem;background:#1a1b23;border-radius:5px;font-size:.68rem;color:#71717a;margin-bottom:1rem}
+  .meta code{background:#27272a;padding:1px 4px;border-radius:3px;color:#a1a1aa}
+  .presets{display:flex;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap}
+  .presets button{padding:.35rem .7rem;border:1px solid #27272a;border-radius:6px;background:#1a1b23;color:#d4d4d8;cursor:pointer;font-size:.75rem}
+  .presets button:hover{border-color:#3b82f6;color:#fff}
+  label{display:block;margin-top:.6rem;font-weight:500;font-size:.75rem;color:#a1a1aa}
+  input,select,textarea{width:100%;margin-top:.2rem;padding:.4rem .5rem;background:#1a1b23;border:1px solid #27272a;border-radius:5px;color:#e4e4e7;font-size:.82rem}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
+  textarea{resize:vertical;min-height:48px}
+  select{appearance:none}
+  .cb-row{display:flex;align-items:center;gap:.4rem;margin-top:.6rem}
+  .cb-row input{width:auto}
+  .cb-row label{margin:0;font-weight:400}
+  .req{color:#ef4444}
+  .row{display:flex;gap:.6rem}
+  .row>*{flex:1;min-width:0}
+  .btn{margin-top:.8rem;width:100%;padding:.5rem;border:none;border-radius:6px;background:#3b82f6;color:#fff;font-size:.85rem;font-weight:600;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  #out{margin-top:.6rem;white-space:pre-wrap;font-size:.7rem;padding:.5rem;border-radius:6px;font-family:monospace;display:none}
+  #out.show{display:block}
+  .err{color:#fca5a5;background:#1c1215;border:1px solid #7f1d1d}
+  .ok{color:#86efac;background:#0f1a14;border:1px solid #14532d}
 </style>
-{% endblock %}
-{% block content %}
+</head>
+<body>
+<div class="wrap">
+  <h1>Test wysyłki do Medidesk</h1>
+  <div class="sub">Dynamicznie pobiera pola formularza, wypełnia adekwatnie do typu</div>
+  <div class="meta"><span id="fname">…</span> · <code id="fid"></code></div>
+  <div class="presets" id="presets"></div>
+  <div id="form-container">Ładowanie…</div>
+  <div id="out"></div>
+</div>
+<script>
+const FORM_ID = "{{ default_form_id }}";
+const SITE_KEY = "{{ recaptcha_site_key }}";
 
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="sidebar-box">
-        <h3>Dane testowe dla leniwych</h3>
-        <div id="sets"></div>
-      </div>
-    </aside>
-    <div class="main">
-      <div class="header">
-        <h1>Integracja Leadów do Medidesk</h1>
-        <div class="sub">Symulacja leada z Facebook Ads</div>
-        <div class="meta-bar"><span id="fname">...</span> &middot; <code id="fid"></code></div>
-      </div>
-      <div id="form-container">Ladowanie...</div>
-      <div id="out"></div>
-    </div>
-  </div>
+document.getElementById("fid").textContent = FORM_ID;
 
-  <script>
-    const DEFAULT_FORM_ID = "e8342a6a-b31a-4e2c-82be-146b73fe8457";
-    const RECAPTCHA_SITE_KEY = "{{ recaptcha_site_key }}";
-    const formId = new URLSearchParams(location.search).get("form_id") || DEFAULT_FORM_ID;
-    document.getElementById("fid").textContent = formId;
+const FAKE = {
+  TEXT_FIELD: [
+    ["Jan Kowalski", "Anna Nowak", "Marek Zieliński"],
+    ["Wizyta kontrolna", "Konsultacja ortopedyczna", "Badanie USG"],
+    ["ul. Testowa 12, Warszawa", "ul. Przykładowa 5, Kraków", "ul. Demo 8, Gdańsk"]
+  ],
+  EMAIL: ["jan.test@example.com", "anna.nowak@example.com", "marek.z@example.com"],
+  PHONE: ["+48500600700", "+48601234567", "+48512345678"],
+  TEXT_AREA: ["Proszę o kontakt po 16:00", "Wizyta dla dziecka, wiek 8 lat", "Chciałbym zmienić termin"],
+  CHECKBOX: ["true", "true", "true"],
+  SELECT: null
+};
 
-    const TEST_SETS = [
-      { name: "Anna Nowak", values: { "Imie-i-nazwisko": "Anna Nowak", "Mail": "anna.nowak@gmail.com", "Telefon": "+48600700800", "zgoda": "true" } },
-      { name: "Marek Zielinski", values: { "Imie-i-nazwisko": "Marek Zielinski", "Mail": "m.zielinski@wp.pl", "Telefon": "+48501234567", "zgoda": "true" } },
-      { name: "Ewa Kowalczyk", values: { "Imie-i-nazwisko": "Ewa Kowalczyk", "Mail": "ewa.k@onet.pl", "Telefon": "+48512345678", "zgoda": "true" } },
-    ];
+let fieldsMeta = [];
+let textFieldIdx = 0;
 
-    const NICE_LABELS = {
-      "Imie-i-nazwisko": "Imie i nazwisko",
-      "Mail": "E-mail",
-      "Telefon": "Telefon",
-      "Lista": "Lista opcji",
-      "Zyczenie": "Zapytanie",
-      "zgoda": "Zgoda na kontakt",
-    };
-
-    const INLINE_FIELDS = new Set(["Mail", "Telefon"]);
-
-    const FIELD_ORDER = ["Imie-i-nazwisko", "Mail", "Telefon", "Lista", "Zyczenie", "zgoda"];
-
-    const setsEl = document.getElementById("sets");
-    const container = document.getElementById("form-container");
-    const out = document.getElementById("out");
-
-    function getCaptchaToken() {
-      if (!RECAPTCHA_SITE_KEY || !window.grecaptcha) return Promise.resolve("");
-      return new Promise((resolve, reject) => {
-        grecaptcha.ready(() => {
-          grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: "submit" }).then(resolve, reject);
-        });
-      });
+function prefill(setIdx) {
+  textFieldIdx = 0;
+  fieldsMeta.forEach(f => {
+    const el = document.querySelector("[name='" + f.fieldId + "']");
+    if (!el) return;
+    if (f.type === "CHECKBOX") {
+      el.checked = true;
+    } else if (f.type === "SELECT") {
+      const opts = el.options;
+      if (opts.length > 0) el.selectedIndex = setIdx % opts.length;
+    } else if (f.type === "EMAIL") {
+      el.value = FAKE.EMAIL[setIdx];
+    } else if (f.type === "PHONE") {
+      el.value = FAKE.PHONE[setIdx];
+    } else if (f.type === "TEXT_AREA") {
+      el.value = FAKE.TEXT_AREA[setIdx];
+    } else {
+      const pool = FAKE.TEXT_FIELD[textFieldIdx % FAKE.TEXT_FIELD.length];
+      el.value = pool[setIdx];
+      textFieldIdx++;
     }
+  });
+  document.getElementById("out").className = "";
+  document.getElementById("out").textContent = "";
+}
 
-    TEST_SETS.forEach(s => {
-      const btn = document.createElement("button");
-      btn.className = "set-btn";
-      btn.innerHTML = "<div class='name'>" + s.name + "</div>";
-      btn.addEventListener("click", () => {
-        Object.entries(s.values).forEach(([k, v]) => {
-          const el = document.querySelector("[name='" + k + "']");
-          if (!el) return;
-          if (el.type === "checkbox") el.checked = v === "true"; else el.value = v;
-        });
-        out.className = ""; out.classList.remove("show"); out.textContent = "";
-      });
-      setsEl.appendChild(btn);
+function getCaptchaToken() {
+  if (!SITE_KEY || !window.grecaptcha) return Promise.resolve("");
+  return new Promise(function(resolve, reject) {
+    grecaptcha.ready(function() {
+      grecaptcha.execute(SITE_KEY, {action: "submit"}).then(resolve, reject);
+    });
+  });
+}
+
+const NAMES = ["Anna Nowak", "Marek Zieliński", "Ewa Kowalczyk"];
+var presetsEl = document.getElementById("presets");
+NAMES.forEach(function(name, i) {
+  var btn = document.createElement("button");
+  btn.textContent = name;
+  btn.addEventListener("click", function() { prefill(i); });
+  presetsEl.appendChild(btn);
+});
+
+fetch("/api/forms/" + FORM_ID + "/fields")
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) { document.getElementById("form-container").innerHTML = "<p class='err show'>" + data.error + "</p>"; return; }
+    if (data.form_name) document.getElementById("fname").textContent = data.form_name;
+    fieldsMeta = data.fields;
+
+    var html = "<form id='f'>";
+    var emailAndPhone = [];
+
+    data.fields.forEach(function(f) {
+      var label = f.name || f.fieldId;
+      var req = f.required ? "<span class='req'> *</span>" : "";
+
+      if (f.type === "EMAIL" || f.type === "PHONE") {
+        emailAndPhone.push(f);
+        if (emailAndPhone.length === 2) {
+          html += "<div class='row'>";
+          emailAndPhone.forEach(function(ef) {
+            var elabel = ef.name || ef.fieldId;
+            var ereq = ef.required ? "<span class='req'> *</span>" : "";
+            var t = ef.type === "EMAIL" ? "email" : "tel";
+            html += "<div><label>" + elabel + ereq + "</label><input type='" + t + "' name='" + ef.fieldId + "'" + (ef.required ? " required" : "") + " /></div>";
+          });
+          html += "</div>";
+          emailAndPhone = [];
+        }
+        return;
+      }
+
+      if (f.type === "CHECKBOX") {
+        html += "<div class='cb-row'><input type='checkbox' name='" + f.fieldId + "' value='true' /><label>" + label + "</label></div>";
+      } else if (f.type === "SELECT" && f.options) {
+        html += "<div><label>" + label + req + "</label><select name='" + f.fieldId + "'>";
+        f.options.forEach(function(o) { html += "<option value='" + o + "'>" + o + "</option>"; });
+        html += "</select></div>";
+      } else if (f.type === "TEXT_AREA") {
+        html += "<div><label>" + label + req + "</label><textarea name='" + f.fieldId + "'" + (f.required ? " required" : "") + "></textarea></div>";
+      } else {
+        html += "<div><label>" + label + req + "</label><input type='text' name='" + f.fieldId + "'" + (f.required ? " required" : "") + " /></div>";
+      }
     });
 
-    fetch("/api/forms/" + formId + "/fields")
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) { container.innerHTML = "<p class='err show'>" + data.error + "</p>"; return; }
-        if (data.form_name) document.getElementById("fname").textContent = data.form_name;
+    // leftover email/phone not paired
+    emailAndPhone.forEach(function(ef) {
+      var elabel = ef.name || ef.fieldId;
+      var ereq = ef.required ? "<span class='req'> *</span>" : "";
+      var t = ef.type === "EMAIL" ? "email" : "tel";
+      html += "<div><label>" + elabel + ereq + "</label><input type='" + t + "' name='" + ef.fieldId + "'" + (ef.required ? " required" : "") + " /></div>";
+    });
 
-        const sorted = data.fields.slice().sort((a, b) => {
-          const ia = FIELD_ORDER.indexOf(a.fieldId), ib = FIELD_ORDER.indexOf(b.fieldId);
-          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-        });
+    html += "<button type='submit' class='btn'>Wyślij do Medidesk</button></form>";
+    document.getElementById("form-container").innerHTML = html;
 
-        let html = "<form id='f'>", inRow = false;
-        sorted.forEach((f, i) => {
-          const label = NICE_LABELS[f.fieldId] || f.name;
-          const req = f.required ? "<span class='req'> *</span>" : "";
-          const nextField = sorted[i + 1];
-          const startRow = !inRow && INLINE_FIELDS.has(f.fieldId) && nextField && INLINE_FIELDS.has(nextField.fieldId);
-          const endRow = inRow && (!nextField || !INLINE_FIELDS.has(nextField?.fieldId));
+    document.getElementById("f").addEventListener("submit", function(e) {
+      e.preventDefault();
+      var btn = e.target.querySelector(".btn");
+      var out = document.getElementById("out");
+      btn.disabled = true;
+      btn.textContent = "captcha…";
+      out.textContent = ""; out.className = "";
 
-          if (startRow) { html += "<div class='row'>"; inRow = true; }
+      var fd = new FormData(e.target);
+      var body = {};
+      for (var pair of fd.entries()) body[pair[0]] = pair[1];
+      data.fields.forEach(function(f) {
+        if (f.type === "CHECKBOX" && !fd.has(f.fieldId)) body[f.fieldId] = "false";
+      });
+      body.siteDomain = location.hostname;
+      body.siteUrl = location.pathname;
 
-          if (f.type === "CHECKBOX") {
-            html += "<div class='checkbox-row'><input type='checkbox' id='cb_" + f.fieldId + "' name='" + f.fieldId + "' value='true' /><label for='cb_" + f.fieldId + "'>" + label + "</label></div>";
-          } else if (f.type === "SELECT" && f.options) {
-            html += "<div><label>" + label + req + "</label><select name='" + f.fieldId + "'>";
-            f.options.forEach(o => { html += "<option value='" + o + "'>" + o + "</option>"; });
-            html += "</select></div>";
-          } else if (f.type === "TEXT_AREA") {
-            html += "<div><label>" + label + req + "</label><textarea name='" + f.fieldId + "'" + (f.required ? " required" : "") + "></textarea></div>";
-          } else {
-            const t = f.type === "EMAIL" ? "email" : f.type === "PHONE" ? "tel" : "text";
-            html += "<div><label>" + label + req + "</label><input type='" + t + "' name='" + f.fieldId + "'" + (f.required ? " required" : "") + " /></div>";
-          }
+      getCaptchaToken()
+        .then(function(token) {
+          if (token) body.captchaResponse = token;
+          btn.textContent = "wysyłanie…";
+          return fetch("/api/submit/" + FORM_ID, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+        })
+        .then(function(r) { return r.json().then(function(d) { return {status: r.status, data: d}; }); })
+        .then(function(res) {
+          out.classList.add("show");
+          out.className = res.status === 200 ? "ok show" : "err show";
+          out.textContent = res.status === 200 ? "OK — lead wysłany do Medidesk" : "Błąd " + res.status + "\n" + JSON.stringify(res.data, null, 2);
+          btn.disabled = false; btn.textContent = "Wyślij do Medidesk";
+        })
+        .catch(function(err) { out.classList.add("show"); out.className = "err show"; out.textContent = "" + err; btn.disabled = false; btn.textContent = "Wyślij do Medidesk"; });
+    });
 
-          if (endRow) { html += "</div>"; inRow = false; }
-        });
-        if (inRow) html += "</div>";
-        html += "<button type='submit' class='submit-btn'>Wyslij lead</button></form>";
-        container.innerHTML = html;
-
-        document.getElementById("f").addEventListener("submit", function(e) {
-          e.preventDefault();
-          const btn = e.target.querySelector(".submit-btn");
-          btn.disabled = true; btn.textContent = "...";
-          out.textContent = ""; out.className = ""; out.classList.remove("show");
-          const fd = new FormData(e.target);
-          const body = {};
-          for (const [k, v] of fd.entries()) body[k] = v;
-          data.fields.forEach(f => { if (f.type === "CHECKBOX" && !fd.has(f.fieldId)) body[f.fieldId] = "false"; });
-          body.siteDomain = location.hostname;
-          body.siteUrl = location.pathname;
-
-          btn.textContent = "captcha...";
-          getCaptchaToken()
-          .then(token => {
-            if (token) body.captchaResponse = token;
-            btn.textContent = "wysylanie...";
-            return fetch("/api/submit/" + formId, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-          })
-          .then(r => r.json().then(d => ({ status: r.status, data: d })))
-          .then(({ status, data }) => {
-            out.classList.add("show");
-            out.className = status === 200 ? "ok show" : "err show";
-            out.textContent = status === 200 ? "OK — sprawdz Medidesk" : "Blad " + status + "\n" + JSON.stringify(data, null, 2);
-            btn.disabled = false; btn.textContent = "Wyslij lead";
-          })
-          .catch(err => { out.classList.add("show"); out.className = "err show"; out.textContent = "" + err; btn.disabled = false; btn.textContent = "Wyslij lead"; });
-        });
-      })
-      .catch(err => { container.innerHTML = "<p class='err'>" + err + "</p>"; });
-  </script>
-
-{% endblock %}
+    prefill(0);
+  })
+  .catch(function(err) { document.getElementById("form-container").innerHTML = "<p class='err show'>" + err + "</p>"; });
+</script>
+</body>
+</html>

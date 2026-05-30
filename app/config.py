@@ -2,61 +2,13 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # App metadata
-    app_name: str = "Integracja Leadów do Medidesk"
-    app_version: str = "2.0.0"
-    app_author: str = "Aga - Marketing"
-    app_admin_email: str = "adminzoho@medidesk.com"
-    app_icon_path: str = "/static/icon.jpg"
-
     medidesk_api_base: str = "https://app.medidesk.io/api/forms"
-    default_site_domain: str = "twoja-domena.pl"
-    default_site_url: str = "/kontakt"
-    # reCAPTCHA v3 site key — ustaw przez MEDIDESK_RECAPTCHA_SITE_KEY na Render.
-    # Musi pasować do secret-key'a po stronie Medideska (para site+secret).
-    recaptcha_site_key: str = ""
-    # URL strony hostującej skrypt grecaptcha — używany przez captcha_bridge
-    # (Playwright). Musi być na liście domen powiązanej z site-key powyżej
-    # w panelu reCAPTCHA. Pusty = bridge wyłączony (server-to-server bez captchy).
-    recaptcha_bridge_url: str = ""
+    recaptcha_site_key: str = ""   # ustaw przez MEDIDESK_RECAPTCHA_SITE_KEY na Render
     http_timeout: float = 15.0
-
-    demo_page_enabled: bool = False
-    debug_upstream: bool = False
-    cors_origins: str = ""
-
-    # Facebook OAuth & Graph API
-    fb_app_id: str = ""
-    fb_app_secret: str = ""
-    fb_redirect_uri: str = "http://localhost:8000/auth/facebook/callback"
-    fb_graph_version: str = "v25.0"
-    fb_webhook_verify_token: str = "medidesk_integrator_verify_2026"
-
-    # Integration storage
-    data_dir: str = "."  # set to /data on Render (persistent disk)
-    integrations_file: str = "integrations.json"
-    lead_log_file: str = "lead_log.json"
-
-    # Session
-    fb_session_secret: str = "medidesk-session-secret-change-me-2026"
-    admin_password: str = "medidesk-admin-2026"
-    admin_email: str = "adminzoho@medidesk.com"
-
-    # Encryption (Fernet) — generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-    encryption_key: str = ""
-
-    # Alerting (Make.com webhooks)
-    alert_email: str = ""  # email for token expiry alerts
-    make_webhook_send_email: str = ""  # Make.com webhook URL for sending emails
-    token_expiry_warn_days: int = 14  # warn when token expires within N days
+    default_site_domain: str = ""
+    default_site_url: str = ""
 
     model_config = {"env_prefix": "MEDIDESK_"}
-
-    @property
-    def cors_origins_list(self) -> list[str]:
-        if not self.cors_origins.strip():
-            return []
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
 
 settings = Settings()
