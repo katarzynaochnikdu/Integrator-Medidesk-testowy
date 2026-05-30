@@ -153,10 +153,10 @@ async def submit_form_urlencoded(
 
     if not captcha_response:
         try:
-            from app.captcha_bridge import get_captcha_token
+            from app.captcha_provider import get_captcha_token
             captcha_response = await get_captcha_token(form_id)
         except Exception:
-            logger.warning("captcha-bridge unavailable for form=%s", form_id, exc_info=True)
+            logger.warning("captcha provider unavailable for form=%s", form_id, exc_info=True)
 
     # Mimic a real browser form submission: Medidesk's "web-form" handler
     # (the path that shows up in 500 error responses) appears to require
