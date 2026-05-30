@@ -2,11 +2,16 @@
 #
 # Aktywny serwis: md-integrator-old (Starter plan).
 #
-# buildCommand instaluje binarkę Chromium dla Playwright — captcha-bridge
-# otwiera app.medidesk.io w headless-browserze i generuje token reCAPTCHA v3.
-# UWAGA: bez `--with-deps` (to runęłoby apt-get, który na Render wymaga
-# roota i pada w buildzie). Render ma w bazowym obrazie biblioteki
-# wystarczające do chrome-headless-shell.
+# Playwright na Render — DWA warunki muszą być spełnione:
+#  1. buildCommand pobiera binarkę chromium (`playwright install chromium`).
+#  2. PLAYWRIGHT_BROWSERS_PATH wskazuje katalog WEWNĄTRZ projektu — domyślny
+#     ~/.cache/ms-playwright NIE przeżywa przejścia build→runtime na Render,
+#     więc binarka instalowana w buildzie znika do startu. Katalog projektu
+#     (/opt/render/project/src) przeżywa. Build i runtime czytają tę samą
+#     zmienną, więc instalacja i lookup trafiają w to samo miejsce.
+#
+# UWAGA: jeśli serwis był utworzony ręcznie (nie z Blueprintu), Render
+# IGNORUJE ten plik — wtedy ustaw buildCommand i env var w dashboardzie.
 services:
   - type: web
     name: md-integrator-old
@@ -19,3 +24,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.0"
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: /opt/render/project/src/.ms-playwright
