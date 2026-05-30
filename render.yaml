@@ -1,25 +1,21 @@
 # Render Blueprint: https://render.com/docs/blueprint-spec
 #
-# UWAGA: Aktywny serwis na Render to `md-integrator-old` (Starter plan).
-# Ten plik powinien być spójny z faktycznym serwisem; zmiana `name` po
-# pierwszym deployu Blueprint na Render może utworzyć nowy serwis zamiast
-# zaktualizować istniejący, dlatego trzymamy nazwę aktualną.
+# Aktywny serwis: md-integrator-old (Starter plan).
 #
-# buildCommand instaluje Chromium dla Playwright (potrzebny do
-# captcha-bridge: generuje tokeny reCAPTCHA v3 w headless-browserze
-# dla wywołań server-to-server (FB webhook → Medidesk), które nie
-# mają własnej przeglądarki).
+# buildCommand instaluje binarkę Chromium dla Playwright — captcha-bridge
+# otwiera app.medidesk.io w headless-browserze i generuje token reCAPTCHA v3.
+# UWAGA: bez `--with-deps` (to runęłoby apt-get, który na Render wymaga
+# roota i pada w buildzie). Render ma w bazowym obrazie biblioteki
+# wystarczające do chrome-headless-shell.
 services:
   - type: web
     name: md-integrator-old
     runtime: python
     region: frankfurt
     plan: starter
-    buildCommand: pip install -r requirements.txt && playwright install --with-deps chromium
+    buildCommand: pip install -r requirements.txt && playwright install chromium
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /
+    healthCheckPath: /demo/contact
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.0"
-      - key: MEDIDESK_DEMO_PAGE_ENABLED
-        value: "true"
