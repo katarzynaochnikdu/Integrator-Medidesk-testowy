@@ -1,9 +1,76 @@
-# Diagnoza: leady nie wchodzą do Medideska — reCAPTCHA v3
+# Diagnoza: leady do Medideska — reCAPTCHA v3 Enterprise
 
-> Data: 2026-05-30
-> Wynik jednym zdaniem: **integracja po naszej stronie działa w 100%; blokuje
-> wyłącznie weryfikacja reCAPTCHA po stronie Medideska — odrzuca każdy
-> poprawny token (HTTP 401).**
+> Data: 2026-05-30 / aktualizacja 2026-06-01
+> Status: **DZIAŁA (HTTP 200)** — Medidesk **tymczasowo** wyłączył captchę.
+> To jest nasz **punkt odniesienia (baseline)**: wszystko poza captchą jest
+> potwierdzone jako poprawne. Gdy captcha wróci, będzie **jedyną** nową zmienną.
+
+---
+
+## 0. ⭐ STAN DZIAŁAJĄCY (baseline — nie ruszać) ⭐
+
+**2026-06-01: Medidesk TYMCZASOWO wyłączył captchę. Wysyłka zwraca HTTP 200.**
+Potwierdzone: `/debug/send?action=submit` → `medidesk_status: 200, medidesk_ok: true`.
+
+**Świadoma decyzja: NIE zmieniamy niczego w konfiguracji.** Zostawiamy dokładnie
+ten sam request, który teraz daje 200 — to nasz znany-dobry stan. Gdy Medidesk
+ponownie włączy captchę, jedyną różnicą będzie weryfikacja tokenu → łatwo
+wyizolujemy, czy problem jest po naszej stronie czy ich.
+
+### Dokładny request, który DZIAŁA (HTTP 200)
+
+```http
+POST https://app.medidesk.io/api/forms/kochnikmini
+```
+Nagłówki:
+```
+Content-Type:                   application/x-www-form-urlencoded; charset=UTF-8
+Accept:                         application/json, text/plain, */*
+Origin:                         https://app.medidesk.io
+Referer:                        https://app.medidesk.io/forms/e8342a6a-b31a-4e2c-82be-146b73fe8457
+User-Agent:                     MedideskIntegrator/2.0 (+https://md-integrator-old.onrender.com)
+X-Requested-With:               XMLHttpRequest
+enterprise-recaptcha-response:  <token reCAPTCHA>   ← przy captcha OFF ignorowany
+```
+Body (urlencoded):
+```
+siteDomain=app.medidesk.io
+&siteUrl=/forms/e8342a6a-b31a-4e2c-82be-146b73fe8457
+&fieldsValues[string]=Jan Testowy
+&fieldsValues[email]=jan.test@example.com
+&fieldsValues[zgoda]=true
+```
+Odpowiedź: **HTTP 200, puste body** = lead przyjęty.
+
+### Konfiguracja, która daje ten 200 (Render env + kod)
+
+| Ustawienie | Wartość | Gdzie |
+|---|---|---|
+| Endpoint | `webFormId` = `kochnikmini` (resolve z UUID) | `medidesk_client.resolve_submit_form_id` |
+| Nagłówek tokenu | `enterprise-recaptcha-response` | `MEDIDESK_CAPTCHA_HEADER` (default w configu) |
+| Site-key | `6Ldo-f0sAAAAAJO47MmGJQu_XZII-2Gd4WyLnyAk` | `MEDIDESK_RECAPTCHA_SITE_KEY` |
+| Tryb captcha | `solver` (CapSolver) | `MEDIDESK_CAPTCHA_MODE` |
+| Format | urlencoded, `fieldsValues[fieldId]=value` | `build_urlencoded_body` |
+
+### Co ten 200 DOWODZI (kluczowe)
+
+Skoro przy captcha OFF dostajemy 200, to **wszystko poza captchą jest poprawne**:
+endpoint ✅, format body ✅, mapowanie pól ✅, nazwa nagłówka ✅, klucz ✅.
+→ **Gdy captcha wróci i znów poleci 401, przyczyną będzie WYŁĄCZNIE weryfikacja
+tokenu (score / action / valid) po stronie Medideska — nic po naszej.**
+
+### Czego ten 200 NIE dowodzi
+
+Przy captcha OFF token jest **ignorowany** — więc **nie potwierdziliśmy**, że
+nasz token przechodzi weryfikację z captchą ON. Z captchą ON każdy nasz wariant
+dawał 401 (zob. sekcja 2). Ta przyczyna **nie została ustalona** — Medidesk ją
+obszedł, nie naprawił.
+
+### Otwarte pytanie do Medideska (na powrót captchy)
+
+Zanim/gdy włączą captchę — wyciągnąć od nich, co zwraca ich `createAssessment`
+dla naszych tokenów: `tokenProperties.valid` (+ `invalidReason`), `score`,
+`expectedAction`. Bez tego, gdy captcha wróci, znów będziemy zgadywać.
 
 ---
 

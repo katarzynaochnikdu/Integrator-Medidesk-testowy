@@ -1,12 +1,13 @@
 # System State — Medidesk Integrator
 
-> Ostatnia aktualizacja: 2026-05-30 (branch `feat/medidesk-captcha-bridge`)
+> Ostatnia aktualizacja: 2026-06-01 (branch `main`)
 
 ## Status projektu
 
 | Element | Status | Uwagi |
 |---|---|---|
-| Produkcja (Render) | ⚠ Częściowo | https://md-integrator-old.onrender.com — leady do Medideska blokuje reCAPTCHA v3 (zobacz „Znane problemy") |
+| Wysyłka do Medideska | ✅ **DZIAŁA (200)** | Medidesk **tymczasowo** wyłączył captchę. Baseline udokumentowany w `docs/captcha_diagnoza.md` sekcja 0. NIE zmieniać configu. |
+| Produkcja (Render) | ✅ Działa | https://md-integrator-old.onrender.com |
 | Lokalny dev | ✅ Działa | `uvicorn app.main:app --reload` |
 | Testy | ⚠️ Brak CI | `pytest` lokalnie |
 | Git | 🔄 Branch | `feat/medidesk-captcha-bridge`, tag `przed_captcha_bridge_20260530` |
