@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Test — wysyłka do Medidesk</title>
+<script>
+  // Klucz reCAPTCHA Enterprise — z configu, można nadpisać ?key=... do testów.
+  window.__RECAPTCHA_KEY = new URLSearchParams(location.search).get("key") || "{{ recaptcha_site_key }}";
+  // enterprise.js ładowany dynamicznie z wybranym kluczem (żeby ?key= działał).
+  (function(){
+    var s = document.createElement("script");
+    s.src = "https://www.google.com/recaptcha/enterprise.js?render=" + encodeURIComponent(window.__RECAPTCHA_KEY);
+    document.head.appendChild(s);
+  })();
+</script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:system-ui,sans-serif;background:#0f1117;color:#e4e4e7;font-size:13px}
@@ -45,8 +55,25 @@
 </div>
 <script>
 const FORM_ID = "{{ default_form_id }}";
+const RECAPTCHA_KEY = window.__RECAPTCHA_KEY;
+const CAPTCHA_ACTION = new URLSearchParams(location.search).get("action") || "submit";
 
 document.getElementById("fid").textContent = FORM_ID;
+
+// Token reCAPTCHA Enterprise generowany w PRZEGLĄDARCE (prawdziwy browser =
+// wysoki score). To jest "implementacja", którą zaleca Medidesk (enterprise.js
+// + grecaptcha.enterprise.execute). Token leci do /api/submit jako captchaResponse.
+function getEnterpriseToken() {
+  return new Promise(function(resolve, reject) {
+    if (!RECAPTCHA_KEY || !window.grecaptcha || !grecaptcha.enterprise) {
+      reject(new Error("grecaptcha.enterprise niedostępne"));
+      return;
+    }
+    grecaptcha.enterprise.ready(function() {
+      grecaptcha.enterprise.execute(RECAPTCHA_KEY, {action: CAPTCHA_ACTION}).then(resolve, reject);
+    });
+  });
+}
 
 const FAKE = {
   TEXT_FIELD: [
@@ -158,7 +185,7 @@ fetch("/api/forms/" + FORM_ID + "/fields")
       var btn = e.target.querySelector(".btn");
       var out = document.getElementById("out");
       btn.disabled = true;
-      btn.textContent = "wysyłanie…";
+      btn.textContent = "captcha…";
       out.textContent = ""; out.className = "";
 
       var fd = new FormData(e.target);
@@ -170,15 +197,20 @@ fetch("/api/forms/" + FORM_ID + "/fields")
       body.siteDomain = location.hostname;
       body.siteUrl = location.pathname;
 
-      fetch("/api/submit/" + FORM_ID, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})
+      getEnterpriseToken()
+        .then(function(token) {
+          body.captchaResponse = token;
+          btn.textContent = "wysyłanie…";
+          return fetch("/api/submit/" + FORM_ID, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+        })
         .then(function(r) { return r.json().then(function(d) { return {status: r.status, data: d}; }); })
         .then(function(res) {
           out.classList.add("show");
           out.className = res.status === 200 ? "ok show" : "err show";
-          out.textContent = res.status === 200 ? "OK — lead wysłany do Medidesk" : "Błąd " + res.status + "\n" + JSON.stringify(res.data, null, 2);
+          out.textContent = res.status === 200 ? "OK — lead wysłany do Medidesk 🎉" : "Błąd " + res.status + "\n" + JSON.stringify(res.data, null, 2);
           btn.disabled = false; btn.textContent = "Wyślij do Medidesk";
         })
-        .catch(function(err) { out.classList.add("show"); out.className = "err show"; out.textContent = "" + err; btn.disabled = false; btn.textContent = "Wyślij do Medidesk"; });
+        .catch(function(err) { out.classList.add("show"); out.className = "err show"; out.textContent = "captcha/wysyłka: " + err; btn.disabled = false; btn.textContent = "Wyślij do Medidesk"; });
     });
 
     prefill(0);
