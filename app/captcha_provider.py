@@ -35,15 +35,16 @@ async def get_captcha_token(
     action: str | None = None,
     enterprise: bool | None = None,
     min_score: float | None = None,
+    site_key: str | None = None,
 ) -> str | None:
     """Zwraca token reCAPTCHA v3 wg skonfigurowanego trybu lub ``None``.
 
-    ``action`` / ``enterprise`` / ``min_score`` nadpisują config (testy
-    przez /debug/send) — gdy None, biorą wartość z configu.
+    ``action`` / ``enterprise`` / ``min_score`` / ``site_key`` nadpisują
+    config (testy przez /debug/send) — gdy None, biorą wartość z configu.
     """
     mode = (settings.captcha_mode or "none").strip().lower()
     if mode == "solver":
-        return await _solve_capsolver(form_id, action=action, enterprise=enterprise, min_score=min_score)
+        return await _solve_capsolver(form_id, action=action, enterprise=enterprise, min_score=min_score, site_key=site_key)
     if mode == "bridge":
         try:
             from app.captcha_bridge import get_captcha_token as bridge_token
@@ -68,6 +69,7 @@ async def _solve_capsolver(
     action: str | None = None,
     enterprise: bool | None = None,
     min_score: float | None = None,
+    site_key: str | None = None,
 ) -> str | None:
     """CapSolver: createTask → poll getTaskResult → gRecaptchaResponse.
 
@@ -79,8 +81,9 @@ async def _solve_capsolver(
     if not settings.solver_captcha_api_key:
         logger.warning("CapSolver: brak MEDIDESK_SOLVER_CAPTCHA_API_KEY")
         return None
-    if not settings.recaptcha_site_key:
-        logger.warning("CapSolver: brak MEDIDESK_RECAPTCHA_SITE_KEY")
+    use_key = site_key or settings.recaptcha_site_key
+    if not use_key:
+        logger.warning("CapSolver: brak site-key")
         return None
 
     use_action = action if action is not None else (settings.captcha_action or "submit")
@@ -91,7 +94,7 @@ async def _solve_capsolver(
     task = {
         "type": task_type,
         "websiteURL": _website_url(form_id),
-        "websiteKey": settings.recaptcha_site_key,
+        "websiteKey": use_key,
         "pageAction": use_action,
         "minScore": use_min_score,
     }

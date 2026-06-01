@@ -74,6 +74,7 @@ async def debug_send(
     action: str | None = None,
     enterprise: bool = False,
     min_score: float | None = None,
+    site_key: str | None = None,
 ):
     """Pełny przepływ end-to-end: token → POST do Medideska → realny status.
 
@@ -95,7 +96,7 @@ async def debug_send(
     t0 = time.time()
     try:
         from app.captcha_provider import get_captcha_token
-        token = await get_captcha_token(form_id, action=action, enterprise=enterprise, min_score=min_score)
+        token = await get_captcha_token(form_id, action=action, enterprise=enterprise, min_score=min_score, site_key=site_key)
     except Exception as e:
         out["stage"] = "token"
         out["error"] = repr(e)
