@@ -5,6 +5,21 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-06-01 — WO#003 Admin-gate `/debug/*`
+
+### Bezpieczeństwo
+- **`/debug/captcha` i `/debug/send` chronione shared-tokenem** (`MEDIDESK_DEBUG_TOKEN`). Bez tokenu w env endpoint odpowiada **503 (fail-closed)** — żaden ruch anonimowy nie spali kredytów CapSolver ani nie spamuje Medideska. Z tokenem: `X-Debug-Token` header lub `?token=` query; porównanie w `hmac.compare_digest`.
+- Tag `przed_debug_admingate_20260601` jako punkt powrotu.
+
+### Dodane
+- `MEDIDESK_DEBUG_TOKEN` (env) — `app/config.py:25` + tabela w `docs/README.md`.
+- Sekcja „Diagnostyka — endpointy `/debug/*`" w `docs/README.md` z przykładami curl.
+
+### Naprawione
+- Finding SecGate z WO#002 — endpointy diagnostyczne były otwarte dla świata.
+
+---
+
 ## [Unreleased] — 2026-06-01 — WO#002 Captcha solver ready
 
 ### Bezpieczeństwo

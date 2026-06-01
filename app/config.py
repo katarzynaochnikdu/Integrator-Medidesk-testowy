@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     captcha_timeout: float = 60.0       # budżet czasu na solve (sekundy)
     captcha_enterprise: bool = False    # True = reCAPTCHA Enterprise (inny typ tasku)
 
+    # --- Diagnostyka ---
+    # Shared token chroniący /debug/* (X-Debug-Token header lub ?token=).
+    # Puste = endpoint zwraca 503 (fail-closed, brak nieautoryzowanego dostępu).
+    debug_token: str = ""
+
     model_config = {"env_prefix": "MEDIDESK_"}
 
 

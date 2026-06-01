@@ -6,7 +6,7 @@
 
 - **Nazwa**: Medidesk Integrator (Integracja Leadów do Medidesk)
 - **Wersja**: 2.0.0
-- **Repo**: https://github.com/katarzynaochnikdu/MD_integrator_V1
+- **Repo**: https://github.com/katarzynaochnikdu/Integrator-Medidesk-testowy
 - **Produkcja**: https://md-integrator-old.onrender.com
 - **Framework**: FastAPI (Python)
 - **Szablony**: Jinja2 z `base.html` layoutem

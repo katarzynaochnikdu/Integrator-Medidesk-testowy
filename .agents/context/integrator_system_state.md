@@ -1,6 +1,6 @@
 # System State — Medidesk Integrator
 
-> Ostatnia aktualizacja: 2026-06-01 (branch `main`, po WO#002)
+> Ostatnia aktualizacja: 2026-06-01 (branch `main`, po WO#003)
 
 ## Status projektu
 
@@ -29,6 +29,7 @@
 | WO | Tytuł | Zamknięcie | Plik |
 |---|---|---|---|
 | #002 | Captcha solver ready (CapSolver oficjalny, bridge fallback) | 2026-06-01 | `.agents/work_orders/integrator_wo002_captcha_solver_ready.md` |
+| #003 | Admin-gating `/debug/*` (token-based, fail-closed) | 2026-06-01 | `.agents/work_orders/integrator_wo003_debug_admin_gate.md` |
 
 ## Aktywne prace
 
@@ -59,3 +60,4 @@
 | `przed_refactoringiem` | `f96b4eb` | Przed migracją na Jinja2 |
 | `przed_captcha_bridge_20260530` | `7451f7a` | Przed pracami nad reCAPTCHA bridge + URL cleanup (snapshot main) |
 | `przed_captcha_solver_ready_20260601` | `5127542` | Przed cleanup-em WO#002 (usunięcie duplikatu diagnozy, sekcja README, CHANGELOG) |
+| `przed_debug_admingate_20260601` | `51ebaf4` | Przed admin-gating `/debug/*` (WO#003) |

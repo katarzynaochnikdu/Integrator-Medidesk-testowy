@@ -1,7 +1,8 @@
+import hmac
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from jinja2 import Environment, FileSystemLoader
 
@@ -38,7 +39,21 @@ async def demo_contact(form_id: str = "e8342a6a-b31a-4e2c-82be-146b73fe8457"):
     return HTMLResponse(html)
 
 
-@app.get("/debug/captcha")
+async def require_debug_token(request: Request) -> None:
+    """Gate dla /debug/*: shared token w env (MEDIDESK_DEBUG_TOKEN).
+
+    Akceptuje X-Debug-Token (preferowane) lub query param ?token=.
+    Fail-closed: brak skonfigurowanego tokenu → 503 (nie da się trafić w domyślny).
+    """
+    configured = settings.debug_token
+    if not configured:
+        raise HTTPException(status_code=503, detail="Debug endpoints disabled (MEDIDESK_DEBUG_TOKEN not set)")
+    provided = request.headers.get("X-Debug-Token") or request.query_params.get("token") or ""
+    if not provided or not hmac.compare_digest(provided, configured):
+        raise HTTPException(status_code=401, detail="Invalid debug token")
+
+
+@app.get("/debug/captcha", dependencies=[Depends(require_debug_token)])
 async def debug_captcha(form_id: str = "e8342a6a-b31a-4e2c-82be-146b73fe8457"):
     """Diagnostyka providera captcha — generuje token wg aktualnego trybu."""
     import time
@@ -68,7 +83,7 @@ async def debug_captcha(form_id: str = "e8342a6a-b31a-4e2c-82be-146b73fe8457"):
     return info
 
 
-@app.get("/debug/send")
+@app.get("/debug/send", dependencies=[Depends(require_debug_token)])
 async def debug_send(
     form_id: str = "e8342a6a-b31a-4e2c-82be-146b73fe8457",
     action: str | None = None,

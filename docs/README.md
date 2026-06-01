@@ -3,7 +3,7 @@
 > **Wersja**: 2.0.0  
 > **Autor**: Aga - Marketing  
 > **Kontakt**: adminzoho@medidesk.com  
-> **Repozytorium**: https://github.com/katarzynaochnikdu/MD_integrator_V1  
+> **Repozytorium**: https://github.com/katarzynaochnikdu/Integrator-Medidesk-testowy  
 > **Produkcja**: https://md-integrator-old.onrender.com
 
 ---
@@ -103,6 +103,7 @@ Wszystkie zmienne środowiskowe mają prefix `MEDIDESK_` (zdefiniowane w `app/co
 | `MEDIDESK_HTTP_TIMEOUT` | `15.0` | Timeout HTTP w sekundach |
 | `MEDIDESK_MAKE_WEBHOOK_SEND_EMAIL` | `""` | Webhook Make.com do alertów |
 | `MEDIDESK_TOKEN_EXPIRY_WARN_DAYS` | `14` | Alert X dni przed wygaśnięciem tokenu |
+| `MEDIDESK_DEBUG_TOKEN` | `""` | Shared token chroniący `/debug/*`. Pusty = endpoint zwraca 503 (fail-closed). |
 
 ### Captcha — tryby i ENV (Medidesk reCAPTCHA v3 Enterprise)
 
@@ -129,6 +130,20 @@ Endpoint `POST /api/forms/{webFormId}` Medideska jest chroniony przez reCAPTCHA 
 | `MEDIDESK_RECAPTCHA_BRIDGE_URL` | — | Override URL dla bridge/solver (domyślnie `https://app.medidesk.io/forms/{form_id}`) |
 
 **Stan na 2026-06-01**: Medidesk **tymczasowo wyłączył captchę** — wysyłka zwraca HTTP 200 z tym samym requestem, którego użyjemy gdy captcha wróci. Pełna diagnoza, dowody i wzór wiadomości do Medideska: [`captcha_diagnoza.md`](captcha_diagnoza.md).
+
+### Diagnostyka — endpointy `/debug/*`
+
+Endpointy `/debug/captcha` i `/debug/send` są chronione shared-tokenem (`MEDIDESK_DEBUG_TOKEN`). Bez tokenu w env zwracają **503**. Z tokenem w env:
+
+```bash
+# Preferowane — header
+curl -H "X-Debug-Token: $TOKEN" "https://md-integrator-old.onrender.com/debug/captcha"
+
+# Wygoda w przeglądarce — query param
+https://md-integrator-old.onrender.com/debug/captcha?token=$TOKEN
+```
+
+Zły / brak tokenu → **401**. Porównanie tokenu w `hmac.compare_digest` (constant-time).
 
 ### Metadane aplikacji
 
