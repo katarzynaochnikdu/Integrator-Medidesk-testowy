@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     # --- Provider tokenów captcha (zob. app/captcha_provider.py) ---
     captcha_mode: str = "solver"        # solver | bridge | none
     solver_captcha_api_key: str = ""    # clientKey solvera (MEDIDESK_SOLVER_CAPTCHA_API_KEY)
+    captcha_header: str = "enterprise-recaptcha-response"  # nagłówek z tokenem (Medidesk Enterprise)
     captcha_action: str = "submit"      # pageAction reCAPTCHA v3
     captcha_min_score: float = 0.3      # minimalny akceptowany score
     captcha_timeout: float = 60.0       # budżet czasu na solve (sekundy)

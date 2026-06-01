@@ -185,7 +185,10 @@ async def submit_form_urlencoded(
         "X-Requested-With": "XMLHttpRequest",
     }
     if captcha_response:
-        headers["captcha-response"] = captcha_response
+        # Medidesk przeszedł na reCAPTCHA Enterprise i zmienił nazwę nagłówka
+        # z `captcha-response` na `enterprise-recaptcha-response`. Nazwa
+        # konfigurowalna przez MEDIDESK_CAPTCHA_HEADER na wypadek kolejnej zmiany.
+        headers[settings.captcha_header] = captcha_response
 
     async with httpx.AsyncClient(timeout=settings.http_timeout) as client:
         try:
