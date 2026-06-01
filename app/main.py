@@ -103,6 +103,7 @@ async def debug_send(
         return out
     out["token_ok"] = bool(token)
     out["token_s"] = round(time.time() - t0, 1)
+    out["header_used"] = settings.captcha_header
     if not token:
         out["stage"] = "token"
         out["note"] = "solver nie zwrócił tokenu"
