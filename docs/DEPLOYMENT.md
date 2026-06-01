@@ -6,6 +6,7 @@
 - **Region**: Frankfurt
 - **Auto-deploy**: Tak (z `main` branch)
 - **URL**: https://md-integrator-old.onrender.com
+- **Repo**: https://github.com/katarzynaochnikdu/Integrator-Medidesk-testowy (po renamie z `MD_integrator_V1` — GitHub trzyma redirect, Render auto-deploy działa dalej)
 
 ### Komendy
 
@@ -71,6 +72,16 @@ Obowiązkowe:
 - `MEDIDESK_ADMIN_PASSWORD`
 - `MEDIDESK_ADMIN_EMAIL`
 
+Captcha (Medidesk reCAPTCHA v3, zob. `docs/README.md` → sekcja „Captcha — tryby i ENV"):
+- `MEDIDESK_CAPTCHA_MODE` = `solver` (oficjalnie produkcyjnie)
+- `MEDIDESK_SOLVER_CAPTCHA_API_KEY` = clientKey CapSolver
+- `MEDIDESK_RECAPTCHA_SITE_KEY` = `6Ldo-f0sAAAAAJO47MmGJQu_XZII-2Gd4WyLnyAk`
+- `MEDIDESK_CAPTCHA_HEADER` = `enterprise-recaptcha-response` (default OK)
+- `MEDIDESK_CAPTCHA_ENTERPRISE` = `true` / `false` (zob. README)
+
+Diagnostyka:
+- `MEDIDESK_DEBUG_TOKEN` — shared token chroniący `/debug/*`. **Bez tego endpointy odpowiadają 503 (fail-closed).** Wygeneruj: `python -c "import secrets; print(secrets.token_urlsafe(32))"`. Użycie: `curl -H "X-Debug-Token: $TOKEN" .../debug/captcha`.
+
 ---
 
 ## Tagi i wersjonowanie
@@ -78,3 +89,6 @@ Obowiązkowe:
 | Tag | Opis |
 |---|---|
 | `przed_refactoringiem` | Ostatni commit przed refaktoryzacją na Jinja2 |
+| `przed_captcha_bridge_20260530` | Przed pracami nad reCAPTCHA bridge |
+| `przed_captcha_solver_ready_20260601` | Przed cleanup-em WO#002 (solver oficjalny) |
+| `przed_debug_admingate_20260601` | Przed admin-gating `/debug/*` (WO#003) |
