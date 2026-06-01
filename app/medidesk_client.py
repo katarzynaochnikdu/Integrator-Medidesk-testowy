@@ -139,6 +139,37 @@ def build_urlencoded_body(
     return "&".join(parts)
 
 
+async def _post_once(
+    target_id: str,
+    body: str,
+    headers: dict[str, str],
+) -> MedideskResult:
+    """Pojedynczy POST do Medideska na konkretny identyfikator formularza."""
+    url = f"{settings.medidesk_api_base}/{quote(target_id, safe='')}"
+    async with httpx.AsyncClient(timeout=settings.http_timeout) as client:
+        try:
+            resp = await client.post(url, content=body.encode("utf-8"), headers=headers)
+        except httpx.TimeoutException:
+            logger.warning("Medidesk request timed out (%s)", target_id)
+            return MedideskResult(success=False, status_code=504)
+        except httpx.HTTPError as exc:
+            logger.error("Medidesk HTTP error (%s): %s", target_id, exc)
+            return MedideskResult(success=False, status_code=502)
+
+    response_body = None
+    raw_text = (resp.text or "")[:8000] if resp.text else None
+    try:
+        response_body = resp.json()
+    except Exception:
+        pass
+    return MedideskResult(
+        success=resp.status_code == 200,
+        status_code=resp.status_code,
+        body=response_body,
+        raw_text=raw_text,
+    )
+
+
 async def submit_form_urlencoded(
     form_id: str,
     fields_values: dict[str, str],
@@ -146,9 +177,14 @@ async def submit_form_urlencoded(
     site_url: str | None = None,
     captcha_response: str | None = None,
 ) -> MedideskResult:
-    """POST urlencoded do Medidesk z opcjonalnym tokenem reCAPTCHA v3."""
+    """POST urlencoded do Medidesk z opcjonalnym tokenem reCAPTCHA v3.
+
+    Próbuje OBA identyfikatory formularza: najpierw webFormId (zwykle
+    właściwy endpoint web-form), potem formTemplateId/UUID (zgodnie ze
+    spec). Zwraca pierwszy sukces; jeśli żaden — ostatni najinformatywniejszy
+    wynik (preferując nie-500, bo 500 to crash ich handlera).
+    """
     submit_form_id = await resolve_submit_form_id(form_id)
-    url = f"{settings.medidesk_api_base}/{quote(submit_form_id, safe='')}"
     body = build_urlencoded_body(fields_values, site_domain, site_url)
 
     if not captcha_response:
@@ -190,49 +226,26 @@ async def submit_form_urlencoded(
         # konfigurowalna przez MEDIDESK_CAPTCHA_HEADER na wypadek kolejnej zmiany.
         headers[settings.captcha_header] = captcha_response
 
-    async with httpx.AsyncClient(timeout=settings.http_timeout) as client:
-        try:
-            resp = await client.post(
-                url,
-                # Body is guaranteed pure ASCII after build_urlencoded_body percent-encodes
-                # every key + value, but we still encode as UTF-8 as defense-in-depth —
-                # if a future caller passes raw bytes by accident, UTF-8 won't blow up
-                # on non-ASCII characters the way .encode("ascii") did (see Polish 'ę').
-                content=body.encode("utf-8"),
-                headers=headers,
-            )
-        except httpx.TimeoutException:
-            logger.warning("Medidesk request timed out")
-            return MedideskResult(success=False, status_code=504)
-        except httpx.HTTPError as exc:
-            logger.error("Medidesk HTTP error: %s", exc)
-            return MedideskResult(success=False, status_code=502)
+    # Kandydaci na endpoint: webFormId i UUID (bez duplikatu).
+    candidates: list[str] = []
+    for cid in (submit_form_id, form_id):
+        if cid and cid not in candidates:
+            candidates.append(cid)
 
-    response_body = None
-    raw_text = (resp.text or "")[:8000] if resp.text else None
-    try:
-        response_body = resp.json()
-    except Exception:
-        pass
-
-    if resp.status_code != 200:
-        # Log BOTH Medidesk's response AND the body we sent — without the
-        # request body it's impossible to tell why their API rejected the lead
-        # (value too long? wrong format? missing required?). Body is already
-        # URL-encoded so values are non-readable secrets-style.
+    last: MedideskResult | None = None
+    for cid in candidates:
+        result = await _post_once(cid, body, headers)
+        if result.success:
+            logger.info("Medidesk POST OK form=%s via=%s", form_id, cid)
+            return result
         logger.warning(
-            "Medidesk POST form=%s submit_form=%s status=%s captcha=%s response=%s sent_body=%s",
-            form_id,
-            submit_form_id,
-            resp.status_code,
-            bool(captcha_response),
-            (resp.text or "")[:1200],
-            body[:2000],
+            "Medidesk POST form=%s via=%s status=%s captcha=%s response=%s sent_body=%s",
+            form_id, cid, result.status_code, bool(captcha_response),
+            (result.raw_text or "")[:600], body[:1500],
         )
+        # Preferuj zachowanie nie-500 jako "ostatni wynik" — 500 to crash ich
+        # handlera (mniej informatywny niż 401/400 z faktyczną walidacją).
+        if last is None or (last.status_code == 500 and result.status_code != 500):
+            last = result
 
-    return MedideskResult(
-        success=resp.status_code == 200,
-        status_code=resp.status_code,
-        body=response_body,
-        raw_text=raw_text,
-    )
+    return last or MedideskResult(success=False, status_code=502)
