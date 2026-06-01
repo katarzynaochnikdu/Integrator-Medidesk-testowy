@@ -5,6 +5,23 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-06-01 — WO#002 Captcha solver ready
+
+### Bezpieczeństwo
+- Tag `przed_captcha_solver_ready_20260601` jako punkt powrotu przed cleanup-em.
+
+### Dodane
+- **Sekcja „Captcha — tryby i ENV"** w `docs/README.md` — pełna lista zmiennych dla `solver` / `bridge` / `none`, defaults, link do `docs/captcha_diagnoza.md`.
+
+### Zmienione
+- **Solver (CapSolver) — oficjalna ścieżka** dostarczania tokenu reCAPTCHA v3 do Medideska (`MEDIDESK_CAPTCHA_MODE=solver`). Bridge (Playwright) zostaje jako fallback. Kod bez zmian — baseline DZIAŁAJĄCY (HTTP 200) potwierdzony z captchą tymczasowo wyłączoną po stronie Medideska; ten sam request zadziała po jej powrocie.
+- **Nagłówek captcha**: `enterprise-recaptcha-response` (Medidesk Enterprise) — utrwalone w defaultach `app/config.py` (commit `442c299`).
+
+### Usunięte
+- Duplikat `captcha_diagnoza.md` z roota repo (kanoniczna wersja: `docs/captcha_diagnoza.md`).
+
+---
+
 ## [Unreleased] — branch `feat/medidesk-captcha-bridge`
 
 ### Dodane

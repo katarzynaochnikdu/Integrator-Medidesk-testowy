@@ -104,6 +104,32 @@ Wszystkie zmienne środowiskowe mają prefix `MEDIDESK_` (zdefiniowane w `app/co
 | `MEDIDESK_MAKE_WEBHOOK_SEND_EMAIL` | `""` | Webhook Make.com do alertów |
 | `MEDIDESK_TOKEN_EXPIRY_WARN_DAYS` | `14` | Alert X dni przed wygaśnięciem tokenu |
 
+### Captcha — tryby i ENV (Medidesk reCAPTCHA v3 Enterprise)
+
+Endpoint `POST /api/forms/{webFormId}` Medideska jest chroniony przez reCAPTCHA v3 (Enterprise). Klient (`app/medidesk_client.py` + `app/captcha_provider.py`) wstawia token jako nagłówek `enterprise-recaptcha-response`. Przełącznik trybu: `MEDIDESK_CAPTCHA_MODE`.
+
+| Tryb | Kiedy | Wymaga |
+|---|---|---|
+| `solver` (**oficjalny / produkcyjny**) | Server-to-server (FB webhook → Medidesk). Token z CapSolver — residential IP, wysoki score. | `MEDIDESK_SOLVER_CAPTCHA_API_KEY`, `MEDIDESK_RECAPTCHA_SITE_KEY` |
+| `bridge` (fallback) | Headless Playwright/Chromium na `app.medidesk.io` — wywołuje `grecaptcha.execute()`. Na datacenter IP Rendera score zwykle za niski. | `playwright` + Chromium (build step) |
+| `none` | Captcha tymczasowo wyłączona po stronie Medideska albo lokalny dev. | — |
+
+**Konfiguracja (default w `app/config.py`)**
+
+| Zmienna | Default | Opis |
+|---|---|---|
+| `MEDIDESK_CAPTCHA_MODE` | `solver` | `solver` \| `bridge` \| `none` |
+| `MEDIDESK_CAPTCHA_HEADER` | `enterprise-recaptcha-response` | Nazwa nagłówka z tokenem |
+| `MEDIDESK_SOLVER_CAPTCHA_API_KEY` | — | clientKey CapSolver (https://capsolver.com) |
+| `MEDIDESK_RECAPTCHA_SITE_KEY` | — | Site-key Medideska: `6Ldo-f0sAAAAAJO47MmGJQu_XZII-2Gd4WyLnyAk` |
+| `MEDIDESK_CAPTCHA_ACTION` | `submit` | `pageAction` reCAPTCHA v3 |
+| `MEDIDESK_CAPTCHA_MIN_SCORE` | `0.3` | Minimalny akceptowany score |
+| `MEDIDESK_CAPTCHA_ENTERPRISE` | `false` | `true` = `ReCaptchaV3EnterpriseTaskProxyLess` |
+| `MEDIDESK_CAPTCHA_TIMEOUT` | `60.0` | Budżet czasu na solve (sekundy) |
+| `MEDIDESK_RECAPTCHA_BRIDGE_URL` | — | Override URL dla bridge/solver (domyślnie `https://app.medidesk.io/forms/{form_id}`) |
+
+**Stan na 2026-06-01**: Medidesk **tymczasowo wyłączył captchę** — wysyłka zwraca HTTP 200 z tym samym requestem, którego użyjemy gdy captcha wróci. Pełna diagnoza, dowody i wzór wiadomości do Medideska: [`captcha_diagnoza.md`](captcha_diagnoza.md).
+
 ### Metadane aplikacji
 
 Centralne ustawienia UI (wstrzykiwane do szablonów przez Jinja2):

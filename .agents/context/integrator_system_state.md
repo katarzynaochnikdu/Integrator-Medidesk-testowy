@@ -1,12 +1,12 @@
 # System State — Medidesk Integrator
 
-> Ostatnia aktualizacja: 2026-06-01 (branch `main`)
+> Ostatnia aktualizacja: 2026-06-01 (branch `main`, po WO#002)
 
 ## Status projektu
 
 | Element | Status | Uwagi |
 |---|---|---|
-| Wysyłka do Medideska | ✅ **DZIAŁA (200)** | Medidesk **tymczasowo** wyłączył captchę. Baseline udokumentowany w `docs/captcha_diagnoza.md` sekcja 0. NIE zmieniać configu. |
+| Wysyłka do Medideska | ✅ **DZIAŁA (200)** | Medidesk **tymczasowo** wyłączył captchę. Baseline udokumentowany w `docs/captcha_diagnoza.md` sekcja 0. NIE zmieniać configu. Solver (CapSolver) gotowy na powrót captchy — WO#002 zamknięty 2026-06-01. |
 | Produkcja (Render) | ✅ Działa | https://md-integrator-old.onrender.com |
 | Lokalny dev | ✅ Działa | `uvicorn app.main:app --reload` |
 | Testy | ⚠️ Brak CI | `pytest` lokalnie |
@@ -23,7 +23,12 @@
 | WO | Tytuł | Status | Plik |
 |---|---|---|---|
 | #001 | Dark Mode (Jasny/Ciemny/Systemowy) | 🔄 W trakcie | `.agents/work_orders/integrator_wo001_dark_mode.md` |
-| #002 | Captcha bridge dla FB webhook → Medidesk (Playwright) | 🔄 W trakcie | branch `feat/medidesk-captcha-bridge` |
+
+## Wykonane Work Ordery
+
+| WO | Tytuł | Zamknięcie | Plik |
+|---|---|---|---|
+| #002 | Captcha solver ready (CapSolver oficjalny, bridge fallback) | 2026-06-01 | `.agents/work_orders/integrator_wo002_captcha_solver_ready.md` |
 
 ## Aktywne prace
 
@@ -43,7 +48,7 @@
 | Python 3.14 na Render — Jinja2 LRUCache crash | ✅ Obejście | `cache_size=0` w Environment |
 | Starlette TemplateResponse zmiana sygnatury | ✅ Obejście | try/except w `render_template()` |
 | Render Free tier — cold starts 30-60s | ℹ️ Nieaktualne | Serwis na planie Starter (płatny) |
-| Medidesk reCAPTCHA v3 wymagana na endpointcie POST | 🔄 W trakcie | Browser-side: ✅ działa (demo). Server-to-server (FB webhook): WIP — Playwright bridge na branchu `feat/medidesk-captcha-bridge` |
+| Medidesk reCAPTCHA v3 wymagana na endpointcie POST | ✅ Gotowe (czeka na powrót captchy) | Solver (CapSolver) jako oficjalna ścieżka — `MEDIDESK_CAPTCHA_MODE=solver`, nagłówek `enterprise-recaptcha-response`. Bridge (Playwright) jako fallback. Baseline 200 osiągnięty z captchą OFF; ten sam request zadziała po jej powrocie. Pełna diagnoza: `docs/captcha_diagnoza.md`. |
 | Medidesk zwraca 500 zamiast 401 przy braku/błędnym tokenie | ❗ Bug po stronie Medideska | Do zgłoszenia. Spec mówi 401 (PDF str. 3), faktycznie leci 500. |
 | `_invite_html()` — inline HTML (nie Jinja2) | ℹ️ Celowe | Izolowany endpoint |
 
@@ -53,3 +58,4 @@
 |---|---|---|
 | `przed_refactoringiem` | `f96b4eb` | Przed migracją na Jinja2 |
 | `przed_captcha_bridge_20260530` | `7451f7a` | Przed pracami nad reCAPTCHA bridge + URL cleanup (snapshot main) |
+| `przed_captcha_solver_ready_20260601` | `5127542` | Przed cleanup-em WO#002 (usunięcie duplikatu diagnozy, sekcja README, CHANGELOG) |
