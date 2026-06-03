@@ -160,27 +160,28 @@ class TestBuildUrlencoded:
         assert "Wyra%C5%BCam" in body and "zgod%C4%99" in body
 
 
-class TestResolveSubmitFormId:
-    @patch("app.medidesk_client.fetch_form_definition", new_callable=AsyncMock)
-    def test_uses_web_form_id_for_submit(self, mock_fetch):
-        import asyncio
-        from app.medidesk_client import resolve_submit_form_id
+class TestSubmitPostsToUuid:
+    """Wysyłka idzie dokładnie jednym POST-em na UUID (formTemplateId).
 
-        mock_fetch.return_value = FormDefinition(
-            name="Test Form",
-            fields=[],
-            web_form_id="Formularz-kontaktowy-KOCHNIKA",
+    Zgodnie ze specyfikacją Medideska poprawny jest strzał na UUID + token;
+    webFormId/string nie są używane (WO#004).
+    """
+
+    @patch("app.medidesk_client._post_once", new_callable=AsyncMock)
+    def test_posts_only_to_uuid(self, mock_post):
+        import asyncio
+        from app.medidesk_client import submit_form_urlencoded
+
+        mock_post.return_value = MedideskResult(success=True, status_code=200)
+
+        # captcha_response podany wprost → pomija solver (brak sieci).
+        result = asyncio.run(
+            submit_form_urlencoded(FORM_ID, {"Mail": "jan@test.pl"}, captcha_response="tok")
         )
 
-        assert asyncio.run(resolve_submit_form_id(FORM_ID)) == "Formularz-kontaktowy-KOCHNIKA"
-
-    @patch("app.medidesk_client.fetch_form_definition", new_callable=AsyncMock)
-    def test_falls_back_to_original_form_id(self, mock_fetch):
-        import asyncio
-        from app.medidesk_client import resolve_submit_form_id
-
-        mock_fetch.return_value = None
-        assert asyncio.run(resolve_submit_form_id(FORM_ID)) == FORM_ID
+        assert result.success
+        mock_post.assert_awaited_once()  # dokładnie jeden POST, nie dwa
+        assert mock_post.await_args.args[0] == FORM_ID  # cel = UUID, nie webFormId
 
 
 class TestDemoPage:

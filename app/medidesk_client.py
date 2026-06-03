@@ -64,23 +64,6 @@ async def fetch_form_definition(form_id: str) -> FormDefinition | None:
     )
 
 
-async def resolve_submit_form_id(form_id: str) -> str:
-    """Resolve Medidesk template UUID to webFormId for POST submissions.
-
-    Medidesk's GET uses formTemplateId, but POST is routed internally through
-    `/api/forms/web-form/{webFormId}`. Posting to the UUID now crashes their
-    handler with HTTP 500; posting to webFormId returns the documented 401/400.
-    """
-    try:
-        defn = await fetch_form_definition(form_id)
-    except Exception as exc:
-        logger.warning("Could not resolve Medidesk webFormId for %s: %s", form_id, exc)
-        return form_id
-    if defn and defn.web_form_id:
-        return defn.web_form_id
-    return form_id
-
-
 # Hard fallbacks for siteDomain/siteUrl — Medidesk's API returns HTTP 500
 # when these arrive empty (their internal "web-form" handler dereferences a
 # null source identifier and crashes). Real-world incident: a Render env var
@@ -179,12 +162,13 @@ async def submit_form_urlencoded(
 ) -> MedideskResult:
     """POST urlencoded do Medidesk z opcjonalnym tokenem reCAPTCHA v3.
 
-    Próbuje OBA identyfikatory formularza: najpierw webFormId (zwykle
-    właściwy endpoint web-form), potem formTemplateId/UUID (zgodnie ze
-    spec). Zwraca pierwszy sukces; jeśli żaden — ostatni najinformatywniejszy
-    wynik (preferując nie-500, bo 500 to crash ich handlera).
+    POST idzie wyłącznie na UUID (formTemplateId) — jedyny identyfikator
+    formularza zgodny ze specyfikacją Medideska. Token reCAPTCHA v3 jest
+    wymagany: gdy go brak lub jest niepoprawny, Medidesk odpowiada HTTP 500
+    zamiast dokumentowanego 401 (znany bug po ich stronie — spec str. 3).
+    Inne identyfikatory (webFormId, string) nie są zgodne z dokumentacją
+    i nie są używane.
     """
-    submit_form_id = await resolve_submit_form_id(form_id)
     body = build_urlencoded_body(fields_values, site_domain, site_url)
 
     if not captcha_response:
@@ -194,12 +178,10 @@ async def submit_form_urlencoded(
         except Exception:
             logger.warning("captcha provider unavailable for form=%s", form_id, exc_info=True)
 
-    # Mimic a real browser form submission: Medidesk's "web-form" handler
-    # (the path that shows up in 500 error responses) appears to require
-    # Origin/Referer headers — without them it bails to a 500. A normal HTML
-    # form posted from a browser would send these automatically, so we set
-    # them here to whatever we can derive from the configured Medidesk API
-    # base. User-Agent labels us so MD's logs can identify the integrator.
+    # Mimic a real browser form submission: a normal HTML form posted from a
+    # browser sends Origin/Referer automatically, so we set them (derived from
+    # the configured Medidesk API base) for browser parity. User-Agent labels
+    # us so MD's logs can identify the integrator.
     md_origin = "https://app.medidesk.io"
     try:
         from urllib.parse import urlparse
@@ -226,26 +208,16 @@ async def submit_form_urlencoded(
         # konfigurowalna przez MEDIDESK_CAPTCHA_HEADER na wypadek kolejnej zmiany.
         headers[settings.captcha_header] = captcha_response
 
-    # Kandydaci na endpoint: webFormId i UUID (bez duplikatu).
-    candidates: list[str] = []
-    for cid in (submit_form_id, form_id):
-        if cid and cid not in candidates:
-            candidates.append(cid)
-
-    last: MedideskResult | None = None
-    for cid in candidates:
-        result = await _post_once(cid, body, headers)
-        if result.success:
-            logger.info("Medidesk POST OK form=%s via=%s", form_id, cid)
-            return result
+    # Jeden POST na UUID (formTemplateId) — endpoint zgodny ze specyfikacją.
+    result = await _post_once(form_id, body, headers)
+    if result.success:
+        logger.info("Medidesk POST OK form=%s", form_id)
+    else:
+        # 500 zwykle = brak/niepoprawny token reCAPTCHA (Medidesk oddaje 500
+        # zamiast dokumentowanego 401). Logujemy status i body do diagnozy.
         logger.warning(
-            "Medidesk POST form=%s via=%s status=%s captcha=%s response=%s sent_body=%s",
-            form_id, cid, result.status_code, bool(captcha_response),
+            "Medidesk POST form=%s status=%s captcha=%s response=%s sent_body=%s",
+            form_id, result.status_code, bool(captcha_response),
             (result.raw_text or "")[:600], body[:1500],
         )
-        # Preferuj zachowanie nie-500 jako "ostatni wynik" — 500 to crash ich
-        # handlera (mniej informatywny niż 401/400 z faktyczną walidacją).
-        if last is None or (last.status_code == 500 and result.status_code != 500):
-            last = result
-
-    return last or MedideskResult(success=False, status_code=502)
+    return result

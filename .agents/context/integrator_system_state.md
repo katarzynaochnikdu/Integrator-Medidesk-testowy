@@ -1,12 +1,12 @@
 # System State — Medidesk Integrator
 
-> Ostatnia aktualizacja: 2026-06-01 (branch `main`, po WO#003)
+> Ostatnia aktualizacja: 2026-06-03 (branch `main`, po WO#004 — implementacja + gates PASS; live-walidacja czeka na deploy)
 
 ## Status projektu
 
 | Element | Status | Uwagi |
 |---|---|---|
-| Wysyłka do Medideska | ✅ **DZIAŁA (200)** | Medidesk **tymczasowo** wyłączył captchę. Baseline udokumentowany w `docs/captcha_diagnoza.md` sekcja 0. NIE zmieniać configu. Solver (CapSolver) gotowy na powrót captchy — WO#002 zamknięty 2026-06-01. |
+| Wysyłka do Medideska | ✅ **DZIAŁA (200)** | Medidesk **tymczasowo** wyłączył captchę. Baseline udokumentowany w `docs/captcha_diagnoza.md` sekcja 0. NIE zmieniać configu. Solver (CapSolver) gotowy na powrót captchy — WO#002 zamknięty 2026-06-01. **WO#004:** klient POST-uje teraz **wyłącznie na UUID (formTemplateId) + token** — `resolve_submit_form_id`/webFormId usunięte. Live-walidacja 200 do potwierdzenia po deployu na Render. |
 | Produkcja (Render) | ✅ Działa | https://md-integrator-old.onrender.com |
 | Lokalny dev | ✅ Działa | `uvicorn app.main:app --reload` |
 | Testy | ⚠️ Brak CI | `pytest` lokalnie |
@@ -23,6 +23,7 @@
 | WO | Tytuł | Status | Plik |
 |---|---|---|---|
 | #001 | Dark Mode (Jasny/Ciemny/Systemowy) | 🔄 W trakcie | `.agents/work_orders/integrator_wo001_dark_mode.md` |
+| #004 | Wysyłka tylko na UUID (usunięcie webFormId/dual-endpoint) | 🔄 Impl + SecGate + DocGate PASS; **QA live-walidacja po deployu** | `.agents/work_orders/integrator_wo004_uuid_only_submit.md` |
 
 ## Wykonane Work Ordery
 
@@ -50,7 +51,8 @@
 | Starlette TemplateResponse zmiana sygnatury | ✅ Obejście | try/except w `render_template()` |
 | Render Free tier — cold starts 30-60s | ℹ️ Nieaktualne | Serwis na planie Starter (płatny) |
 | Medidesk reCAPTCHA v3 wymagana na endpointcie POST | ✅ Gotowe (czeka na powrót captchy) | Solver (CapSolver) jako oficjalna ścieżka — `MEDIDESK_CAPTCHA_MODE=solver`, nagłówek `enterprise-recaptcha-response`. Bridge (Playwright) jako fallback. Baseline 200 osiągnięty z captchą OFF; ten sam request zadziała po jej powrocie. Pełna diagnoza: `docs/captcha_diagnoza.md`. |
-| Medidesk zwraca 500 zamiast 401 przy braku/błędnym tokenie | ❗ Bug po stronie Medideska | Do zgłoszenia. Spec mówi 401 (PDF str. 3), faktycznie leci 500. |
+| Medidesk zwraca 500 zamiast 401 przy braku/błędnym tokenie | ❗ Bug po stronie Medideska | Do zgłoszenia. Spec mówi 401 (PDF str. 3), faktycznie leci 500. **Potwierdzone WO#004:** 500 to objaw braku/złego tokenu, nie złego endpointu — klient POST-uje na UUID. |
+| Repo „testowy" rozjechane z pełną wersją: `app/config.py` nie ma `data_dir`/`demo_page_enabled`, brak route'ów `/`, `/api/info` → pytest pokazuje 7 failed + 12 errors (pre-existing, NIE z WO#004). Lokalny Python (PyManager 3.14) nie weryfikuje cert SSL Medideska. | ℹ️ Znane, pre-existing | Live-testy MD wykonywać na Render (env + CA OK). Pełny zielony pytest wymaga sync `config.py`↔`db.py` — kandydat na osobny WO. |
 | `_invite_html()` — inline HTML (nie Jinja2) | ℹ️ Celowe | Izolowany endpoint |
 
 ## Tagi bezpieczeństwa
@@ -61,3 +63,4 @@
 | `przed_captcha_bridge_20260530` | `7451f7a` | Przed pracami nad reCAPTCHA bridge + URL cleanup (snapshot main) |
 | `przed_captcha_solver_ready_20260601` | `5127542` | Przed cleanup-em WO#002 (usunięcie duplikatu diagnozy, sekcja README, CHANGELOG) |
 | `przed_debug_admingate_20260601` | `51ebaf4` | Przed admin-gating `/debug/*` (WO#003) |
+| `przed_uuid_only_submit_20260603` | `cb17031` | Przed przejściem wysyłki na UUID-only (WO#004) |

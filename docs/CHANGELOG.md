@@ -5,6 +5,21 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-06-03 — WO#004 Wysyłka tylko na UUID
+
+### Zmienione
+- **`submit_form_urlencoded()` POST-uje wyłącznie na UUID (formTemplateId)** — jedyny endpoint zgodny z dokumentacją Medideska. Usunięto logikę „próbuj OBA endpointy" (webFormId + UUID) z commita `9aba701`: była oparta na błędnej diagnozie. HTTP **500 oznaczał brak/niepoprawny token reCAPTCHA** (Medidesk oddaje 500 zamiast dokumentowanego 401), a nie zły endpoint.
+- Tag `przed_uuid_only_submit_20260603` jako punkt powrotu.
+
+### Usunięte
+- Funkcja `resolve_submit_form_id()` (routing przez `webFormId`) — martwa po przejściu na UUID-only. `fetch_form_definition()` pozostaje (odkrywanie pól przez GET nadal działa).
+- Klasa testowa `TestResolveSubmitFormId` → zastąpiona `TestSubmitPostsToUuid` (potwierdza dokładnie jeden POST, na UUID).
+
+### Naprawione
+- Mylące docstringi/komentarze w `medidesk_client.py` („POST na UUID → 500, użyj webFormId") — skorygowane: 500 = brak/zły token. Zaktualizowano też wiersz o endpoincie w `docs/captcha_diagnoza.md`.
+
+---
+
 ## [Unreleased] — 2026-06-01 — WO#003 Admin-gate `/debug/*`
 
 ### Bezpieczeństwo

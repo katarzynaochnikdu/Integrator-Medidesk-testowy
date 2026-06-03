@@ -46,11 +46,13 @@ Odpowiedź: **HTTP 200, puste body** = lead przyjęty.
 
 | Ustawienie | Wartość | Gdzie |
 |---|---|---|
-| Endpoint | `webFormId` = `kochnikmini` (resolve z UUID) | `medidesk_client.resolve_submit_form_id` |
+| Endpoint | **UUID (formTemplateId)** — jedyny zgodny ze spec | `medidesk_client.submit_form_urlencoded` (pojedynczy POST) |
 | Nagłówek tokenu | `enterprise-recaptcha-response` | `MEDIDESK_CAPTCHA_HEADER` (default w configu) |
 | Site-key | `6Ldo-f0sAAAAAJO47MmGJQu_XZII-2Gd4WyLnyAk` | `MEDIDESK_RECAPTCHA_SITE_KEY` |
 | Tryb captcha | `solver` (CapSolver) | `MEDIDESK_CAPTCHA_MODE` |
 | Format | urlencoded, `fieldsValues[fieldId]=value` | `build_urlencoded_body` |
+
+> **Korekta WO#004 (2026-06-03):** poprawny endpoint POST to **UUID (formTemplateId)** + poprawnie wygenerowany token reCAPTCHA — zgodnie z dokumentacją Medideska. Wcześniejsze HTTP 500 oznaczało **brak lub niepoprawny token** (Medidesk oddaje 500 zamiast dokumentowanego 401), a nie zły endpoint. Routing przez `webFormId` oraz forma `string` są niezgodne z dokumentacją i zostały usunięte z klienta — `submit_form_urlencoded` wykonuje teraz jeden POST na UUID.
 
 ### Co ten 200 DOWODZI (kluczowe)
 
