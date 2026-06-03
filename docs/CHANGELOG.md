@@ -5,6 +5,13 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-06-03 — WO#007 Specyfikacja wdrożeniowa do przekazania
+
+### Dodane
+- **`docs/INTEGRACJA_MEDIDESK.md`** — samodzielna, przekazywalna specyfikacja „jak wysyłać leady do Medideska" (dokładnie to, co testujemy): endpoint POST na UUID, format body, generowanie tokenu (przeglądarka / solver), nagłówek `enterprise-recaptcha-response`, interpretacja 200/400/500, konkretny przykład (`kochnikmini`), wskazanie referencji na żywo (`/demo/contact`) i plików kodu. Nadrzędna nad starym PDF w części reCAPTCHA.
+
+---
+
 ## [Unreleased] — 2026-06-03 — WO#006 Dokumentacja: aktualny kontrakt captchy
 
 ### Dokumentacja
