@@ -107,16 +107,39 @@ Formularz produkcyjny (dla porównania): `formTemplateId = d908ee01-0b7d-44a0-a4
 
 ---
 
-## 6. Konfiguracja (u nas — zmienne środowiskowe)
+## 6. Zmienne środowiskowe — ustaw DOKŁADNIE te same wartości
 
-Wartości captchy trzymamy w ENV (zmiana = zmiana zmiennej, bez ruszania kodu):
+Cała konfiguracja captchy/Medideska to zmienne środowiskowe (prefix `MEDIDESK_`).
+Drugi system musi mieć **te same wartości publiczne** (zwłaszcza **site-key** — jest
+sparowany z secret-key po stronie Medideska; inny klucz = token odrzucony).
 
-| Zmienna | Wartość u nas |
+**Wartości do ustawienia 1:1 (publiczne — wpisz dokładnie tak):**
+
+| Zmienna (ENV) | Wartość (taka sama jak u nas) |
 |---|---|
-| `MEDIDESK_CAPTCHA_HEADER` | `enterprise-recaptcha-response` |
 | `MEDIDESK_RECAPTCHA_SITE_KEY` | `6Ldo-f0sAAAAAJO47MmGJQu_XZII-2Gd4WyLnyAk` |
+| `MEDIDESK_CAPTCHA_HEADER` | `enterprise-recaptcha-response` |
+| `MEDIDESK_CAPTCHA_MODE` | `solver` |
 | `MEDIDESK_CAPTCHA_ACTION` | `submit` |
-| `MEDIDESK_CAPTCHA_ENTERPRISE` | (wg ustawienia po stronie Medideska) |
+| `MEDIDESK_CAPTCHA_ENTERPRISE` | `false` |
+| `MEDIDESK_CAPTCHA_MIN_SCORE` | `0.3` |
+| `MEDIDESK_CAPTCHA_TIMEOUT` | `60.0` |
+
+Baza API (domyślna w kodzie, zwykle bez zmian): `https://app.medidesk.io/api/forms`.
+
+**Sekret — NIE wpisuj do repo/dokumentacji, ustaw z bezpiecznego źródła:**
+
+| Zmienna (ENV) | Wartość |
+|---|---|
+| `MEDIDESK_SOLVER_CAPTCHA_API_KEY` | ‹clientKey CapSolver — **ten sam dostawca/konto**, przekaż kanałem bezpiecznym, nie w tym pliku› |
+
+> **Dlaczego site-key musi być identyczny:** reCAPTCHA działa w parze site-key ↔
+> secret-key. Medidesk weryfikuje token swoim secret-key sparowanym **z tym właśnie
+> site-keyem**. Inny site-key → token nie przejdzie (401/500), choćby był poprawny.
+>
+> **Czego NIE kopiować:** zmienne specyficzne dla naszej pełnej aplikacji (FB OAuth,
+> `MEDIDESK_ADMIN_*`, `MEDIDESK_ENCRYPTION_KEY`, `MEDIDESK_DEBUG_TOKEN`) — nie są
+> potrzebne do samej wysyłki leadów do Medideska.
 
 ---
 
