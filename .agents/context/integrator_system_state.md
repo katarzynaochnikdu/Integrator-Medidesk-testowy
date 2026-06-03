@@ -1,6 +1,6 @@
 # System State — Medidesk Integrator
 
-> Ostatnia aktualizacja: 2026-06-03 (branch `main`, po WO#004 — ZAMKNIĘTY: live 200 potwierdzone w produkcji)
+> Ostatnia aktualizacja: 2026-06-03 (branch `main`, po WO#005 — test captchy na /demo/contact + fix presetów)
 
 ## Status projektu
 
@@ -31,6 +31,7 @@
 | #002 | Captcha solver ready (CapSolver oficjalny, bridge fallback) | 2026-06-01 | `.agents/work_orders/integrator_wo002_captcha_solver_ready.md` |
 | #003 | Admin-gating `/debug/*` (token-based, fail-closed) | 2026-06-01 | `.agents/work_orders/integrator_wo003_debug_admin_gate.md` |
 | #004 | Wysyłka tylko na UUID (usunięcie webFormId/dual-endpoint) | 2026-06-03 | `.agents/work_orders/integrator_wo004_uuid_only_submit.md` |
+| #005 | Test captchy na `/demo/contact` (zły→dobry token) + fix presetów | 2026-06-03 | `.agents/work_orders/integrator_wo005_demo_captcha_test.md` |
 
 ## Aktywne prace
 
@@ -64,3 +65,4 @@
 | `przed_captcha_solver_ready_20260601` | `5127542` | Przed cleanup-em WO#002 (usunięcie duplikatu diagnozy, sekcja README, CHANGELOG) |
 | `przed_debug_admingate_20260601` | `51ebaf4` | Przed admin-gating `/debug/*` (WO#003) |
 | `przed_uuid_only_submit_20260603` | `cb17031` | Przed przejściem wysyłki na UUID-only (WO#004) |
+| `przed_demo_captcha_test_20260603` | `d3c79a5` | Przed testem captchy + fix presetów na /demo/contact (WO#005) |

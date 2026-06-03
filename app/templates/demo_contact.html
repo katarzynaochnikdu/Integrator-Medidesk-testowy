@@ -38,10 +38,13 @@
   .row>*{flex:1;min-width:0}
   .btn{margin-top:.8rem;width:100%;padding:.5rem;border:none;border-radius:6px;background:#3b82f6;color:#fff;font-size:.85rem;font-weight:600;cursor:pointer}
   .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-test{background:#27272a;border:1px solid #3f3f46;color:#d4d4d8}
+  .btn-test:hover:not(:disabled){border-color:#3b82f6;color:#fff}
   #out{margin-top:.6rem;white-space:pre-wrap;font-size:.7rem;padding:.5rem;border-radius:6px;font-family:monospace;display:none}
   #out.show{display:block}
   .err{color:#fca5a5;background:#1c1215;border:1px solid #7f1d1d}
   .ok{color:#86efac;background:#0f1a14;border:1px solid #14532d}
+  .warn{color:#fde68a;background:#1c1a10;border:1px solid #78350f}
 </style>
 </head>
 <body>
@@ -75,49 +78,51 @@ function getEnterpriseToken() {
   });
 }
 
-const FAKE = {
-  TEXT_FIELD: [
-    ["Jan Kowalski", "Anna Nowak", "Marek Zieliński"],
-    ["Wizyta kontrolna", "Konsultacja ortopedyczna", "Badanie USG"],
-    ["ul. Testowa 12, Warszawa", "ul. Przykładowa 5, Kraków", "ul. Demo 8, Gdańsk"]
-  ],
-  EMAIL: ["jan.test@example.com", "anna.nowak@example.com", "marek.z@example.com"],
-  PHONE: ["+48500600700", "+48601234567", "+48512345678"],
-  TEXT_AREA: ["Proszę o kontakt po 16:00", "Wizyta dla dziecka, wiek 8 lat", "Chciałbym zmienić termin"],
-  CHECKBOX: ["true", "true", "true"],
-  SELECT: null
-};
+// Jedno źródło prawdy: każda osoba ma spójny komplet danych. Presety i prefill
+// indeksują TĘ SAMĄ listę, więc klik "Marek" zawsze wstawia dane Marka.
+// (Wcześniej przyciski [Anna,Marek,Ewa] i pule [Jan,Anna,Marek] były przesunięte
+//  → "Marek" wstawiał Annę.)
+const PEOPLE = [
+  {name: "Anna Nowak",      email: "anna.nowak@example.com",      phone: "+48601234567", subject: "Konsultacja ortopedyczna", address: "ul. Przykładowa 5, Kraków",  note: "Proszę o kontakt po 16:00"},
+  {name: "Marek Zieliński", email: "marek.zielinski@example.com", phone: "+48512345678", subject: "Badanie USG",             address: "ul. Demo 8, Gdańsk",       note: "Chciałbym zmienić termin"},
+  {name: "Ewa Kowalczyk",   email: "ewa.kowalczyk@example.com",   phone: "+48500600700", subject: "Wizyta kontrolna",        address: "ul. Testowa 12, Warszawa", note: "Wizyta dla dziecka, wiek 8 lat"}
+];
+// Kolejne pola TEXT_FIELD dostają po kolei: 1. imię i nazwisko, 2. temat, 3. adres.
+const TEXT_BY_POS = [function(p){return p.name;}, function(p){return p.subject;}, function(p){return p.address;}];
 
 let fieldsMeta = [];
 let textFieldIdx = 0;
 
+function clearOut() {
+  var o = document.getElementById("out");
+  o.className = ""; o.textContent = "";
+}
+
 function prefill(setIdx) {
   textFieldIdx = 0;
-  fieldsMeta.forEach(f => {
-    const el = document.querySelector("[name='" + f.fieldId + "']");
+  var person = PEOPLE[setIdx % PEOPLE.length];
+  fieldsMeta.forEach(function(f) {
+    var el = document.querySelector("[name='" + f.fieldId + "']");
     if (!el) return;
     if (f.type === "CHECKBOX") {
       el.checked = true;
     } else if (f.type === "SELECT") {
-      const opts = el.options;
-      if (opts.length > 0) el.selectedIndex = setIdx % opts.length;
+      if (el.options.length > 0) el.selectedIndex = setIdx % el.options.length;
     } else if (f.type === "EMAIL") {
-      el.value = FAKE.EMAIL[setIdx];
+      el.value = person.email;
     } else if (f.type === "PHONE") {
-      el.value = FAKE.PHONE[setIdx];
+      el.value = person.phone;
     } else if (f.type === "TEXT_AREA") {
-      el.value = FAKE.TEXT_AREA[setIdx];
+      el.value = person.note;
     } else {
-      const pool = FAKE.TEXT_FIELD[textFieldIdx % FAKE.TEXT_FIELD.length];
-      el.value = pool[setIdx];
+      el.value = TEXT_BY_POS[textFieldIdx % TEXT_BY_POS.length](person);
       textFieldIdx++;
     }
   });
-  document.getElementById("out").className = "";
-  document.getElementById("out").textContent = "";
+  clearOut();
 }
 
-const NAMES = ["Anna Nowak", "Marek Zieliński", "Ewa Kowalczyk"];
+const NAMES = PEOPLE.map(function(p){ return p.name; });
 var presetsEl = document.getElementById("presets");
 NAMES.forEach(function(name, i) {
   var btn = document.createElement("button");
@@ -177,18 +182,17 @@ fetch("/api/forms/" + FORM_ID + "/fields")
       html += "<div><label>" + elabel + ereq + "</label><input type='" + t + "' name='" + ef.fieldId + "'" + (ef.required ? " required" : "") + " /></div>";
     });
 
-    html += "<button type='submit' class='btn'>Wyślij do Medidesk</button></form>";
+    html += "<button type='submit' class='btn'>Wyślij do Medidesk</button>";
+    html += "<button type='button' id='captcha-test' class='btn btn-test'>Test captcha: zły token → dobry token</button>";
+    html += "</form>";
     document.getElementById("form-container").innerHTML = html;
 
-    document.getElementById("f").addEventListener("submit", function(e) {
-      e.preventDefault();
-      var btn = e.target.querySelector(".btn");
-      var out = document.getElementById("out");
-      btn.disabled = true;
-      btn.textContent = "captcha…";
-      out.textContent = ""; out.className = "";
+    var formEl = document.getElementById("f");
+    var out = document.getElementById("out");
 
-      var fd = new FormData(e.target);
+    // Zbiera wartości pól z formularza (bez tokenu captchy).
+    function collectBody() {
+      var fd = new FormData(formEl);
       var body = {};
       for (var pair of fd.entries()) body[pair[0]] = pair[1];
       data.fields.forEach(function(f) {
@@ -196,22 +200,95 @@ fetch("/api/forms/" + FORM_ID + "/fields")
       });
       body.siteDomain = location.hostname;
       body.siteUrl = location.pathname;
+      return body;
+    }
 
+    // POST leada; zawsze zwraca {status, data} (nawet gdy body nie jest JSON-em).
+    function postLead(body) {
+      return fetch("/api/submit/" + FORM_ID, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})
+        .then(function(r) { return r.json().then(function(d){ return {status: r.status, data: d}; }, function(){ return {status: r.status, data: null}; }); });
+    }
+
+    // Normalna wysyłka: prawdziwy token enterprise wygenerowany w przeglądarce.
+    formEl.addEventListener("submit", function(e) {
+      e.preventDefault();
+      var btn = formEl.querySelector("button[type='submit']");
+      btn.disabled = true; btn.textContent = "captcha…";
+      out.className = ""; out.textContent = "";
+      var body = collectBody();
       getEnterpriseToken()
         .then(function(token) {
           body.captchaResponse = token;
           btn.textContent = "wysyłanie…";
-          return fetch("/api/submit/" + FORM_ID, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+          return postLead(body);
         })
-        .then(function(r) { return r.json().then(function(d) { return {status: r.status, data: d}; }); })
         .then(function(res) {
-          out.classList.add("show");
-          out.className = res.status === 200 ? "ok show" : "err show";
-          out.textContent = res.status === 200 ? "OK — lead wysłany do Medidesk 🎉" : "Błąd " + res.status + "\n" + JSON.stringify(res.data, null, 2);
+          out.className = (res.status === 200 ? "ok show" : "err show");
+          out.textContent = res.status === 200 ? "OK — lead wysłany do Medidesk 🎉" : ("Błąd " + res.status + "\n" + JSON.stringify(res.data, null, 2));
           btn.disabled = false; btn.textContent = "Wyślij do Medidesk";
         })
-        .catch(function(err) { out.classList.add("show"); out.className = "err show"; out.textContent = "captcha/wysyłka: " + err; btn.disabled = false; btn.textContent = "Wyślij do Medidesk"; });
+        .catch(function(err) { out.className = "err show"; out.textContent = "captcha/wysyłka: " + err; btn.disabled = false; btn.textContent = "Wyślij do Medidesk"; });
     });
+
+    // Test captchy: ten sam lead wysłany 2×. Najpierw ZŁY token (zaślepka),
+    // potem PRAWDZIWY. Porównanie statusów mówi, czy Medidesk weryfikuje
+    // captchę i czy nasz token przechodzi. Zaślepka, bo całkiem bez tokenu
+    // serwer sam dociągnąłby token z solvera (→ test byłby niewiarygodny).
+    var BAD_TOKEN = "INVALID_TOKEN_CAPTCHA_TEST";
+    document.getElementById("captcha-test").addEventListener("click", function() {
+      var tbtn = document.getElementById("captcha-test");
+      var sbtn = formEl.querySelector("button[type='submit']");
+      tbtn.disabled = true; sbtn.disabled = true;
+      tbtn.textContent = "test: zły token…";
+      out.className = "show"; out.textContent = "Test captchy — wysyłam 2 leady…\n";
+
+      var base = collectBody();
+      var r1 = null;
+      postLead(Object.assign({}, base, {captchaResponse: BAD_TOKEN}))
+        .then(function(res1) {
+          r1 = res1;
+          tbtn.textContent = "test: dobry token…";
+          return getEnterpriseToken();
+        })
+        .then(function(token) {
+          return postLead(Object.assign({}, base, {captchaResponse: token}));
+        })
+        .then(function(r2) {
+          renderVerdict(r1, r2);
+          tbtn.disabled = false; sbtn.disabled = false;
+          tbtn.textContent = "Test captcha: zły token → dobry token";
+        })
+        .catch(function(err) {
+          out.className = "err show";
+          out.textContent = "Test przerwany: " + err + "\n(szot 1 status: " + (r1 ? r1.status : "—") + ")";
+          tbtn.disabled = false; sbtn.disabled = false;
+          tbtn.textContent = "Test captcha: zły token → dobry token";
+        });
+    });
+
+    // Interpretacja dwóch szotów → werdykt o stanie captchy i przejściu tokenu.
+    function renderVerdict(bad, good) {
+      var lines = [
+        "Zły token (zaślepka):  HTTP " + bad.status,
+        "Dobry token (real):    HTTP " + good.status,
+        ""
+      ];
+      var cls, verdict;
+      if (bad.status === 200 && good.status === 200) {
+        cls = "warn"; verdict = "⚠️ Captcha WYŁĄCZONA — Medidesk przyjął nawet zły token. Twoje 200 przechodzą bez weryfikacji; tokenu nie ma jak sprawdzić, dopóki captcha nie wróci.";
+      } else if (bad.status !== 200 && good.status === 200) {
+        cls = "ok"; verdict = "✅ Captcha WŁĄCZONA i Twój token PRZECHODZI. Zły token odrzucony, prawdziwy przyjęty — działa end-to-end.";
+      } else if (bad.status !== 200 && good.status !== 200) {
+        cls = "err"; verdict = "❌ Captcha WŁĄCZONA, ale prawdziwy token NIE przechodzi (score / action / site-key). Sprawdź solver i klucz.";
+      } else {
+        cls = "err"; verdict = "❓ Anomalia: zły token przeszedł, a prawdziwy nie. Zobacz surowe odpowiedzi.";
+      }
+      lines.push(verdict);
+      if (good.status !== 200 && good.data) lines.push("\nDobry → " + JSON.stringify(good.data));
+      if (bad.status !== 200 && bad.data) lines.push("Zły → " + JSON.stringify(bad.data));
+      out.className = cls + " show";
+      out.textContent = lines.join("\n");
+    }
 
     prefill(0);
   })

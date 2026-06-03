@@ -5,6 +5,19 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-06-03 — WO#005 Test captchy na `/demo/contact`
+
+### Dodane
+- **Przycisk „Test captcha: zły token → dobry token"** na `/demo/contact` — wysyła ten sam lead 2×: raz z **zaślepką** (zły token), raz z **prawdziwym** tokenem enterprise, i pokazuje werdykt: captcha **OFF** (zły też przeszedł) / **ON i token przechodzi** (zły odrzucony, dobry OK) / **ON, token odrzucony**. Odpowiada na „czy przechodzę captchę" — samo 200 z demo tego nie mówi, bo demo zawsze dosyła token.
+
+### Naprawione
+- **Niespójne dane presetów** na `/demo/contact` — klik „Marek Zieliński" wstawiał dane Anny (przyciski `[Anna, Marek, Ewa]` vs pula danych `[Jan, Anna, Marek]` — przesunięcie indeksów). Wprowadzono pojedyncze źródło prawdy `PEOPLE`; preset N wstawia spójny komplet danych osoby N (imię + e-mail + telefon + …).
+
+### Bezpieczeństwo
+- Tag `przed_demo_captcha_test_20260603` jako punkt powrotu.
+
+---
+
 ## [Unreleased] — 2026-06-03 — WO#004 Wysyłka tylko na UUID
 
 ### Zmienione
