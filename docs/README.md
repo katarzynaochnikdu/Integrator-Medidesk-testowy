@@ -107,7 +107,7 @@ Wszystkie zmienne środowiskowe mają prefix `MEDIDESK_` (zdefiniowane w `app/co
 
 ### Captcha — tryby i ENV (Medidesk reCAPTCHA v3 Enterprise)
 
-Endpoint `POST /api/forms/{webFormId}` Medideska jest chroniony przez reCAPTCHA v3 (Enterprise). Klient (`app/medidesk_client.py` + `app/captcha_provider.py`) wstawia token jako nagłówek `enterprise-recaptcha-response`. Przełącznik trybu: `MEDIDESK_CAPTCHA_MODE`.
+Endpoint `POST /api/forms/{formTemplateId}` Medideska (UUID — **nie** webFormId; patrz WO#004) jest chroniony przez reCAPTCHA v3 (Enterprise). Klient (`app/medidesk_client.py` + `app/captcha_provider.py`) wstawia token jako nagłówek `enterprise-recaptcha-response` (aktualny; PDF spec podaje stary `captcha-response`). Przełącznik trybu: `MEDIDESK_CAPTCHA_MODE`.
 
 | Tryb | Kiedy | Wymaga |
 |---|---|---|

@@ -1,6 +1,6 @@
 # System State — Medidesk Integrator
 
-> Ostatnia aktualizacja: 2026-06-03 (branch `main`, po WO#005 — test captchy na /demo/contact + fix presetów)
+> Ostatnia aktualizacja: 2026-06-03 (branch `main`, po WO#006 — docs: aktualny kontrakt captchy nadrzędny nad starym PDF)
 
 ## Status projektu
 
@@ -32,6 +32,7 @@
 | #003 | Admin-gating `/debug/*` (token-based, fail-closed) | 2026-06-01 | `.agents/work_orders/integrator_wo003_debug_admin_gate.md` |
 | #004 | Wysyłka tylko na UUID (usunięcie webFormId/dual-endpoint) | 2026-06-03 | `.agents/work_orders/integrator_wo004_uuid_only_submit.md` |
 | #005 | Test captchy na `/demo/contact` (zły→dobry token) + fix presetów | 2026-06-03 | `.agents/work_orders/integrator_wo005_demo_captcha_test.md` |
+| #006 | Docs: aktualny kontrakt captchy (nadrzędny nad starym PDF) + fix endpointu w README | 2026-06-03 | `.agents/work_orders/integrator_wo006_doc_captcha_contract.md` |
 
 ## Aktywne prace
 

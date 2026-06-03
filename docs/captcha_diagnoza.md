@@ -7,6 +7,34 @@
 
 ---
 
+## ⭐ AKTUALNY KONTRAKT (2026-06-03 — NADRZĘDNY nad PDF spec) ⭐
+
+> Te wartości są **aktualne** i mają pierwszeństwo nad plikiem
+> `pliki od medidesk/Medidesk - Formularze - Specyfikacja API.pdf` — jego sekcja
+> **reCAPTCHA jest starsza/nieaktualna**. Dane trzymamy w **zmiennych środowiskowych**
+> (zmiana wartości = zmiana ENV na Render, bez ruszania kodu).
+
+**Endpoint POST:** `https://app.medidesk.io/api/forms/{formTemplateId}` — **UUID**
+(zgodne z PDF i z WO#004). `webFormId` / `string` **nie są zgodne z dokumentacją** —
+nie używamy ich. Odwołania do `kochnikmini` / `webFormId` w sekcjach 0–4 niżej to
+**historia** (gdy testowaliśmy błędną hipotezę przed WO#004).
+
+**Captcha — aktualne vs stare:**
+
+| Element | AKTUALNE (stosujemy) | STARE — sekcja reCAPTCHA w PDF (NIE używać) |
+|---|---|---|
+| Nagłówek tokenu | **`enterprise-recaptcha-response`** (`MEDIDESK_CAPTCHA_HEADER`) | `captcha-response` |
+| Site-key | **`6Ldo-f0sAAAAAJO47MmGJQu_XZII-2Gd4WyLnyAk`** (`MEDIDESK_RECAPTCHA_SITE_KEY`) | `6Lfs81ghAAAAAL1x7coNFL3OORZHAkNk7ugPcBJ_` |
+| Typ reCAPTCHA | wg `MEDIDESK_CAPTCHA_ENTERPRISE` (ENV) | — |
+
+**Zasady (info od Medideska, 2026-06-03):** poprawny strzał = **UUID + poprawnie
+wygenerowany token**. **HTTP 500 = brak lub niepoprawny token** (nie zły endpoint).
+
+> Sekcje 0–4 poniżej to **zapis diagnozy z maja/czerwca** (captcha ON → 401).
+> Zostają jako historia; powyższy kontrakt jest nadrzędny.
+
+---
+
 ## 0. ⭐ STAN DZIAŁAJĄCY (baseline — nie ruszać) ⭐
 
 **2026-06-01: Medidesk TYMCZASOWO wyłączył captchę. Wysyłka zwraca HTTP 200.**

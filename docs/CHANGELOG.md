@@ -5,6 +5,18 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-06-03 — WO#006 Dokumentacja: aktualny kontrakt captchy
+
+### Dokumentacja
+- **Ujednoznaczniono aktualny kontrakt captchy** jako nadrzędny nad PDF spec (`pliki od medidesk/…Specyfikacja API.pdf`), którego sekcja reCAPTCHA jest **stara**. Aktualne (info Medideska 2026-06-03): nagłówek `enterprise-recaptcha-response`, site-key `6Ldo-f0s…`; stare z PDF: `captcha-response`, `6Lfs81gh…`. Baner „AKTUALNY KONTRAKT" w `docs/captcha_diagnoza.md` + notatka `pliki od medidesk/_UWAGA-aktualnosc-captcha.md`.
+- **Poprawiono stary endpoint** w `docs/README.md`: POST idzie na `{formTemplateId}` (UUID), nie `{webFormId}` (zgodnie z WO#004).
+- Sekcje 0–4 w `captcha_diagnoza.md` oznaczone jako **historia** (diagnoza maj/czerwiec, captcha ON → 401).
+
+### Uwaga
+- Bez zmian w kodzie/configu — wartości captchy są **zmiennymi środowiskowymi** (`MEDIDESK_CAPTCHA_HEADER`, `MEDIDESK_RECAPTCHA_SITE_KEY`, `MEDIDESK_CAPTCHA_ENTERPRISE`), zarządza je użytkownik na Render.
+
+---
+
 ## [Unreleased] — 2026-06-03 — WO#005 Test captchy na `/demo/contact`
 
 ### Dodane
