@@ -50,7 +50,7 @@ To spójne ze znanym problemem z `integrator_system_state.md` (linia 53): *„Me
 
 - [x] `submit_form_urlencoded` wykonuje **dokładnie jeden** POST — na `form_id` (UUID); brak odniesień do webFormId w ścieżce POST. (Potwierdzone testem `TestSubmitPostsToUuid` + diff.)
 - [x] `pytest` **bez regresji**: baseline `7 failed / 26 passed / 12 errors` → po zmianie `7 failed / 25 passed / 12 errors`. Delta = zamiana 2 testów `resolve` na 1 test UUID; **zero nowych failures**. Czerwone testy są pre-existing (env-mismatch repo „testowy", patrz Znane problemy).
-- [ ] ⏳ **Walidacja baseline (QA) — ODŁOŻONA NA DEPLOY:** lokalnie niewykonalna (brak `MEDIDESK_DEBUG_TOKEN`, brak klucza CapSolver, lokalny Python nie weryfikuje cert SSL MD). Do wykonania po deployu na Render: `/debug/send?action=submit` → oczekiwane `medidesk_status: 200`. 500 → STOP/eskalacja.
+- [x] **Walidacja live (QA): PASS** — lead wysłany przez `/demo/contact` (form `e8342a6a-b31a-4e2c-82be-146b73fe8457`, webFormId `kochnikmini`) → **„OK — lead wysłany do Medidesk" (200)** w produkcji, 2026-06-03. Potwierdza tezę użytkownika: POST na UUID + token → 200. (Lokalnie niewykonalne — egress TLS tej maszyny blokuje `onrender.com`/`medidesk.io`; walidację wykonał użytkownik z przeglądarki.) Build-level tell w logach Render: nowy kod loguje `Medidesk POST OK form=… ` bez `via=…`.
 - [x] `docs/CHANGELOG.md` zaktualizowany.
 - [x] 🛡 **SecGate**: PASS — raport w `.agents/security_reports/integrator_wo004_uuid_only_submit.md`
 - [x] 📝 **DocGate**: PASS — raport w `.agents/doc_reports/integrator_wo004_uuid_only_submit.md`
@@ -69,4 +69,4 @@ To spójne ze znanym problemem z `integrator_system_state.md` (linia 53): *„Me
 
 ---
 
-**Status**: 🔄 W trakcie — implementacja + SecGate + DocGate PASS; QA live-walidacja odłożona na deploy (Render)
+**Status**: ✅ Wykonane — implementacja + QA (live 200 w produkcji) + SecGate PASS + DocGate PASS

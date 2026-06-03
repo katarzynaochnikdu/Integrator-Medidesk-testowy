@@ -1,12 +1,12 @@
 # System State — Medidesk Integrator
 
-> Ostatnia aktualizacja: 2026-06-03 (branch `main`, po WO#004 — implementacja + gates PASS; live-walidacja czeka na deploy)
+> Ostatnia aktualizacja: 2026-06-03 (branch `main`, po WO#004 — ZAMKNIĘTY: live 200 potwierdzone w produkcji)
 
 ## Status projektu
 
 | Element | Status | Uwagi |
 |---|---|---|
-| Wysyłka do Medideska | ✅ **DZIAŁA (200)** | Medidesk **tymczasowo** wyłączył captchę. Baseline udokumentowany w `docs/captcha_diagnoza.md` sekcja 0. NIE zmieniać configu. Solver (CapSolver) gotowy na powrót captchy — WO#002 zamknięty 2026-06-01. **WO#004:** klient POST-uje teraz **wyłącznie na UUID (formTemplateId) + token** — `resolve_submit_form_id`/webFormId usunięte. Live-walidacja 200 do potwierdzenia po deployu na Render. |
+| Wysyłka do Medideska | ✅ **DZIAŁA (200)** | Medidesk **tymczasowo** wyłączył captchę. Baseline udokumentowany w `docs/captcha_diagnoza.md` sekcja 0. NIE zmieniać configu. Solver (CapSolver) gotowy na powrót captchy — WO#002 zamknięty 2026-06-01. **WO#004 (zamknięty 2026-06-03):** klient POST-uje **wyłącznie na UUID (formTemplateId) + token** — `resolve_submit_form_id`/webFormId usunięte. Live 200 potwierdzone w produkcji przez `/demo/contact` (form `e8342a6a`, „OK — lead wysłany"). |
 | Produkcja (Render) | ✅ Działa | https://md-integrator-old.onrender.com |
 | Lokalny dev | ✅ Działa | `uvicorn app.main:app --reload` |
 | Testy | ⚠️ Brak CI | `pytest` lokalnie |
@@ -23,7 +23,6 @@
 | WO | Tytuł | Status | Plik |
 |---|---|---|---|
 | #001 | Dark Mode (Jasny/Ciemny/Systemowy) | 🔄 W trakcie | `.agents/work_orders/integrator_wo001_dark_mode.md` |
-| #004 | Wysyłka tylko na UUID (usunięcie webFormId/dual-endpoint) | 🔄 Impl + SecGate + DocGate PASS; **QA live-walidacja po deployu** | `.agents/work_orders/integrator_wo004_uuid_only_submit.md` |
 
 ## Wykonane Work Ordery
 
@@ -31,6 +30,7 @@
 |---|---|---|---|
 | #002 | Captcha solver ready (CapSolver oficjalny, bridge fallback) | 2026-06-01 | `.agents/work_orders/integrator_wo002_captcha_solver_ready.md` |
 | #003 | Admin-gating `/debug/*` (token-based, fail-closed) | 2026-06-01 | `.agents/work_orders/integrator_wo003_debug_admin_gate.md` |
+| #004 | Wysyłka tylko na UUID (usunięcie webFormId/dual-endpoint) | 2026-06-03 | `.agents/work_orders/integrator_wo004_uuid_only_submit.md` |
 
 ## Aktywne prace
 
